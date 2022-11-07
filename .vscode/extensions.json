@@ -1,0 +1,10 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "juanblanco.solidity",
+    "usernamehw.errorlens",
+    "ms-vscode.makefile-tools",
+    "ryanluker.vscode-coverage-gutters"
+  ]
+}

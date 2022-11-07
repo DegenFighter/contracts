@@ -1,0 +1,33 @@
+{
+  "name": "@degenfighter/betting-contracts",
+  "version": "1.0.0",
+  "description": "Betting contracts for DegenFighter",
+  "main": "index.js",
+  "repository": "https://github.com/DegenFighter/betting-platform.git",
+  "author": "Kevin Park <kevin@fruitful.gg>",
+  "license": "MIT",
+  "private": true,
+  "devDependencies": {
+    "chalk": "4",
+    "dotenv": "^16.0.1",
+    "eslint": "^8.18.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-config-standard": "^17.0.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-promise": "^6.0.0",
+    "ethereum-waffle": "^3.4.4",
+    "ethers": "^5.6.9",
+    "glob": "^8.0.3",
+    "prettier": "^2.7.1",
+    "prettier-plugin-solidity": "^1.0.0-beta.19",
+    "solc": "^0.8.16",
+    "solhint": "^3.3.7",
+    "solidity-coverage": "^0.7.21",
+    "solidity-docgen": "^0.5.17"
+  },
+  "dependencies": {
+    "yarn": "^1.22.19"
+  }
+}
