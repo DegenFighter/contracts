@@ -9,14 +9,14 @@ import { Bet, Winner, Pools } from "src/Bet.sol";
 import { MockERC20 } from "solmate/test/utils/mocks/MockERC20.sol";
 
 /// @return r random number (sent to server)
-/// @return rp obfuscated pick (stored on smart contracts)
-function pickFighter(Winner winner, uint256 randomNum) returns (uint256 r, uint256 rp) {
+/// @return pr obfuscated pick (stored on smart contracts)
+function pickFighter(Winner winner, uint256 randomNum) returns (uint256 r, uint256 pr) {
     if (winner == Winner.FighterA) {
         r = randomNum;
-        rp = randomNum;
+        pr = randomNum;
     } else if (winner == Winner.FighterB) {
         r = randomNum;
-        rp = randomNum + 1;
+        pr = randomNum + 1;
     }
 }
 
@@ -28,18 +28,33 @@ contract User is Bet {
     }
 
     /// @dev A user can place a bet
-    function placeBet(uint256 boutNum, Winner winner, uint256 amount, uint256 randomNum) public returns (uint256 boutNum_, uint256 r, uint256 rp) {
-        (r, rp) = pickFighter(winner, randomNum);
-        boutNum_ = bet2.bet(boutNum, amount, rp);
+    function placeBet(uint256 boutNum, Winner winner, uint256 amount, uint256 randomNum) public returns (uint256 boutNum_, uint256 r, uint256 pr) {
+        (r, pr) = pickFighter(winner, randomNum);
+        boutNum_ = bet2.bet(boutNum, amount, pr);
     }
 
-    function placeBetPool(uint256 boutPoolNo, Pools pool, Winner winner, uint256 amount, uint256 randomNum) public returns (uint256 boutPoolNo_, uint256 r, uint256 rp) {
-        (r, rp) = pickFighter(winner, randomNum);
-        boutPoolNo_ = bet2.betPool(boutPoolNo, pool, amount, rp);
+    function placePermitBet(
+        uint256 randomNum,
+        uint256 boutNum,
+        Winner winner,
+        uint256 amount,
+        address server,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) public returns (uint256 boutNum_, uint256 randno, uint256 pr) {
+        (randno, pr) = pickFighter(winner, randomNum);
+        boutNum_ = bet2.permitBet(boutNum, amount, pr, server, deadline, v, r, s);
     }
+
+    // function placeBetPool(uint256 boutPoolNo, Pools pool, Winner winner, uint256 amount, uint256 randomNum) public returns (uint256 boutPoolNo_, uint256 r, uint256 pr) {
+    //     (r, pr) = pickFighter(winner, randomNum);
+    //     boutPoolNo_ = bet2.betPool(boutPoolNo, pool, amount, pr);
+    // }
 }
 
-contract Server is Bet {
+contract Server is Bet, DSTestPlusF {
     Bet bet2;
 
     constructor(Bet bet) {
@@ -71,17 +86,28 @@ contract Server is Bet {
         bet2.reveal(boutNo, S_users[boutNo], S_randno[boutNo], noOfBets);
     }
 
-    function revealPoolBets(uint256 boutNo, Pools pool) public {
-        uint256 noOfBets = S_poolUsers[boutNo][pool].length;
-        bet2.revealPool(boutNo, pool, S_poolUsers[boutNo][pool], S_poolRandno[boutNo][pool], noOfBets);
-    }
+    // function revealPoolBets(uint256 boutNo, Pools pool) public {
+    //     uint256 noOfBets = S_poolUsers[boutNo][pool].length;
+    //     bet2.revealPool(boutNo, pool, S_poolUsers[boutNo][pool], S_poolRandno[boutNo][pool], noOfBets);
+    // }
 
     function judgeFight(uint256 boutNo, Winner winner) public {
         bet2.judge(boutNo, winner);
     }
 
-    function judgePoolFight(uint256 boutNo, Pools pool, Winner winner) public {
-        bet2.judgePool(boutNo, pool, winner);
+    // function judgePoolFight(uint256 boutNo, Pools pool, Winner winner) public {
+    //     bet2.judgePool(boutNo, pool, winner);
+    // }
+
+    function createSign(address server, address user, uint256 pr, uint256 nonce, uint256 deadline) public returns (address signer, address server2) {
+        server2 = vm.addr(12345);
+        bytes32 hash2222 = keccak256(
+            abi.encode(keccak256("Sign(address server,address user,uint256 pr,uint256 nonce,uint256 deadline)"), server, user, pr, nonces[owner]++, deadline)
+        );
+
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(12345, hash2222);
+        signer = ecrecover(hash2222, v, r, s);
+        // assertEq(server2, signer);
     }
 
     function validateBets(uint256 boutId) public returns (uint256[] memory picks) {}
@@ -99,7 +125,8 @@ contract BetTest is DSTestPlusF {
 
     address alice = address(0xABCD);
     address bob = address(0xBEEF);
-
+    address serverSigner;
+    uint256 serverPk;
     // address server = address(0xEEEEFF);
 
     address dfTreasury = address(0xDDDDDDAAABBBB);
@@ -107,6 +134,8 @@ contract BetTest is DSTestPlusF {
     function setUp() public {
         bet = new Bet();
         server = new Server(bet);
+        serverPk = 133713371337;
+        serverSigner = vm.addr(serverPk);
 
         alice2 = new User(bet);
         bob2 = new User(bet);
@@ -145,6 +174,80 @@ contract BetTest is DSTestPlusF {
         bet.bet(1, 1e18, pickR);
     }
 
+    function testSign() public {
+        address server = address(server);
+        address user = address(alice);
+        uint256 pr = 1 + 3;
+
+        uint256 nonce = 0;
+        uint256 deadline = block.timestamp + 30;
+
+        (uint256 boutNo, ) = bet.open();
+
+        bet.setToken(address(dfight));
+        bet.setTreasury(address(dfTreasury));
+
+        // bytes32 hash = keccak256(
+        //     abi.encode(keccak256("Sign(address server,address user,uint256 pr,uint256 bout,uint256 nonce,uint256 deadline)"), serverSigner, user, pr, boutNo, nonce, deadline)
+        // );
+        bytes32 hash = keccak256(
+            abi.encodePacked(
+                "\x19\x01",
+                bet.DOMAIN_SEPARATOR(),
+                keccak256(
+                    abi.encode(
+                        keccak256("Sign(address server,address user,uint256 pr,uint256 bout,uint256 nonce,uint256 deadline)"),
+                        serverSigner,
+                        user,
+                        pr,
+                        boutNo,
+                        nonce,
+                        deadline
+                    )
+                )
+            )
+        );
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(serverPk, hash);
+        address signer = ecrecover(hash, v, r, s);
+        assertEq(serverSigner, signer, "invalid signer");
+        console2.log("recovered signer", signer);
+        console2.log("server signer", serverSigner);
+        vm.prank(alice);
+        bet.permitBet(boutNo, 1e18, pr, serverSigner, deadline, v, r, s);
+
+        // server.record(boutNo, address(alice2), 1 ether, randno1);
+    }
+
+    function testWithSignFighterAWins() public {
+        (uint256 boutNo, ) = bet.open();
+
+        bet.setToken(address(dfight));
+        bet.setTreasury(address(dfTreasury));
+
+        uint256 randno1 = 100;
+        (, , uint256 pr) = alice2.placeBet(boutNo, Winner.FighterA, 1 ether, randno1);
+
+        server.record(boutNo, address(alice2), 1 ether, randno1);
+
+        uint256 randno2 = 20001;
+        (, , pr) = bob2.placeBet(boutNo, Winner.FighterB, 1 ether, randno2);
+
+        server.record(boutNo, address(bob2), 1 ether, randno2);
+
+        bet.close(boutNo);
+
+        server.revealBets(boutNo);
+
+        server.judgeFight(boutNo, Winner.FighterA);
+
+        vm.prank(address(alice2));
+        bet.claim(boutNo);
+
+        vm.prank(address(bob2));
+        vm.expectRevert("User picked the losing fighter");
+        bet.claim(boutNo);
+    }
+
     function testFighterAWins() public {
         (uint256 boutNo, ) = bet.open();
 
@@ -152,12 +255,12 @@ contract BetTest is DSTestPlusF {
         bet.setTreasury(address(dfTreasury));
 
         uint256 randno1 = 100;
-        (, , uint256 rp) = alice2.placeBet(boutNo, Winner.FighterA, 1 ether, randno1);
+        (, , uint256 pr) = alice2.placeBet(boutNo, Winner.FighterA, 1 ether, randno1);
 
         server.record(boutNo, address(alice2), 1 ether, randno1);
 
         uint256 randno2 = 20001;
-        (, , rp) = bob2.placeBet(boutNo, Winner.FighterB, 1 ether, randno2);
+        (, , pr) = bob2.placeBet(boutNo, Winner.FighterB, 1 ether, randno2);
 
         server.record(boutNo, address(bob2), 1 ether, randno2);
 
@@ -182,12 +285,12 @@ contract BetTest is DSTestPlusF {
         bet.setTreasury(address(dfTreasury));
 
         uint256 randno1 = 100;
-        (, , uint256 rp) = alice2.placeBet(boutNo, Winner.FighterA, 1 ether, randno1);
+        (, , uint256 pr) = alice2.placeBet(boutNo, Winner.FighterA, 1 ether, randno1);
 
         server.record(boutNo, address(alice2), 1 ether, randno1);
 
         uint256 randno2 = 20001;
-        (, , rp) = bob2.placeBet(boutNo, Winner.FighterB, 1 ether, randno2);
+        (, , pr) = bob2.placeBet(boutNo, Winner.FighterB, 1 ether, randno2);
 
         server.record(boutNo, address(bob2), 1 ether, randno2);
 
@@ -205,42 +308,42 @@ contract BetTest is DSTestPlusF {
         bet.claim(boutNo);
     }
 
-    function testPoolFighterAWins() public {
-        uint256 boutNo = bet.openPools();
+    // function testPoolFighterAWins() public {
+    //     uint256 boutNo = bet.openPools();
 
-        bet.setToken(address(usdc));
-        bet.setTreasury(address(dfTreasury));
+    //     bet.setToken(address(usdc));
+    //     bet.setTreasury(address(dfTreasury));
 
-        uint256 randno1 = 100;
+    //     uint256 randno1 = 100;
 
-        console2.log("usdc balance of Bet contract", usdc.balanceOf(address(alice2)));
+    //     console2.log("usdc balance of Bet contract", usdc.balanceOf(address(alice2)));
 
-        vm.prank(address(alice2));
-        (, , uint256 rp) = alice2.placeBetPool(boutNo, Pools.Low, Winner.FighterA, 1e6, randno1);
+    //     vm.prank(address(alice2));
+    //     (, , uint256 pr) = alice2.placeBetPool(boutNo, Pools.Low, Winner.FighterA, 1e6, randno1);
 
-        server.recordPool(boutNo, Pools.Low, address(alice2), 1e6, randno1);
+    //     server.recordPool(boutNo, Pools.Low, address(alice2), 1e6, randno1);
 
-        uint256 randno2 = 20001;
-        (, , rp) = bob2.placeBetPool(boutNo, Pools.Low, Winner.FighterB, 1e7, randno2);
+    //     uint256 randno2 = 20001;
+    //     (, , pr) = bob2.placeBetPool(boutNo, Pools.Low, Winner.FighterB, 1e7, randno2);
 
-        server.recordPool(boutNo, Pools.Low, address(bob2), 1e7, randno2);
+    //     server.recordPool(boutNo, Pools.Low, address(bob2), 1e7, randno2);
 
-        bet.closePools(boutNo);
+    //     bet.closePools(boutNo);
 
-        server.revealPoolBets(boutNo, Pools.Low);
+    //     server.revealPoolBets(boutNo, Pools.Low);
 
-        console2.log("usdc balance of Bet contract", usdc.balanceOf(address(bet)));
+    //     console2.log("usdc balance of Bet contract", usdc.balanceOf(address(bet)));
 
-        server.judgePoolFight(boutNo, Pools.Low, Winner.FighterA);
-        console2.log("usdc balance of Bet contract", usdc.balanceOf(address(bet)));
+    //     server.judgePoolFight(boutNo, Pools.Low, Winner.FighterA);
+    //     console2.log("usdc balance of Bet contract", usdc.balanceOf(address(bet)));
 
-        vm.prank(address(alice2));
-        bet.claimPool(boutNo, Pools.Low);
+    //     vm.prank(address(alice2));
+    //     bet.claimPool(boutNo, Pools.Low);
 
-        vm.prank(address(bob2));
-        vm.expectRevert("User picked the losing fighter");
-        bet.claimPool(boutNo, Pools.Low);
-    }
+    //     vm.prank(address(bob2));
+    //     vm.expectRevert("User picked the losing fighter");
+    //     bet.claimPool(boutNo, Pools.Low);
+    // }
 
     // note currently, when there are no bets placed on the losing fighter, the platform takes no commissions. Is this an issue?
 }
