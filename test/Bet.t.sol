@@ -20,6 +20,19 @@ function pickFighter(Winner winner, uint256 randomNum) returns (uint256 r, uint2
     }
 }
 
+function signBet(bytes32 doms, address serverSigner, address user, uint256 pr, uint256 boutNo, uint256 nonce, uint256 deadline) returns (bytes32 hash) {
+    hash = keccak256(
+        abi.encodePacked(
+            "\x19\x01",
+            doms,
+            keccak256(
+                abi.encode(keccak256("Sign(address server,address user,uint256 pr,uint256 bout,uint256 nonce,uint256 deadline)"), serverSigner, user, pr, boutNo, nonce, deadline)
+            )
+        )
+    );
+    // (uint8 v, bytes32 r, bytes32 s) = vm.sign(serverPk, hash);
+}
+
 contract User is Bet {
     Bet bet2;
 
@@ -175,9 +188,10 @@ contract BetTest is DSTestPlusF {
     }
 
     function testSign() public {
-        address server = address(server);
+        address serverAddress = address(server);
         address user = address(alice);
-        uint256 pr = 1 + 3;
+        uint256 randno = 3;
+        uint256 pr = 1 + randno;
 
         uint256 nonce = 0;
         uint256 deadline = block.timestamp + 30;
@@ -190,32 +204,30 @@ contract BetTest is DSTestPlusF {
         // bytes32 hash = keccak256(
         //     abi.encode(keccak256("Sign(address server,address user,uint256 pr,uint256 bout,uint256 nonce,uint256 deadline)"), serverSigner, user, pr, boutNo, nonce, deadline)
         // );
-        bytes32 hash = keccak256(
-            abi.encodePacked(
-                "\x19\x01",
-                bet.DOMAIN_SEPARATOR(),
-                keccak256(
-                    abi.encode(
-                        keccak256("Sign(address server,address user,uint256 pr,uint256 bout,uint256 nonce,uint256 deadline)"),
-                        serverSigner,
-                        user,
-                        pr,
-                        boutNo,
-                        nonce,
-                        deadline
-                    )
-                )
-            )
-        );
+
+        bytes32 hash = signBet(bet.DOMAIN_SEPARATOR(), serverSigner, alice, pr, boutNo, nonce, deadline);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(serverPk, hash);
         address signer = ecrecover(hash, v, r, s);
         assertEq(serverSigner, signer, "invalid signer");
         console2.log("recovered signer", signer);
         console2.log("server signer", serverSigner);
         vm.prank(alice);
-        bet.permitBet(boutNo, 1e18, pr, serverSigner, deadline, v, r, s);
+        bet.permitBet(boutNo, 1 ether, pr, serverSigner, deadline, v, r, s);
 
-        // server.record(boutNo, address(alice2), 1 ether, randno1);
+        server.record(boutNo, address(alice), 1 ether, randno);
+
+        hash = signBet(bet.DOMAIN_SEPARATOR(), serverSigner, bob, pr, boutNo, nonce + 1, deadline);
+        (v, r, s) = vm.sign(serverPk, hash);
+        vm.prank(bob);
+        bet.permitBet(boutNo, 1 ether, pr, serverSigner, deadline, v, r, s);
+
+        server.record(boutNo, address(bob), 1 ether, 3);
+
+        bet.close(boutNo);
+
+        server.revealBets(boutNo);
+
+        server.judgeFight(boutNo, Winner.FighterA);
     }
 
     function testWithSignFighterAWins() public {
@@ -346,4 +358,71 @@ contract BetTest is DSTestPlusF {
     // }
 
     // note currently, when there are no bets placed on the losing fighter, the platform takes no commissions. Is this an issue?
+
+    uint256 map1;
+    uint256 mask = 3;
+    mapping(uint256 => uint256) map;
+
+    function testBit() public {
+        uint256 pr1 = 1; // 01
+        uint256 pr2 = 2; // 10
+        uint256 pr3 = 3; // 11
+        // 111001 == 57
+        // 001001 == 9
+
+        uint256 tmap = 57;
+
+        uint256 chk;
+
+        chk = tmap & mask;
+
+        console2.log(chk);
+
+        // 111001 == 57
+        // 001100 == 12
+        chk = tmap >> 2;
+        chk = chk & mask;
+        // chk = tmap & (mask << 2);
+        // console2.log(mask << 2);
+        console2.log(chk);
+
+        chk = (tmap >> 4) & mask;
+
+        console2.log(chk);
+
+        set(0, 1);
+        set(1, 2);
+        set(2, 3);
+        console2.log(get(0));
+        console2.log(get(1));
+        console2.log(get(2));
+
+        set(2, 3);
+        console2.log(get(0));
+        console2.log(get(1));
+        console2.log(get(2));
+    }
+
+    function set(uint256 index, uint256 pr) public returns (uint256 map_) {
+        uint256 bucket = index >> 7;
+
+        console2.log("map before set", map[bucket]);
+        console2.log("bucket", bucket);
+        // move pr to position based on index
+        // uint256 movePr = pr << (2 * index);
+        uint256 movePr = pr << (2 * (index & 0x7f));
+        console2.log("movePr", movePr);
+
+        // map1 |= movePr;
+        map[bucket] |= movePr;
+        console2.log("get map", map[bucket]);
+
+        // pr = (map1 >> (2 * index)) & mask;
+    }
+
+    function get(uint256 index) public returns (uint256 pr) {
+        uint256 bucket = index >> 7;
+
+        pr = (map[bucket] >> (2 * (index & 0x7f))) & mask;
+    }
 }

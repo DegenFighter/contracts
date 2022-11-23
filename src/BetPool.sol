@@ -5,6 +5,7 @@ pragma solidity 0.8.17;
 import "./Bet.sol";
 
 contract BetPool is Bet {
+    uint256 boutPools;
     mapping(uint256 => mapping(Pools => BoutInfo)) pools; // boutPools => pool => bout info
 
     mapping(address => mapping(uint256 => mapping(Pools => uint256))) poolPicks; // user => boutPool => pool => R

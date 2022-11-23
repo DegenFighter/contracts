@@ -3,6 +3,7 @@
 pragma solidity 0.8.17;
 
 import { LibERC20 } from "./LibERC20.sol";
+
 // import { console2 } from "forge-std/console2.sol";
 
 /// Naming conventions for the Betting Platform
@@ -29,6 +30,10 @@ struct BoutInfo {
     uint256 amountA; // amount bet on fighter A
     uint256 amountB;
 }
+
+error PermitDeadlineExpired(uint256 deadline, uint256 blockTimeStamp);
+error InvalidSigner(address recoveredAddress, address expectedSignerAddress);
+error BoutClosed();
 
 contract Bet {
     uint256 internal immutable INITIAL_CHAIN_ID;
@@ -61,10 +66,14 @@ contract Bet {
     address dfTreasury;
 
     uint256 bout;
-    uint256 boutPools;
 
     mapping(uint256 => BoutInfo) bouts; // bout => bout info
+    mapping(uint256 => uint256) numUniqueBets; // bout => number of unique users that bet on this bout
 
+    mapping(address => mapping(uint256 => uint256)) usersBoutMapIndex; // user => bout => pick index in bitmap
+    mapping(uint256 => mapping(uint256 => address)) indexedUsers; // bout => pick index in bitmap => user
+    mapping(uint256 => mapping(uint256 => uint256)) picksB; // bout => bucket => pick bitmap
+    uint256 constant mask = 3; // todo
     mapping(address => mapping(uint256 => uint256)) picks; // user => bout => R
     mapping(address => mapping(uint256 => uint256)) amounts; // user => bout => bet amount
 
@@ -100,7 +109,8 @@ contract Bet {
     function sign(address server, address user, uint256 pr, uint256 bout, uint256 nonce, uint256 deadline) public {}
 
     function permitBet(uint256 boutNo, uint256 amount, uint256 pr, address server, uint256 deadline, uint8 v, bytes32 r, bytes32 s) public returns (uint256) {
-        require(deadline >= block.timestamp, "PERMIT_DEADLINE_EXPIRED");
+        if (deadline < block.timestamp) revert PermitDeadlineExpired(deadline, block.timestamp);
+        // require(deadline >= block.timestamp, "PERMIT_DEADLINE_EXPIRED");
 
         // address user = msg.sender;
         // Unchecked because the only math done is incrementing
@@ -129,10 +139,12 @@ contract Bet {
                 s
             );
 
-            require(recoveredAddress != address(0) && recoveredAddress == server, "INVALID_SIGNER");
+            if (recoveredAddress == address(0) || recoveredAddress != server) revert InvalidSigner(recoveredAddress, server);
+            // require(recoveredAddress != address(0) && recoveredAddress == server, "INVALID_SIGNER");
         }
 
         return bet(boutNo, amount, pr);
+        // return betPacked(boutNo, amount, pr);
     }
 
     function DOMAIN_SEPARATOR() public view virtual returns (bytes32) {
@@ -163,8 +175,46 @@ contract Bet {
         // note: currently, a user can only bet once and this is currently checked by seeing if a bet amount has been recorded
         require(amounts[msg.sender][boutNo] == 0, "User has already placed a bet");
 
-        // Store pick R + 1
+        // Store pick + R
         picks[msg.sender][boutNo] = pr;
+        amounts[msg.sender][boutNo] = amount;
+
+        boutNo_ = boutNo;
+        // Transfer funds to contract
+        LibERC20.transfer(token, address(this), amount);
+
+        emit BetPlaced(boutNo, msg.sender, amount);
+    }
+
+    function setPr(uint256 boutNo, uint256 index, uint256 pr) public returns (uint256 map_) {
+        uint256 bucket = index >> 7;
+        // move pr to position based on index
+        uint256 movePr = pr << (2 * (index & 0x7f));
+
+        picksB[boutNo][bucket] |= movePr;
+    }
+
+    function getPr(uint256 boutNo, uint256 index) public returns (uint256 pr) {
+        uint256 bucket = index >> 7;
+
+        pr = (picksB[boutNo][bucket] >> (2 * (index & 0x7f))) & mask;
+    }
+
+    function betPacked(uint256 boutNo, uint256 amount, uint256 pr) private returns (uint256 boutNo_) {
+        require(bouts[boutNo].open, "This bout is not open for betting");
+        require(amount >= POOL_USDC_LOW_MIN, "Bet size is below minimum");
+        // note: currently, a user can only bet once and this is currently checked by seeing if a bet amount has been recorded
+        // todo change this check
+        require(amounts[msg.sender][boutNo] == 0, "User has already placed a bet");
+
+        // todo need additional checks here to ensure first time better on bout
+        // note Index for a user starts at 0.
+        uint256 userBoutIndex = numUniqueBets[boutNo];
+        numUniqueBets[boutNo]++;
+        usersBoutMapIndex[msg.sender][boutNo] = userBoutIndex;
+        indexedUsers[boutNo][userBoutIndex] = msg.sender;
+        // Store pick + R
+        setPr(boutNo, usersBoutMapIndex[msg.sender][boutNo], pr);
         amounts[msg.sender][boutNo] = amount;
 
         boutNo_ = boutNo;
@@ -196,9 +246,6 @@ contract Bet {
 
         bouts[boutNo].reveal = true;
 
-        // uint256 numberOfBets;
-        // uint256 numberOfBets = picks.length;
-
         for (uint256 i; i < noOfBets; i++) {
             picks[users[i]][boutNo] -= randno[i];
             if (picks[users[i]][boutNo] == 0) {
@@ -207,6 +254,42 @@ contract Bet {
                 bouts[boutNo].amountB += amounts[users[i]][boutNo];
             }
             emit DebugReveal(boutNo, picks[users[i]][boutNo], amounts[users[i]][boutNo], bouts[boutNo].amountA, bouts[boutNo].amountB);
+        }
+
+        emit BetsRevealed(boutNo, bouts[boutNo].amountA, bouts[boutNo].amountB);
+    }
+
+    function readMap(uint256 prMap, uint256 index) private returns (uint256 pr) {
+        pr = (prMap >> (2 * (index & 0x7f))) & mask;
+    }
+
+    function revealPacked(uint256 boutNo, uint256[] memory prPacked) public {
+        require(!bouts[boutNo].open, "Bout still open");
+        require(!bouts[boutNo].reveal, "Bout already revealed");
+
+        bouts[boutNo].reveal = true;
+
+        uint256 noOfBets = numUniqueBets[boutNo]; // aka max index of boutNo
+        uint256 noOfBuckets = noOfBets >> 7;
+
+        uint256 r;
+        uint256 userPr;
+        for (uint256 bucketNo; bucketNo < noOfBuckets; bucketNo++) {
+            for (uint256 index; index < noOfBets; index++) {
+                // note: Server passes in r = 0 if the bet is invalid.
+                // todo deal with r = 0
+                // todo store pick
+                r = readMap(prPacked[bucketNo], index);
+
+                userPr = getPr(boutNo, index);
+
+                if (userPr - r == 0) {
+                    bouts[boutNo].amountA += amounts[indexedUsers[boutNo][index]][boutNo];
+                } else if (userPr - r == 1) {
+                    bouts[boutNo].amountB += amounts[indexedUsers[boutNo][index]][boutNo];
+                }
+                emit DebugReveal(boutNo, userPr - r, amounts[indexedUsers[boutNo][index]][boutNo], bouts[boutNo].amountA, bouts[boutNo].amountB);
+            }
         }
 
         emit BetsRevealed(boutNo, bouts[boutNo].amountA, bouts[boutNo].amountB);
