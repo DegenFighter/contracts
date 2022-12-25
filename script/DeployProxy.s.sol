@@ -3,24 +3,21 @@ pragma solidity ^0.8.13;
 
 import "forge-std/Script.sol";
 
-import "src/Bet.sol";
-import "solmate/test/utils/mocks/MockERC20.sol";
+import "src/Proxy.sol";
 
-contract DeployBet is Script {
-    MockERC20 test;
-
+contract DeployProxy is Script {
     function setUp() public {}
 
     function run() public {
         vm.broadcast();
-        address betAddress = address(new Bet());
+        address proxyAddress = address(new Proxy(msg.sender));
         string memory deployFile = "deployedAddresses.json";
 
         // test = new MockERC20("Test", "TEST", 18);
         vm.removeFile(deployFile);
-        vm.writeLine(deployFile, '{ "Bet": { ');
+        vm.writeLine(deployFile, '{ "Proxy": { ');
 
-        string memory d = string.concat('"', vm.toString(block.chainid), '": { "address": "', vm.toString(betAddress), '" }}} ');
+        string memory d = string.concat('"', vm.toString(block.chainid), '": { "address": "', vm.toString(proxyAddress), '" }}} ');
         vm.writeLine(deployFile, d);
     }
 }
