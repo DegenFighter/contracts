@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.17;
+pragma solidity >=0.8.17 <0.9;
 
 import { IERC20 } from "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import { IInternalTokenImpl } from "./interfaces/IInternalTokenImpl.sol";
+import { ITokenImplFacet } from "./interfaces/ITokenImplFacet.sol";
 
 contract MemeToken is IERC20 {
-    IInternalTokenImpl public impl;
+    ITokenImplFacet public impl;
 
     constructor(address _impl) {
-        impl = IInternalTokenImpl(_impl);
+        impl = ITokenImplFacet(_impl);
     }
 
     function totalSupply() external view override returns (uint256) {

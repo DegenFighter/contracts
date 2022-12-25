@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.17;
+pragma solidity >=0.8.17 <0.9;
 
-interface IInternalTokenImpl {
+interface ITokenImplFacet {
     /**
      * @dev Returns the amount of tokens in existence.
      */
     function tokenTotalSupply(uint tokenId) external view returns (uint256);
 
     /**
-     * @dev Returns the amount of tokens owned by `account`.
+     * @dev Returns the amount of tokens owned by `wallet`.
      */
-    function tokenBalanceOf(uint tokenId, address account) external view returns (uint256);
+    function tokenBalanceOf(uint tokenId, address wallet) external view returns (uint256);
 
     /**
      * @dev Moves `amount` tokens from the caller's account to `to`.

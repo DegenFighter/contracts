@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.17;
+pragma solidity >=0.8.17 <0.9;
 
 enum BoutState {
     Open,
@@ -24,19 +24,21 @@ struct Bout {
 }
 
 struct AppStorage {
-    /* 
-    MEME token 
-    */
+    ///
+    /// MEME token
+    ///
 
+    // MEME token address
+    address memeToken;
     // minimum balance that's mintable
     uint memeMintableBalance;
     // wallet => MEME balance
     mapping(address => uint) memeBalance;
     // MEME supply
     uint memeSupply;
-    /* 
-    Fights 
-    */
+    ///
+    /// Fights
+    ///
 
     // no. of bouts created
     uint totalBouts;

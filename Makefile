@@ -28,6 +28,10 @@ devnet: ## run development node
 		--fork-block-number 15078000 \
 		-vvvv
 
+prep-build:
+	@echo "preparing build"
+	node ./script/prep-build.js
+
 build: ## forge build
 	forge build --names --sizes
 b: build
@@ -87,7 +91,7 @@ lcov-fork: ## coverage report (lcov) for mainnet fork
 anvil-fork: ## fork goerli locally with anvil
 	anvil -f ${ALCHEMY_ETH_GOERLI_RPC_URL}
 
-deploy-proxy: ## deploy Bet contract to local node with sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+deploy-local: ## deploy Bet contract to local node with sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 	forge script DeployProxy \
 		-f http:\\127.0.0.1:8545 \
 		--sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 \

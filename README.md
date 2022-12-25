@@ -23,7 +23,9 @@ anvil
 Then run in a separate terminal:
 
 ```zsh
-make deploy-proxy
+make prep-build
+make build
+make deploy-local
 ```
 
 The RPC endpoint defaults to: `http:\\127.0.0.1:8545`, chainid: `31337`, sender address: `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266`
