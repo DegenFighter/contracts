@@ -4,7 +4,7 @@ pragma solidity 0.8.17;
 import { AppStorage, LibAppStorage } from "../Base.sol";
 import { IInternalTokenImpl } from "../interfaces/IInternalTokenImpl.sol";
 
-contract MemeTokenImplFacet is IInternalTokenImpl {
+contract InternalTokenImplFacet is IInternalTokenImpl {
     function tokenTotalSupply(uint tokenId) external view returns (uint256) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         return s.memeSupply;
