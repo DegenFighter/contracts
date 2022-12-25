@@ -5,7 +5,7 @@ pragma solidity 0.8.17;
  * Author: Nick Mudge
  */
 
-import { IERC20 } from "openzeppelin-contracts/interfaces/IERC20.sol";
+import { IERC20 } from "lib/openzeppelin-contracts/contracts/interfaces/IERC20.sol";
 
 library LibERC20 {
     function transferFrom(address _token, address _from, address _to, uint256 _value) internal {

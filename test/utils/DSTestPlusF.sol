@@ -3,7 +3,7 @@ pragma solidity >=0.8.13;
 
 import "forge-std/Test.sol";
 
-import {IERC20} from "openzeppelin-contracts/interfaces/IERC20.sol";
+import { IERC20 } from "lib/openzeppelin-contracts/contracts/interfaces/IERC20.sol";
 
 contract DSTestPlusF is Test {
     using stdStorage for StdStorage;
