@@ -11,6 +11,18 @@ contract MemeToken is IERC20 {
         impl = ITokenImplFacet(_impl);
     }
 
+    function name() external view returns (string memory) {
+        return impl.tokenName(0);
+    }
+
+    function symbol() external view returns (string memory) {
+        return impl.tokenSymbol(0);
+    }
+
+    function decimals() external view returns (uint256) {
+        return impl.tokenDecimals(0);
+    }
+
     function totalSupply() external view override returns (uint256) {
         return impl.tokenTotalSupply(0);
     }

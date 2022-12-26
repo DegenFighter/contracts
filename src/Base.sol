@@ -2,8 +2,8 @@
 pragma solidity >=0.8.17 <0.9;
 
 enum BoutState {
-    Open,
-    SupportClosed,
+    Created,
+    SupportRevealed,
     Ended
 }
 
@@ -14,22 +14,28 @@ enum BoutTarget {
 }
 
 struct Bout {
-    uint num;
+    uint id;
     BoutState state;
     mapping(BoutTarget => uint) fighters;
-    mapping(BoutTarget => uint) pots;
+    mapping(BoutTarget => uint) potTotals;
+    mapping(BoutTarget => uint) potBalances;
     uint revealTime;
     uint endTime;
     BoutTarget winner;
+    BoutTarget loser;
 }
 
 struct AppStorage {
     ///
+    /// Settings
+    ///
+
+    // addresses
+    mapping(bytes32 => address) addresses;
+    ///
     /// MEME token
     ///
 
-    // MEME token address
-    address memeToken;
     // minimum balance that's mintable
     uint memeMintableBalance;
     // wallet => MEME balance
@@ -46,12 +52,20 @@ struct AppStorage {
     uint boutsFinished;
     // bout => details
     mapping(uint => Bout) bouts;
-    // wallet => bout => bet amounts
-    mapping(address => mapping(uint => uint)) boutBetAmounts;
-    // wallet => bout => bet targetr
-    mapping(address => mapping(uint => BoutTarget)) boutBetTargets;
-    // wallet => bout
-    mapping(address => uint) lastClaimedWinnings;
+    ///
+    /// Fight supporters
+    ///
+
+    // wallet => bout num => support amount (MEME)
+    mapping(address => mapping(uint => uint)) userBoutSupportAmounts;
+    // wallet => bout num => support target fighter
+    mapping(address => mapping(uint => BoutTarget)) userBoutSupportTargets;
+    // wallet => no. of bouts supported
+    mapping(address => uint) userBoutsSupported;
+    // wallet => no. of bouts where winnings claimed
+    mapping(address => uint) userBoutsClaimed;
+    // wallet => list of bouts supported
+    mapping(address => mapping(uint => uint)) userBoutSupportList;
 }
 
 library LibAppStorage {

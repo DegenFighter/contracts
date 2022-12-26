@@ -7,5 +7,6 @@ import { IERC173 } from "lib/diamond-2-hardhat/contracts/interfaces/IERC173.sol"
 import { IERC165 } from "lib/diamond-2-hardhat/contracts/interfaces/IERC165.sol";
 import { ITokenImplFacet } from "./interfaces/ITokenImplFacet.sol";
 import { ISettingsFacet } from "./interfaces/ISettingsFacet.sol";
+import { ISupportFacet } from "./interfaces/ISupportFacet.sol";
 
-interface IProxy is IERC173, IERC165, IDiamondCut, IDiamondLoupe, ITokenImplFacet, ISettingsFacet {}
+interface IProxy is IERC173, IERC165, IDiamondCut, IDiamondLoupe, ITokenImplFacet, ISettingsFacet, ISupportFacet {}

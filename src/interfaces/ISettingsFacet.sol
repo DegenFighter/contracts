@@ -2,7 +2,17 @@
 pragma solidity >=0.8.17 <0.9;
 
 interface ISettingsFacet {
-    function memeToken() external view returns (address);
+    /**
+     * @dev Get an address.
+     * @param key The key to get.
+     * @return The address.
+     */
+    function getAddress(bytes32 key) external view returns (address);
 
-    function setMemeToken(address addr) external;
+    /**
+     * @dev Set an address.
+     * @param key The key to set.
+     * @param value The value to set.
+     */
+    function setAddress(bytes32 key, address value) external;
 }

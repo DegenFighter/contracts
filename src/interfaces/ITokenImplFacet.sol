@@ -3,6 +3,21 @@ pragma solidity >=0.8.17 <0.9;
 
 interface ITokenImplFacet {
     /**
+     * @dev Returns the name.
+     */
+    function tokenName(uint tokenId) external view returns (string memory);
+
+    /**
+     * @dev Returns the symbol.
+     */
+    function tokenSymbol(uint tokenId) external view returns (string memory);
+
+    /**
+     * @dev Returns the decimals.
+     */
+    function tokenDecimals(uint tokenId) external view returns (uint);
+
+    /**
      * @dev Returns the amount of tokens in existence.
      */
     function tokenTotalSupply(uint tokenId) external view returns (uint256);

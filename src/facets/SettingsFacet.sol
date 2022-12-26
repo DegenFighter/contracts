@@ -6,13 +6,13 @@ import { ISettingsFacet } from "../interfaces/ISettingsFacet.sol";
 import { Modifiers } from "../Modifiers.sol";
 
 contract SettingsFacet is ISettingsFacet, Modifiers {
-    function memeToken() external view returns (address) {
+    function getAddress(bytes32 key) external view returns (address) {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        return s.memeToken;
+        return s.addresses[key];
     }
 
-    function setMemeToken(address addr) external isAdmin {
+    function setAddress(bytes32 key, address value) external {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        s.memeToken = addr;
+        s.addresses[key] = value;
     }
 }
