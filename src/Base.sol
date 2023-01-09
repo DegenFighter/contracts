@@ -7,7 +7,7 @@ enum BoutState {
     Ended
 }
 
-enum BoutTarget {
+enum BoutParticipant {
     Unknown,
     FighterA,
     FighterB
@@ -16,28 +16,48 @@ enum BoutTarget {
 struct Bout {
     uint id;
     BoutState state;
-    mapping(BoutTarget => uint) fighters;
-    mapping(BoutTarget => uint) potTotals;
-    mapping(BoutTarget => uint) potBalances;
+    uint numSupporters;
+    mapping(uint => address) supporters;
+    mapping(address => uint8) hiddenBets;
+    mapping(address => uint8) revealedBets;
+    mapping(address => uint) betAmounts;
+    mapping(BoutParticipant => uint) fighterIds;
+    mapping(BoutParticipant => uint) fighterPots;
+    mapping(BoutParticipant => uint) fighterPotBalances;
+    uint totalPot;
     uint revealTime;
     uint endTime;
-    BoutTarget winner;
-    BoutTarget loser;
+    BoutParticipant winner;
+    BoutParticipant loser;
+}
+
+// from https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/cryptography/EIP712.sol
+struct EIP712 {
+    bytes32 CACHED_DOMAIN_SEPARATOR;
+    uint256 CACHED_CHAIN_ID;
+    address CACHED_THIS;
+    bytes32 HASHED_NAME;
+    bytes32 HASHED_VERSION;
+    bytes32 TYPE_HASH;
 }
 
 struct AppStorage {
     ///
+    /// EIP712
+    ///
+
+    // eip712 data
+    EIP712 eip712;
+    ///
     /// Settings
     ///
 
-    // addresses
     mapping(bytes32 => address) addresses;
+    mapping(bytes32 => bytes32) bytes32s;
     ///
     /// MEME token
     ///
 
-    // minimum balance that's mintable
-    uint memeMintableBalance;
     // wallet => MEME balance
     mapping(address => uint) memeBalance;
     // MEME supply
@@ -56,10 +76,6 @@ struct AppStorage {
     /// Fight supporters
     ///
 
-    // wallet => bout num => support amount (MEME)
-    mapping(address => mapping(uint => uint)) userBoutSupportAmounts;
-    // wallet => bout num => support target fighter
-    mapping(address => mapping(uint => BoutTarget)) userBoutSupportTargets;
     // wallet => no. of bouts supported
     mapping(address => uint) userBoutsSupported;
     // wallet => no. of bouts where winnings claimed

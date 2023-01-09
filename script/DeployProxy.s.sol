@@ -30,10 +30,10 @@ contract DeployProxy is Script {
         // deploy token
         address memeTokenAddress = address(new MemeToken(proxyAddress));
         console.log("Address[memeToken]: ", memeTokenAddress);
-        proxy.setAddress(LibConstants.SETTING_MEME_TOKEN_ADDRESS, memeTokenAddress);
+        proxy.setAddress(LibConstants.MEME_TOKEN_ADDRESS, memeTokenAddress);
 
         // set server address
-        proxy.setAddress(LibConstants.SETTING_SERVER_ADDRESS, msg.sender);
+        proxy.setAddress(LibConstants.SERVER_ADDRESS, msg.sender);
 
         // set ownership
         proxy.transferOwnership(msg.sender);
