@@ -64,7 +64,7 @@ contract Supporters is TestBaseContract {
         assertEq(entries[0].topics.length, 1, "Invalid event count");
         assertEq(entries[0].topics[0], keccak256("BoutCreated(uint256)"));
         uint boutNum = abi.decode(entries[0].data, (uint256));
-        assertEq(boutNum, 1, "Event boutNum incorrect");
+        assertEq(boutNum, 1, "boutNum incorrect");
     }
 
     function testBetWithInvalidBoutState() public {
@@ -164,15 +164,7 @@ contract Supporters is TestBaseContract {
             // increasing bet amounts
             betAmounts[i] = LibConstants.MIN_BET_AMOUNT * (i + 1);
 
-            // mint tokens
-            proxy._testMintMeme(player.addr, betAmounts[i]);
-
-            // do signature
-            bytes32 digest = proxy.calculateBetSignature(server.addr, player.addr, 1, 1, betAmounts[i], block.timestamp + 1000);
-            (uint8 v, bytes32 r, bytes32 s) = vm.sign(server.privateKey, digest);
-
-            vm.prank(player.addr);
-            proxy.bet(1, 1, betAmounts[i], block.timestamp + 1000, v, r, s);
+            _bet(player.addr, 1, 1, betAmounts[i]);
         }
 
         // check bout basic state
@@ -189,6 +181,25 @@ contract Supporters is TestBaseContract {
             assertEq(proxy.getBoutHiddenBet(1, player.addr), 1, "supporter hidden bet");
             assertEq(proxy.getBoutBetAmount(1, player.addr), betAmounts[i - 1], "supporter bet amount");
         }
+    }
+
+    function testBetEmitsEvent() public {
+        // create bout
+        testCreateBout();
+
+        uint amount = LibConstants.MIN_BET_AMOUNT;
+
+        vm.recordLogs();
+
+        _bet(player1.addr, 1, 1, amount);
+
+        // check logs
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        assertEq(entries[0].topics.length, 1, "Invalid event count");
+        assertEq(entries[0].topics[0], keccak256("BetPlaced(uint256,address)"));
+        (uint boutNum, address supporter) = abi.decode(entries[0].data, (uint256, address));
+        assertEq(boutNum, 1, "boutNum incorrect");
+        assertEq(supporter, player1.addr, "supporter incorrect");
     }
 
     function testRevealBetsMustBeDoneByServer() public {
@@ -226,5 +237,57 @@ contract Supporters is TestBaseContract {
         vm.prank(server.addr);
         vm.expectRevert(BoutInWrongStateError.selector);
         proxy.revealBets(1, rPacked);
+    }
+
+    function testRevealBetsUpdatesState() public {
+        // create bout and place bets
+        testBetNewBets();
+
+        uint8[] memory rPacked = new uint8[](0);
+
+        vm.prank(server.addr);
+        proxy.revealBets(1, rPacked);
+
+        BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(1);
+        assertEq(uint(bout.state), uint(BoutState.BetsRevealed), "state");
+        assertGt(bout.revealTime, 0, "reveal time");
+    }
+
+    function testRevealBetsEmitsEvent() public {
+        // create bout and place bets
+        testBetNewBets();
+
+        uint8[] memory rPacked = new uint8[](0);
+
+        vm.recordLogs();
+
+        vm.prank(server.addr);
+        proxy.revealBets(1, rPacked);
+
+        // check logs
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        assertEq(entries[0].topics.length, 1, "Invalid event count");
+        assertEq(entries[0].topics[0], keccak256("BetsRevealed(uint256,uint256)"));
+        (uint boutNum, uint count) = abi.decode(entries[0].data, (uint, uint));
+        assertEq(boutNum, 1, "boutNum incorrect");
+        assertEq(count, 0, "count incorrect");
+    }
+
+    // ------------------------------------------------------ //
+    //
+    // Private/internal methods
+    //
+    // ------------------------------------------------------ //
+
+    function _bet(address supporter, uint boutNum, uint8 br, uint amount) internal {
+        // mint tokens
+        proxy._testMintMeme(supporter, amount);
+
+        // do signature
+        bytes32 digest = proxy.calculateBetSignature(server.addr, supporter, boutNum, br, amount, block.timestamp + 1000);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(server.privateKey, digest);
+
+        vm.prank(supporter);
+        proxy.bet(boutNum, br, amount, block.timestamp + 1000, v, r, s);
     }
 }

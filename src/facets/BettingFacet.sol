@@ -104,9 +104,6 @@ contract BettingFacet is FacetBase, IBettingFacet {
             revert BoutAlreadyFullyRevealedError();
         }
 
-        bout.state = BoutState.BetsRevealed;
-        bout.revealTime = block.timestamp;
-
         uint count;
 
         // do reveal
@@ -126,6 +123,9 @@ contract BettingFacet is FacetBase, IBettingFacet {
             bout.numRevealedBets++;
             count++;
         }
+
+        bout.state = BoutState.BetsRevealed;
+        bout.revealTime = block.timestamp;
 
         emit BetsRevealed(boutNum, count);
     }
