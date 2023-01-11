@@ -5,6 +5,7 @@ import { FacetBase } from "../FacetBase.sol";
 import { NotAllowedError } from "../Errors.sol";
 import { AppStorage, LibAppStorage } from "../Objects.sol";
 import { ITokenImplFacet } from "../interfaces/ITokenImplFacet.sol";
+import { LibConstants } from "../libs/LibConstants.sol";
 
 contract TokenImplFacet is FacetBase, ITokenImplFacet {
     constructor() FacetBase() {}
@@ -23,12 +24,12 @@ contract TokenImplFacet is FacetBase, ITokenImplFacet {
 
     function tokenTotalSupply(uint tokenId) external view returns (uint256) {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        return s.memeSupply;
+        return s.tokenSupply[LibConstants.TOKEN_MEME];
     }
 
     function tokenBalanceOf(uint tokenId, address account) external view returns (uint256) {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        return s.memeBalance[account];
+        return s.tokenBalances[LibConstants.TOKEN_MEME][account];
     }
 
     function tokenTransfer(uint tokenId, address to, uint256 amount) external returns (bool) {

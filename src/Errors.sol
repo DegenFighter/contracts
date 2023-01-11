@@ -21,3 +21,5 @@ error InvalidBetTargetError(); //uint boutNum, address supporter, uint8 br);
 error BoutAlreadyFullyRevealedError(); //uint boutNum);
 error BoutAlreadyEndedError(); //uint boutNum);
 error InvalidWinnerError(); //uint boutNum, BoutParticipant winner);
+
+error TokenBalanceInsufficient();

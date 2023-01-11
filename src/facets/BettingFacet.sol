@@ -9,6 +9,7 @@ import { IBettingFacet } from "../interfaces/IBettingFacet.sol";
 import { FacetBase } from "../FacetBase.sol";
 import { LibConstants } from "../libs/LibConstants.sol";
 import { LibEip712 } from "../libs/LibEip712.sol";
+import { LibToken } from "../libs/LibToken.sol";
 
 contract BettingFacet is FacetBase, IBettingFacet {
     using SafeMath for uint;
@@ -36,7 +37,7 @@ contract BettingFacet is FacetBase, IBettingFacet {
             );
     }
 
-    function bet(uint boutNum, uint8 br, uint amount, uint deadline, bytes memory signature) external {
+    function bet(uint boutNum, uint8 br, uint amount, uint deadline, uint8 sigV, bytes32 sigR, bytes32 sigS) external {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
         Bout storage bout = s.bouts[boutNum];
@@ -50,7 +51,7 @@ contract BettingFacet is FacetBase, IBettingFacet {
 
         // recover signer
         bytes32 digest = calculateBetSignature(server, supporter, boutNum, br, amount, deadline);
-        address signer = LibEip712.recover(digest, signature);
+        address signer = LibEip712.recover(digest, sigV, sigR, sigS);
 
         // final checks
         if (signer != server) {
@@ -68,16 +69,24 @@ contract BettingFacet is FacetBase, IBettingFacet {
 
         // replace old bet?
         if (bout.hiddenBets[supporter] != 0) {
-            bout.totalPot = bout.totalPot.sub(bout.betAmounts[supporter]).add(amount);
+            // refund old bet
+            bout.totalPot = bout.totalPot.sub(bout.betAmounts[supporter]);
+            LibToken.transfer(LibConstants.TOKEN_MEME, address(this), supporter, bout.betAmounts[supporter]);
         }
         // new bet?
         else {
-            bout.totalPot = bout.totalPot.add(amount);
+            // add to supporter list
             bout.numSupporters += 1;
             bout.supporters[bout.numSupporters] = supporter;
         }
+
+        // add to pot
+        bout.totalPot = bout.totalPot.add(amount);
         bout.betAmounts[supporter] = amount;
         bout.hiddenBets[supporter] = br;
+
+        // transfer bet
+        LibToken.transfer(LibConstants.TOKEN_MEME, supporter, address(this), amount);
 
         emit BetPlaced(boutNum, supporter);
     }
@@ -161,6 +170,8 @@ contract BettingFacet is FacetBase, IBettingFacet {
     function claimWinnings(address wallet) external {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
+        uint totalWinnings = 0;
+
         for (uint i = s.userBoutsClaimed[wallet] + 1; i <= s.userBoutsSupported[wallet]; i++) {
             uint boutNum = s.userBoutSupportList[wallet][i];
 
@@ -170,11 +181,15 @@ contract BettingFacet is FacetBase, IBettingFacet {
                 Bout storage bout = s.bouts[boutNum];
                 bout.fighterPotBalances[bout.winner] = bout.fighterPotBalances[bout.winner].sub(selfAmount);
                 bout.fighterPotBalances[bout.loser] = bout.fighterPotBalances[bout.loser].sub(won);
-                s.memeBalance[address(this)] = s.memeBalance[address(this)].sub(total);
-                s.memeBalance[wallet] = s.memeBalance[wallet].add(total);
+                totalWinnings = totalWinnings.add(total);
             }
 
             s.userBoutsClaimed[wallet]++;
+        }
+
+        // transfer winnings
+        if (totalWinnings > 0) {
+            LibToken.transfer(LibConstants.TOKEN_MEME, address(this), wallet, totalWinnings);
         }
     }
 

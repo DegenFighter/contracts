@@ -77,10 +77,10 @@ struct AppStorage {
     /// MEME token
     ///
 
-    // wallet => MEME balance
-    mapping(address => uint) memeBalance;
-    // MEME supply
-    uint memeSupply;
+    // token id => wallet => balance
+    mapping(uint => mapping(address => uint)) tokenBalances;
+    // token id => supply
+    mapping(uint => uint) tokenSupply;
     ///
     /// Fights
     ///

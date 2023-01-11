@@ -33,7 +33,7 @@ contract Supporters is TestBaseContract {
 
         // create and check event
         vm.recordLogs();
-        vm.prank(serverAddress);
+        vm.prank(server.addr);
         proxy.createBout(fighterAId, fighterBId);
         Vm.Log[] memory entries = vm.getRecordedLogs();
         assertEq(entries[0].topics.length, 1, "Invalid event count");
@@ -60,12 +60,11 @@ contract Supporters is TestBaseContract {
         // create bout
         testCreateBout();
 
-        // vm.expectRevert(abi.encodeWithSignature("BoutInWrongStateError(uint256,BoutState)", 2, BoutState.Unknown));
         vm.expectRevert(BoutInWrongStateError.selector);
-        proxy.bet(2, 1, 100, 100, new bytes(0));
+        proxy.bet(2, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, 1, "0x", "0x");
 
         vm.expectRevert(BoutInWrongStateError.selector);
-        proxy.bet(0, 1, 100, 100, new bytes(0));
+        proxy.bet(0, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, 1, "0x", "0x");
     }
 
     function testBetWithBadSigner() public {
@@ -74,10 +73,72 @@ contract Supporters is TestBaseContract {
 
         // do signature
         address signer = vm.addr(123);
-        bytes32 digest = proxy.calculateBetSignature(signer, account0, 1, 1, 100, 100);
+        bytes32 digest = proxy.calculateBetSignature(signer, account0, 1, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(123, digest);
 
         vm.expectRevert(SignerMustBeServerError.selector);
-        proxy.bet(1, 1, 100, 100, sig);
+        proxy.bet(1, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, v, r, s);
     }
+
+    function testBetWithExpiredDeadline() public {
+        // create bout
+        testCreateBout();
+
+        // do signature
+        bytes32 digest = proxy.calculateBetSignature(server.addr, account0, 1, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp - 1);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(server.privateKey, digest);
+
+        vm.expectRevert(SignatureExpiredError.selector);
+        proxy.bet(1, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp - 1, v, r, s);
+    }
+
+    function testBetWithInsufficientBetAmount() public {
+        // create bout
+        testCreateBout();
+
+        // do signature
+        bytes32 digest = proxy.calculateBetSignature(server.addr, account0, 1, 1, LibConstants.MIN_BET_AMOUNT - 1, block.timestamp + 1000);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(server.privateKey, digest);
+
+        vm.expectRevert(MinimumBetAmountError.selector);
+        proxy.bet(1, 1, LibConstants.MIN_BET_AMOUNT - 1, block.timestamp + 1000, v, r, s);
+    }
+
+    function testBetWithInvalidBetTarget(uint8 br) public {
+        vm.assume(br < 1 || br > 3); // Invalid bet target
+
+        // create bout
+        testCreateBout();
+
+        // do signature
+        bytes32 digest = proxy.calculateBetSignature(server.addr, account0, 1, br, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(server.privateKey, digest);
+
+        vm.expectRevert(InvalidBetTargetError.selector);
+        proxy.bet(1, br, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, v, r, s);
+    }
+
+    function testBetWithInsufficentTokens() public {
+        // create bout
+        testCreateBout();
+
+        // do signature
+        bytes32 digest = proxy.calculateBetSignature(server.addr, account0, 1, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(server.privateKey, digest);
+
+        vm.expectRevert(TokenBalanceInsufficient.selector);
+        proxy.bet(1, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, v, r, s);
+    }
+
+    // function testBetNewBets() public {
+    //     // create bout
+    //     testCreateBout();
+
+    //     // do signature
+    //     bytes32 digest = proxy.calculateBetSignature(server.addr, account0, 1, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000);
+    //     (uint8 v, bytes32 r, bytes32 s) = vm.sign(server.privateKey, digest);
+
+    //     vm.prank(player1.addr);
+    //     proxy.bet(1, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, v, r, s);
+    // }
 }

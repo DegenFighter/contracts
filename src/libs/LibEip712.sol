@@ -32,8 +32,8 @@ library LibEip712 {
         return ECDSA.toTypedDataHash(domainSeparatorV4(), structHash);
     }
 
-    function recover(bytes32 hash, bytes memory signature) internal pure returns (address) {
-        return ECDSA.recover(hash, signature);
+    function recover(bytes32 hash, uint8 v, bytes32 r, bytes32 s) internal pure returns (address) {
+        return ECDSA.recover(hash, v, r, s);
     }
 
     function _buildDomainSeparator(bytes32 typeHash, bytes32 nameHash, bytes32 versionHash) private view returns (bytes32) {

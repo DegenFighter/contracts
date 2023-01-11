@@ -9,13 +9,22 @@ import { LibConstants } from "../../src/libs/LibConstants.sol";
 import { LibGeneratedFacetHelpers } from "../../script/generated/LibGeneratedFacetHelpers.sol";
 import { MemeToken } from "../../src/MemeToken.sol";
 
+struct Wallet {
+    address addr;
+    uint privateKey;
+}
+
 contract TestBaseContract is Test {
     using stdStorage for StdStorage;
 
     address internal immutable account0 = address(this);
 
-    uint internal constant SERVER_PRIVATE_KEY = 12345;
-    address internal serverAddress;
+    Wallet internal player1 = Wallet({ addr: vm.addr(1001), privateKey: 1001 });
+    Wallet internal player2 = Wallet({ addr: vm.addr(1002), privateKey: 1002 });
+    Wallet internal player3 = Wallet({ addr: vm.addr(1003), privateKey: 1003 });
+    Wallet internal player4 = Wallet({ addr: vm.addr(1004), privateKey: 1004 });
+    Wallet internal player5 = Wallet({ addr: vm.addr(1005), privateKey: 1005 });
+    Wallet internal server = Wallet({ addr: vm.addr(12345), privateKey: 12345 });
 
     address internal proxyAddress;
     IProxy internal proxy;
@@ -45,8 +54,7 @@ contract TestBaseContract is Test {
         proxy.setAddress(LibConstants.MEME_TOKEN_ADDRESS, memeTokenAddress);
 
         // set server address
-        serverAddress = vm.addr(SERVER_PRIVATE_KEY);
-        proxy.setAddress(LibConstants.SERVER_ADDRESS, serverAddress);
+        proxy.setAddress(LibConstants.SERVER_ADDRESS, server.addr);
 
         // set ownership
         proxy.transferOwnership(account0);

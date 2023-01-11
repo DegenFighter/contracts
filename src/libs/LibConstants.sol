@@ -8,4 +8,6 @@ library LibConstants {
     bytes32 public constant SERVER_ADDRESS = keccak256("SERVER_ADDRESS");
 
     uint public constant MIN_BET_AMOUNT = 10 ether;
+
+    uint public constant TOKEN_MEME = 1;
 }
