@@ -4,10 +4,10 @@ pragma solidity >=0.8.17 <0.9;
 import { Bout, BoutParticipant } from "../Base.sol";
 
 interface IBettingFacet {
-    event BoutCreated(uint indexed boutNum);
-    event BetPlaced(uint indexed boutNum, address indexed supporter);
-    event BetsRevealed(uint indexed boutNum, uint indexed numBetsRevealed);
-    event BoutEnded(uint indexed boutNum);
+    event BoutCreated(uint boutNum);
+    event BetPlaced(uint boutNum, address supporter);
+    event BetsRevealed(uint boutNum, uint numBetsRevealed);
+    event BoutEnded(uint boutNum);
 
     function createBout(uint fighterA, uint fighterB) external returns (uint boutNum);
 

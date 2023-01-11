@@ -4,6 +4,8 @@ pragma solidity >=0.8.17 <0.9;
 import { BoutNonMappingInfo, BoutParticipant } from "../Base.sol";
 
 interface IBoutInfoFacet {
+    function getTotalBouts() external view returns (uint);
+
     function getBoutNonMappingInfo(uint boutNum) external view returns (BoutNonMappingInfo memory);
 
     function getBoutSupporter(uint boutNum, uint supporterNum) external view returns (address);

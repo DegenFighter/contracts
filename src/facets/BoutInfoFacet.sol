@@ -5,6 +5,11 @@ import { AppStorage, LibAppStorage, Bout, BoutParticipant, BoutNonMappingInfo } 
 import { IBoutInfoFacet } from "../interfaces/IBoutInfoFacet.sol";
 
 contract BoutInfoFacet is IBoutInfoFacet {
+    function getTotalBouts() external view returns (uint) {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        return s.totalBouts;
+    }
+
     function getBoutNonMappingInfo(uint boutNum) external view returns (BoutNonMappingInfo memory) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         Bout storage bout = s.bouts[boutNum];
