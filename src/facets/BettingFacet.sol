@@ -91,7 +91,7 @@ contract BettingFacet is FacetBase, IBettingFacet {
         emit BetPlaced(boutNum, supporter);
     }
 
-    function revealBets(uint boutNum, uint8[] calldata rPacked) external isServer {
+    function revealBets(uint boutNum, uint numValues, uint8[] calldata rPacked) external isServer {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
         Bout storage bout = s.bouts[boutNum];
@@ -107,11 +107,8 @@ contract BettingFacet is FacetBase, IBettingFacet {
         uint count;
 
         // do reveal
-        for (uint i = bout.numRevealedBets; i < bout.numSupporters; i++) {
+        for (uint i = bout.numRevealedBets; i < bout.numSupporters && count < numValues; i++) {
             uint rPackedIndex = (i - bout.numRevealedBets) >> 2;
-            if (rPackedIndex >= rPacked.length) {
-                break;
-            }
             uint8 r = (rPacked[rPackedIndex] >> ((3 - (i % 4)) * 2)) & 3;
             address supporter = bout.supporters[i + 1];
             uint8 rawBet;

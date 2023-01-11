@@ -15,7 +15,7 @@ interface IBettingFacet {
 
     function bet(uint boutNum, uint8 br, uint amount, uint deadline, uint8 sigV, bytes32 sigR, bytes32 sigS) external;
 
-    function revealBets(uint boutNum, uint8[] calldata rPacked) external;
+    function revealBets(uint boutNum, uint numValues, uint8[] calldata rPacked) external;
 
     function endBout(uint boutNum, BoutFighter winner) external;
 
