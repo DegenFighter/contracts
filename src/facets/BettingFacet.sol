@@ -172,12 +172,13 @@ contract BettingFacet is FacetBase, IBettingFacet {
         return winnings;
     }
 
-    function claimWinnings(address wallet) external {
+    function claimWinnings(address wallet, uint maxBoutsToClaim) external {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
         uint totalWinnings = 0;
+        uint count = 0;
 
-        for (uint i = s.userBoutsClaimed[wallet] + 1; i <= s.userBoutsSupported[wallet]; i++) {
+        for (uint i = s.userBoutsClaimed[wallet] + 1; i <= s.userBoutsSupported[wallet] && count < maxBoutsToClaim; i++) {
             uint boutNum = s.userBoutSupportList[wallet][i];
 
             (uint total, uint selfAmount, uint won) = _calculateBoutWinnings(wallet, boutNum);
@@ -190,6 +191,7 @@ contract BettingFacet is FacetBase, IBettingFacet {
             }
 
             s.userBoutsClaimed[wallet]++;
+            count++;
         }
 
         // transfer winnings

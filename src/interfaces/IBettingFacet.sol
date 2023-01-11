@@ -21,5 +21,5 @@ interface IBettingFacet {
 
     function getClaimableWinnings(address wallet) external view returns (uint);
 
-    function claimWinnings(address wallet) external;
+    function claimWinnings(address wallet, uint maxBoutsToClaim) external;
 }

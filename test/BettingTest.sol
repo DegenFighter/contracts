@@ -7,7 +7,7 @@ import { BoutNonMappingInfo, BoutFighter, BoutState } from "../src/Objects.sol";
 import { Wallet, TestBaseContract } from "./utils/TestBaseContract.sol";
 import { LibConstants } from "../src/libs/LibConstants.sol";
 
-contract Supporters is TestBaseContract {
+contract BettingTest is TestBaseContract {
     uint fighterAId = 1;
     uint fighterBId = 2;
 
