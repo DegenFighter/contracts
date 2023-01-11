@@ -193,6 +193,37 @@ contract Supporters is TestBaseContract {
             assertEq(proxy.getBoutHiddenBet(1, player.addr), 1, "supporter hidden bet");
             assertEq(proxy.getBoutBetAmount(1, player.addr), betAmounts[i - 1], "supporter bet amount");
         }
+
+        // check MEME balances
+        for (uint i = 0; i < players.length; i += 1) {
+            Wallet memory player = players[i];
+            assertEq(memeToken.balanceOf(player.addr), 0, "MEME balance");
+        }
+        assertEq(memeToken.balanceOf(address(proxy)), bout.totalPot, "MEME balance");
+    }
+
+    function testBetReplaceBets() public {
+        // create bout
+        testCreateBout();
+
+        for (uint i = 1; i <= 5; i += 1) {
+            _bet(player1.addr, 1, 1, LibConstants.MIN_BET_AMOUNT * i);
+        }
+
+        // check bout basic state
+        BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(1);
+        assertEq(uint(bout.state), uint(BoutState.Created), "created");
+        assertEq(bout.numSupporters, 1, "no. of supporters");
+        assertEq(bout.totalPot, LibConstants.MIN_BET_AMOUNT * 5, "total pot");
+
+        // // check supporter data
+        assertEq(proxy.getBoutSupporter(1, 1), player1.addr, "supporter address");
+        assertEq(proxy.getBoutHiddenBet(1, player1.addr), 1, "supporter hidden bet");
+        assertEq(proxy.getBoutBetAmount(1, player1.addr), bout.totalPot, "supporter bet amount");
+
+        // check MEME balances
+        assertEq(memeToken.balanceOf(player1.addr), LibConstants.MIN_BET_AMOUNT * 10, "MEME balance");
+        assertEq(memeToken.balanceOf(address(proxy)), bout.totalPot, "MEME balance");
     }
 
     function testBetEmitsEvent() public {
