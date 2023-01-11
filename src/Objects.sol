@@ -88,7 +88,7 @@ struct AppStorage {
     // no. of bouts created
     uint totalBouts;
     // no. of bouts finished
-    uint boutsFinished;
+    uint endedBouts;
     // bout => details
     mapping(uint => Bout) bouts;
     ///

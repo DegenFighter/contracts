@@ -6,6 +6,8 @@ import { BoutNonMappingInfo, BoutFighter } from "../Objects.sol";
 interface IBoutInfoFacet {
     function getTotalBouts() external view returns (uint);
 
+    function getEndedBouts() external view returns (uint);
+
     function getBoutNonMappingInfo(uint boutNum) external view returns (BoutNonMappingInfo memory);
 
     function getBoutSupporter(uint boutNum, uint supporterNum) external view returns (address);

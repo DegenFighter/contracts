@@ -257,20 +257,6 @@ contract Supporters is TestBaseContract {
         proxy.revealBets(1, 0, rPacked);
     }
 
-    function testRevealBetsUpdatesBasicState() public {
-        // create bout and place bets
-        testBetNewBets();
-
-        uint8[] memory rPacked = new uint8[](0);
-
-        vm.prank(server.addr);
-        proxy.revealBets(1, 0, rPacked);
-
-        BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(1);
-        assertEq(uint(bout.state), uint(BoutState.BetsRevealed), "state");
-        assertGt(bout.revealTime, 0, "reveal time");
-    }
-
     function testRevealBetsEmitsEvent() public {
         // create bout and place bets
         testBetNewBets();
@@ -310,7 +296,10 @@ contract Supporters is TestBaseContract {
         proxy.revealBets(1, 5, rPacked);
 
         // num of revealed bets
-        assertEq(proxy.getBoutNonMappingInfo(1).numRevealedBets, 5, "num revealed bets (1st call)");
+        BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(1);
+        assertEq(uint(bout.state), uint(BoutState.BetsRevealed), "state");
+        assertGt(bout.revealTime, 0, "reveal time");
+        assertEq(bout.numRevealedBets, 5, "num revealed bets (1st call)");
 
         // now let's check the revealed bets
         assertEq(uint(proxy.getBoutRevealedBet(1, player1.addr)), uint(BoutFighter.FighterA), "revealed bet 1");
@@ -476,6 +465,33 @@ contract Supporters is TestBaseContract {
         proxy.endBout(1, BoutFighter.FighterA);
 
         vm.stopPrank();
+    }
+
+    function testEndBoutWithInvalidWinner() public {
+        // create bout, place bets, reveal bets
+        testRevealBets();
+
+        vm.prank(server.addr);
+        vm.expectRevert(InvalidWinnerError.selector);
+        proxy.endBout(1, BoutFighter.Unknown);
+    }
+
+    function testEndBout() public {
+        // create bout, place bets, reveal bets
+        testRevealBets();
+
+        vm.prank(server.addr);
+        proxy.endBout(1, BoutFighter.FighterB);
+
+        // check the state
+        BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(1);
+        assertEq(uint(bout.state), uint(BoutState.Ended), "state");
+        assertGt(bout.endTime, 0, "end time");
+        assertEq(uint(bout.winner), uint(BoutFighter.FighterB), "winner");
+        assertEq(uint(bout.loser), uint(BoutFighter.FighterA), "loser");
+
+        // check global state
+        assertEq(proxy.getEndedBouts(), 1, "ended bouts");
     }
 
     // ------------------------------------------------------ //

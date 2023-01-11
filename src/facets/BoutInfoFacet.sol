@@ -13,6 +13,11 @@ contract BoutInfoFacet is FacetBase, IBoutInfoFacet {
         return s.totalBouts;
     }
 
+    function getEndedBouts() external view returns (uint) {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        return s.endedBouts;
+    }
+
     function getBoutNonMappingInfo(uint boutNum) external view returns (BoutNonMappingInfo memory) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         Bout storage bout = s.bouts[boutNum];

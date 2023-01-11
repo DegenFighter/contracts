@@ -153,7 +153,7 @@ contract BettingFacet is FacetBase, IBettingFacet {
         bout.endTime = block.timestamp;
         bout.winner = winner;
         bout.loser = (winner == BoutFighter.FighterA ? BoutFighter.FighterB : BoutFighter.FighterA);
-        s.boutsFinished++;
+        s.endedBouts++;
 
         emit BoutEnded(boutNum);
     }
