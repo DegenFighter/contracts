@@ -4,7 +4,7 @@ pragma solidity >=0.8.17 <0.9;
 import "forge-std/Test.sol";
 import "../src/Errors.sol";
 import { BoutNonMappingInfo, BoutParticipant, BoutState } from "../src/Objects.sol";
-import { TestBaseContract } from "./utils/TestBaseContract.sol";
+import { Wallet, TestBaseContract } from "./utils/TestBaseContract.sol";
 import { LibConstants } from "../src/libs/LibConstants.sol";
 
 contract Supporters is TestBaseContract {
@@ -130,15 +130,44 @@ contract Supporters is TestBaseContract {
         proxy.bet(1, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, v, r, s);
     }
 
-    // function testBetNewBets() public {
-    //     // create bout
-    //     testCreateBout();
+    function testBetNewBets() public {
+        // create bout
+        testCreateBout();
 
-    //     // do signature
-    //     bytes32 digest = proxy.calculateBetSignature(server.addr, account0, 1, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000);
-    //     (uint8 v, bytes32 r, bytes32 s) = vm.sign(server.privateKey, digest);
+        Wallet[] memory players = getPlayers();
+        uint[] memory betAmounts = new uint[](players.length);
 
-    //     vm.prank(player1.addr);
-    //     proxy.bet(1, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, v, r, s);
-    // }
+        // place bets
+        for (uint i = 0; i < players.length; i += 1) {
+            Wallet memory player = players[i];
+
+            // increasing bet amounts
+            betAmounts[i] = LibConstants.MIN_BET_AMOUNT * (i + 1);
+
+            // mint tokens
+            proxy.mintMeme(player.addr, betAmounts[i]);
+
+            // do signature
+            bytes32 digest = proxy.calculateBetSignature(server.addr, player.addr, 1, 1, betAmounts[i], block.timestamp + 1000);
+            (uint8 v, bytes32 r, bytes32 s) = vm.sign(server.privateKey, digest);
+
+            vm.prank(player.addr);
+            proxy.bet(1, 1, betAmounts[i], block.timestamp + 1000, v, r, s);
+        }
+
+        // check bout basic state
+        BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(1);
+        assertEq(uint(bout.state), uint(BoutState.Created), "created");
+        assertEq(bout.numSupporters, 5, "no. of supporters");
+        assertEq(bout.totalPot, LibConstants.MIN_BET_AMOUNT * 15, "total pot");
+
+        // check supporter data
+        for (uint i = 1; i <= players.length; i += 1) {
+            Wallet memory player = players[i - 1];
+
+            assertEq(proxy.getBoutSupporter(1, i), player.addr, "supporter address");
+            assertEq(proxy.getBoutHiddenBet(1, player.addr), 1, "supporter hidden bet");
+            assertEq(proxy.getBoutBetAmount(1, player.addr), betAmounts[i - 1], "supporter bet amount");
+        }
+    }
 }

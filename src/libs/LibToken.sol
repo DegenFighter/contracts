@@ -20,4 +20,10 @@ library LibToken {
             s.tokenBalances[tokenId][to] = s.tokenBalances[tokenId][to].add(amount);
         }
     }
+
+    function mint(uint tokenId, address wallet, uint amount) internal {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        s.tokenBalances[tokenId][wallet] = s.tokenBalances[tokenId][wallet].add(amount);
+        s.tokenSupply[tokenId] = s.tokenSupply[tokenId].add(amount);
+    }
 }

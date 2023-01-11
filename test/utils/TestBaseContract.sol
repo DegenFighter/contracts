@@ -8,11 +8,14 @@ import { Proxy } from "../../src/Proxy.sol";
 import { LibConstants } from "../../src/libs/LibConstants.sol";
 import { LibGeneratedFacetHelpers } from "../../script/generated/LibGeneratedFacetHelpers.sol";
 import { MemeToken } from "../../src/MemeToken.sol";
+import { ITestFacet, LibTestFacetsHelper } from "./TestFacets.sol";
 
 struct Wallet {
     address addr;
     uint privateKey;
 }
+
+abstract contract ITestProxy is ITestFacet, IProxy {}
 
 contract TestBaseContract is Test {
     using stdStorage for StdStorage;
@@ -24,10 +27,11 @@ contract TestBaseContract is Test {
     Wallet internal player3 = Wallet({ addr: vm.addr(1003), privateKey: 1003 });
     Wallet internal player4 = Wallet({ addr: vm.addr(1004), privateKey: 1004 });
     Wallet internal player5 = Wallet({ addr: vm.addr(1005), privateKey: 1005 });
+
     Wallet internal server = Wallet({ addr: vm.addr(12345), privateKey: 12345 });
 
     address internal proxyAddress;
-    IProxy internal proxy;
+    ITestProxy internal proxy;
 
     address internal memeTokenAddress;
     IERC20 internal memeToken;
@@ -43,8 +47,9 @@ contract TestBaseContract is Test {
         console.log("Address[proxy]: ", proxyAddress);
         vm.label(proxyAddress, "Proxy");
         LibGeneratedFacetHelpers.deployAndCutFacets(proxyAddress);
+        LibTestFacetsHelper.deployAndCutTestFacets(proxyAddress);
 
-        proxy = IProxy(proxyAddress);
+        proxy = ITestProxy(proxyAddress);
 
         // deploy token
         memeTokenAddress = address(new MemeToken(proxyAddress));
@@ -60,11 +65,13 @@ contract TestBaseContract is Test {
         proxy.transferOwnership(account0);
     }
 
-    function enforceHasContractCode(address _contract, string memory _errorMessage) public view {
-        uint256 contractSize;
-        assembly {
-            contractSize := extcodesize(_contract)
-        }
-        require(contractSize > 0, _errorMessage);
+    function getPlayers() internal returns (Wallet[] memory) {
+        Wallet[] memory w = new Wallet[](5);
+        w[0] = player1;
+        w[1] = player2;
+        w[2] = player3;
+        w[3] = player4;
+        w[4] = player5;
+        return w;
     }
 }
