@@ -8,6 +8,7 @@ Install:
 
 - Install [foundry](https://github.com/foundry-rs/foundry/blob/master/README.md)
 - Run `foundryup`
+- Run `forge install foundry-rs/forge-std`
 - Run `npm i`
 - Run `git submodule update --init --recursive`
 - Run `cp .env.example .env` and set `export LOCAL_RPC_URL=http://localhost:8545` inside `.env`

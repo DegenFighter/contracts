@@ -2,7 +2,6 @@
 pragma solidity >=0.8.17 <0.9;
 
 import "forge-std/Test.sol";
-import { Vm } from "forge-std/Vm.sol";
 import { IERC20 } from "lib/openzeppelin-contracts/contracts/interfaces/IERC20.sol";
 import { IProxy } from "../../src/interfaces/IProxy.sol";
 import { Proxy } from "../../src/Proxy.sol";
@@ -10,27 +9,29 @@ import { LibConstants } from "../../src/libs/LibConstants.sol";
 import { LibGeneratedFacetHelpers } from "../../script/generated/LibGeneratedFacetHelpers.sol";
 import { MemeToken } from "../../src/MemeToken.sol";
 
-contract TestBaseContract {
+contract TestBaseContract is Test {
     using stdStorage for StdStorage;
 
-    address public immutable account0 = address(this);
+    address internal immutable account0 = address(this);
+    bytes internal constant ERROR_MUST_BE_ADMIN = "LibDiamond: Must be contract owner";
+    bytes internal constant ERROR_MUST_BE_SERVER = "Must be server";
 
-    address public proxyAddress;
-    IProxy public proxy;
+    address internal proxyAddress;
+    IProxy internal proxy;
 
-    address public memeTokenAddress;
-    IERC20 public memeToken;
+    address internal memeTokenAddress;
+    IERC20 internal memeToken;
 
     function setUp() public virtual {
         console2.log("account0", account0);
         console2.log("msg.sender", msg.sender);
 
-        Vm.label(account0, "Account 0 (Test Contract address)");
+        vm.label(account0, "Account 0 (Test Contract address)");
 
         // deploy proxy
         proxyAddress = address(new Proxy(address(this)));
         console.log("Address[proxy]: ", proxyAddress);
-        Vm.label(proxyAddress, "Proxy");
+        vm.label(proxyAddress, "Proxy");
         LibGeneratedFacetHelpers.deployAndCutFacets(proxyAddress);
 
         proxy = IProxy(proxyAddress);
@@ -38,7 +39,7 @@ contract TestBaseContract {
         // deploy token
         memeTokenAddress = address(new MemeToken(proxyAddress));
         console.log("Address[memeToken]: ", memeTokenAddress);
-        Vm.label(memeTokenAddress, "MemeToken");
+        vm.label(memeTokenAddress, "MemeToken");
         memeToken = IERC20(memeTokenAddress);
         proxy.setAddress(LibConstants.MEME_TOKEN_ADDRESS, memeTokenAddress);
 

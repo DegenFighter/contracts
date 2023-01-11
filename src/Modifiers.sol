@@ -13,7 +13,7 @@ abstract contract Modifiers {
 
     modifier isServer() {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        require(msg.sender == s.addresses[LibConstants.SERVER_ADDRESS], "Not server");
+        require(msg.sender == s.addresses[LibConstants.SERVER_ADDRESS], "Must be server");
         _;
     }
 }
