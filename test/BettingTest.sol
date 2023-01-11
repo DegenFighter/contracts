@@ -2,6 +2,7 @@
 pragma solidity >=0.8.17 <0.9;
 
 import "forge-std/Test.sol";
+import "../src/Errors.sol";
 import { BoutNonMappingInfo, BoutParticipant, BoutState } from "../src/Objects.sol";
 import { TestBaseContract } from "./utils/TestBaseContract.sol";
 import { LibConstants } from "../src/libs/LibConstants.sol";
@@ -15,13 +16,15 @@ contract Supporters is TestBaseContract {
     }
 
     function testCreateBoutMustBeDoneByServer() public {
-        vm.prank(address(0));
-        vm.expectRevert(ERROR_MUST_BE_SERVER);
+        address dummyServer = vm.addr(123);
+
+        vm.prank(dummyServer);
+        vm.expectRevert(CallerMustBeServerError.selector);
         proxy.createBout(fighterAId, fighterBId);
 
-        proxy.setAddress(LibConstants.SERVER_ADDRESS, address(0));
+        proxy.setAddress(LibConstants.SERVER_ADDRESS, dummyServer);
 
-        vm.prank(address(0));
+        vm.prank(dummyServer);
         proxy.createBout(fighterAId, fighterBId);
     }
 
@@ -57,10 +60,11 @@ contract Supporters is TestBaseContract {
         // create bout
         testCreateBout();
 
-        vm.expectRevert(ERROR_INVALID_BOUT);
+        // vm.expectRevert(abi.encodeWithSignature("BoutInWrongStateError(uint256,BoutState)", 2, BoutState.Unknown));
+        vm.expectRevert(BoutInWrongStateError.selector);
         proxy.bet(2, 1, 100, 100, new bytes(0));
 
-        vm.expectRevert(ERROR_INVALID_BOUT);
+        vm.expectRevert(BoutInWrongStateError.selector);
         proxy.bet(0, 1, 100, 100, new bytes(0));
     }
 
@@ -71,9 +75,9 @@ contract Supporters is TestBaseContract {
         // do signature
         address signer = vm.addr(123);
         bytes32 digest = proxy.calculateBetSignature(signer, account0, 1, 1, 100, 100);
-        bytes memory sig = vm.sign(signer, digest);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(123, digest);
 
-        vm.expectRevert(ERROR_INVALID_BOUT);
-        proxy.bet(2, 1, 100, 100, sig);
+        vm.expectRevert(SignerMustBeServerError.selector);
+        proxy.bet(1, 1, 100, 100, sig);
     }
 }

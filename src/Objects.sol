@@ -2,6 +2,7 @@
 pragma solidity >=0.8.17 <0.9;
 
 enum BoutState {
+    Unknown,
     Created,
     SupportRevealed,
     Ended

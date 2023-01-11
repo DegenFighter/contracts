@@ -32,17 +32,7 @@ contract BettingFacet is FacetBase, IBettingFacet {
     function calculateBetSignature(address server, address supporter, uint256 boutNum, uint8 br, uint256 amount, uint256 deadline) public returns (bytes32) {
         return
             LibEip712.hashTypedDataV4(
-                keccak256(
-                    abi.encode(
-                        keccak256("calculateBetSignature(address server,address supporter,uint256 boutNum,uint8 br,uint256 amount,uint256 deadline)"),
-                        server,
-                        supporter,
-                        boutNum,
-                        br,
-                        amount,
-                        deadline
-                    )
-                )
+                keccak256(abi.encode(keccak256("calculateBetSignature(address,address,uint256,uint8,uint256,uint256)"), server, supporter, boutNum, br, amount, deadline))
             );
     }
 
@@ -51,8 +41,8 @@ contract BettingFacet is FacetBase, IBettingFacet {
 
         Bout storage bout = s.bouts[boutNum];
 
-        if (bout.state == BoutState.Created) {
-            revert BoutInWrongStateError(boutNum, bout.state);
+        if (bout.state != BoutState.Created) {
+            revert BoutInWrongStateError();
         }
 
         address server = s.addresses[LibConstants.SERVER_ADDRESS];
@@ -70,10 +60,10 @@ contract BettingFacet is FacetBase, IBettingFacet {
             revert SignatureExpiredError();
         }
         if (amount < LibConstants.MIN_BET_AMOUNT) {
-            revert MinimumBetAmountError(boutNum, supporter, amount);
+            revert MinimumBetAmountError();
         }
         if (br < 1 || br > 3) {
-            revert InvalidBetTargetError(boutNum, supporter, br);
+            revert InvalidBetTargetError();
         }
 
         // replace old bet?
@@ -98,11 +88,11 @@ contract BettingFacet is FacetBase, IBettingFacet {
         Bout storage bout = s.bouts[boutNum];
 
         if (bout.state != BoutState.Created && bout.state != BoutState.SupportRevealed) {
-            revert BoutInWrongStateError(boutNum, bout.state);
+            revert BoutInWrongStateError();
         }
 
         if (bout.numRevealedBets == bout.numSupporters) {
-            revert BoutAlreadyFullyRevealedError(boutNum);
+            revert BoutAlreadyFullyRevealedError();
         }
 
         bout.state = BoutState.SupportRevealed;
@@ -134,15 +124,15 @@ contract BettingFacet is FacetBase, IBettingFacet {
         Bout storage bout = s.bouts[boutNum];
 
         if (bout.state != BoutState.SupportRevealed) {
-            revert BoutInWrongStateError(boutNum, bout.state);
+            revert BoutInWrongStateError();
         }
 
         if (bout.endTime != 0) {
-            revert BoutAlreadyEndedError(boutNum);
+            revert BoutAlreadyEndedError();
         }
 
         if (winner != BoutParticipant.FighterA && winner != BoutParticipant.FighterB) {
-            revert InvalidWinnerError(boutNum, winner);
+            revert InvalidWinnerError();
         }
 
         bout.state = BoutState.Ended;

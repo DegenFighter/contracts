@@ -12,8 +12,6 @@ import { MemeToken } from "../../src/MemeToken.sol";
 contract TestBaseContract is Test {
     using stdStorage for StdStorage;
 
-    bytes internal constant ERROR_CALLER_MUST_BE_ADMIN = "LibDiamond: Must be contract owner";
-
     address internal immutable account0 = address(this);
 
     uint internal constant SERVER_PRIVATE_KEY = 12345;
