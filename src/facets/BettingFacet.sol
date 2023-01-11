@@ -145,10 +145,6 @@ contract BettingFacet is FacetBase, IBettingFacet {
             revert BoutInWrongStateError();
         }
 
-        if (bout.endTime != 0) {
-            revert BoutAlreadyEndedError();
-        }
-
         if (winner != BoutFighter.FighterA && winner != BoutFighter.FighterB) {
             revert InvalidWinnerError();
         }

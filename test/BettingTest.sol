@@ -400,6 +400,21 @@ contract Supporters is TestBaseContract {
         assertEq(proxy.getBoutFighterPot(1, BoutFighter.FighterB), 0, "fighter B pot");
     }
 
+    function testRevealBetsWhenAlreadyFullyRevealed() public {
+        // create bout and place bets
+        testBetNewBets();
+
+        vm.startPrank(server.addr);
+
+        uint8[] memory rPacked = new uint8[](2);
+        proxy.revealBets(1, 5, rPacked);
+
+        vm.expectRevert(BoutAlreadyFullyRevealedError.selector);
+        proxy.revealBets(1, 1, rPacked);
+
+        vm.stopPrank();
+    }
+
     // ------------------------------------------------------ //
     //
     // End bout
@@ -420,6 +435,47 @@ contract Supporters is TestBaseContract {
 
         vm.prank(dummyServer);
         proxy.endBout(1, BoutFighter.FighterA);
+    }
+
+    function testEndBoutEmitsEvent() public {
+        // create bout, place bets, reveal bets
+        testRevealBets();
+
+        vm.recordLogs();
+
+        vm.prank(server.addr);
+        proxy.endBout(1, BoutFighter.FighterA);
+
+        // check logs
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        assertEq(entries[0].topics.length, 1, "Invalid event count");
+        assertEq(entries[0].topics[0], keccak256("BoutEnded(uint256)"));
+        uint boutNum = abi.decode(entries[0].data, (uint));
+        assertEq(boutNum, 1, "boutNum incorrect");
+    }
+
+    function testEndBoutWithInvalidState() public {
+        // create bout, place bets, reveal bets
+        testRevealBets();
+
+        vm.startPrank(server.addr);
+
+        // state: Unknown
+        proxy._testSetBoutState(1, BoutState.Unknown);
+        vm.expectRevert(BoutInWrongStateError.selector);
+        proxy.endBout(1, BoutFighter.FighterA);
+
+        // state: Created
+        proxy._testSetBoutState(1, BoutState.Created);
+        vm.expectRevert(BoutInWrongStateError.selector);
+        proxy.endBout(1, BoutFighter.FighterA);
+
+        // state: Ended
+        proxy._testSetBoutState(1, BoutState.Ended);
+        vm.expectRevert(BoutInWrongStateError.selector);
+        proxy.endBout(1, BoutFighter.FighterA);
+
+        vm.stopPrank();
     }
 
     // ------------------------------------------------------ //
