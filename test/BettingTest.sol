@@ -15,6 +15,12 @@ contract Supporters is TestBaseContract {
         super.setUp();
     }
 
+    // ------------------------------------------------------ //
+    //
+    // Create bout
+    //
+    // ------------------------------------------------------ //
+
     function testCreateBoutMustBeDoneByServer() public {
         address dummyServer = vm.addr(123);
 
@@ -66,6 +72,12 @@ contract Supporters is TestBaseContract {
         uint boutNum = abi.decode(entries[0].data, (uint256));
         assertEq(boutNum, 1, "boutNum incorrect");
     }
+
+    // ------------------------------------------------------ //
+    //
+    // Place bet
+    //
+    // ------------------------------------------------------ //
 
     function testBetWithInvalidBoutState() public {
         // create bout
@@ -202,6 +214,12 @@ contract Supporters is TestBaseContract {
         assertEq(supporter, player1.addr, "supporter incorrect");
     }
 
+    // ------------------------------------------------------ //
+    //
+    // Reveal bets
+    //
+    // ------------------------------------------------------ //
+
     function testRevealBetsMustBeDoneByServer() public {
         // create bout and place bets
         testBetNewBets();
@@ -273,7 +291,7 @@ contract Supporters is TestBaseContract {
         assertEq(count, 3, "count incorrect");
     }
 
-    function testRevealBetsUpdatesPotsAndRevealedBets() public {
+    function testRevealBets() public {
         // create bout and place bets
         testBetNewBets();
 
@@ -380,6 +398,28 @@ contract Supporters is TestBaseContract {
         // check the fighter pots
         assertEq(proxy.getBoutFighterPot(1, BoutFighter.FighterA), proxy.getBoutNonMappingInfo(1).totalPot, "fighter A pot");
         assertEq(proxy.getBoutFighterPot(1, BoutFighter.FighterB), 0, "fighter B pot");
+    }
+
+    // ------------------------------------------------------ //
+    //
+    // End bout
+    //
+    // ------------------------------------------------------ //
+
+    function testEndBoutMustBeDoneByServer() public {
+        // create bout, place bets, reveal bets
+        testRevealBets();
+
+        address dummyServer = vm.addr(123);
+
+        vm.prank(dummyServer);
+        vm.expectRevert(CallerMustBeServerError.selector);
+        proxy.endBout(1, BoutFighter.FighterA);
+
+        proxy.setAddress(LibConstants.SERVER_ADDRESS, dummyServer);
+
+        vm.prank(dummyServer);
+        proxy.endBout(1, BoutFighter.FighterA);
     }
 
     // ------------------------------------------------------ //
