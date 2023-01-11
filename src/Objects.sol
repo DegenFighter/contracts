@@ -8,7 +8,7 @@ enum BoutState {
     Ended
 }
 
-enum BoutParticipant {
+enum BoutFighter {
     Unknown,
     FighterA,
     FighterB
@@ -21,16 +21,16 @@ struct Bout {
     mapping(uint => address) supporters;
     mapping(address => uint8) hiddenBets;
     uint numRevealedBets;
-    mapping(address => BoutParticipant) revealedBets;
+    mapping(address => BoutFighter) revealedBets;
     mapping(address => uint) betAmounts;
-    mapping(BoutParticipant => uint) fighterIds;
-    mapping(BoutParticipant => uint) fighterPots;
-    mapping(BoutParticipant => uint) fighterPotBalances;
+    mapping(BoutFighter => uint) fighterIds;
+    mapping(BoutFighter => uint) fighterPots;
+    mapping(BoutFighter => uint) fighterPotBalances;
     uint totalPot;
     uint revealTime;
     uint endTime;
-    BoutParticipant winner;
-    BoutParticipant loser;
+    BoutFighter winner;
+    BoutFighter loser;
 }
 
 /**
@@ -46,8 +46,8 @@ struct BoutNonMappingInfo {
     uint totalPot;
     uint revealTime;
     uint endTime;
-    BoutParticipant winner;
-    BoutParticipant loser;
+    BoutFighter winner;
+    BoutFighter loser;
 }
 
 // from https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/cryptography/EIP712.sol

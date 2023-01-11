@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.17 <0.9;
 
-import { Bout, BoutParticipant } from "../Objects.sol";
+import { Bout, BoutFighter } from "../Objects.sol";
 
 interface IBettingFacet {
     event BoutCreated(uint boutNum);
@@ -17,7 +17,7 @@ interface IBettingFacet {
 
     function revealBets(uint boutNum, uint8[] calldata rPacked) external;
 
-    function endBout(uint boutNum, BoutParticipant winner) external;
+    function endBout(uint boutNum, BoutFighter winner) external;
 
     function getClaimableWinnings(address wallet) external view returns (uint);
 

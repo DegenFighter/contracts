@@ -2,7 +2,7 @@
 pragma solidity >=0.8.17 <0.9;
 
 import { FacetBase } from "../FacetBase.sol";
-import { AppStorage, LibAppStorage, Bout, BoutParticipant, BoutNonMappingInfo } from "../Objects.sol";
+import { AppStorage, LibAppStorage, Bout, BoutFighter, BoutNonMappingInfo } from "../Objects.sol";
 import { IBoutInfoFacet } from "../interfaces/IBoutInfoFacet.sol";
 
 contract BoutInfoFacet is FacetBase, IBoutInfoFacet {
@@ -32,7 +32,7 @@ contract BoutInfoFacet is FacetBase, IBoutInfoFacet {
         return bout.hiddenBets[supporter];
     }
 
-    function getBoutRevealedBet(uint boutNum, address supporter) external view returns (BoutParticipant) {
+    function getBoutRevealedBet(uint boutNum, address supporter) external view returns (BoutFighter) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         Bout storage bout = s.bouts[boutNum];
         return bout.revealedBets[supporter];
@@ -44,19 +44,19 @@ contract BoutInfoFacet is FacetBase, IBoutInfoFacet {
         return bout.betAmounts[supporter];
     }
 
-    function getBoutFighterId(uint boutNum, BoutParticipant p) external view returns (uint) {
+    function getBoutFighterId(uint boutNum, BoutFighter p) external view returns (uint) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         Bout storage bout = s.bouts[boutNum];
         return bout.fighterIds[p];
     }
 
-    function getBoutFighterPot(uint boutNum, BoutParticipant p) external view returns (uint) {
+    function getBoutFighterPot(uint boutNum, BoutFighter p) external view returns (uint) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         Bout storage bout = s.bouts[boutNum];
         return bout.fighterPots[p];
     }
 
-    function getBoutFighterPotBalance(uint boutNum, BoutParticipant p) external view returns (uint) {
+    function getBoutFighterPotBalance(uint boutNum, BoutFighter p) external view returns (uint) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         Bout storage bout = s.bouts[boutNum];
         return bout.fighterPotBalances[p];

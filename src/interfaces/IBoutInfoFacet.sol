@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.17 <0.9;
 
-import { BoutNonMappingInfo, BoutParticipant } from "../Objects.sol";
+import { BoutNonMappingInfo, BoutFighter } from "../Objects.sol";
 
 interface IBoutInfoFacet {
     function getTotalBouts() external view returns (uint);
@@ -12,13 +12,13 @@ interface IBoutInfoFacet {
 
     function getBoutHiddenBet(uint boutNum, address supporter) external view returns (uint8);
 
-    function getBoutRevealedBet(uint boutNum, address supporter) external view returns (BoutParticipant);
+    function getBoutRevealedBet(uint boutNum, address supporter) external view returns (BoutFighter);
 
     function getBoutBetAmount(uint boutNum, address supporter) external view returns (uint);
 
-    function getBoutFighterId(uint boutNum, BoutParticipant p) external view returns (uint);
+    function getBoutFighterId(uint boutNum, BoutFighter p) external view returns (uint);
 
-    function getBoutFighterPot(uint boutNum, BoutParticipant p) external view returns (uint);
+    function getBoutFighterPot(uint boutNum, BoutFighter p) external view returns (uint);
 
-    function getBoutFighterPotBalance(uint boutNum, BoutParticipant p) external view returns (uint);
+    function getBoutFighterPotBalance(uint boutNum, BoutFighter p) external view returns (uint);
 }

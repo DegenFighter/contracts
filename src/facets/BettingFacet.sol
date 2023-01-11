@@ -4,7 +4,7 @@ pragma solidity >=0.8.17 <0.9;
 import { SafeMath } from "lib/openzeppelin-contracts/contracts/utils/math/SafeMath.sol";
 
 import "../Errors.sol";
-import { AppStorage, LibAppStorage, Bout, BoutState, BoutParticipant } from "../Objects.sol";
+import { AppStorage, LibAppStorage, Bout, BoutState, BoutFighter } from "../Objects.sol";
 import { IBettingFacet } from "../interfaces/IBettingFacet.sol";
 import { FacetBase } from "../FacetBase.sol";
 import { LibConstants } from "../libs/LibConstants.sol";
@@ -22,10 +22,10 @@ contract BettingFacet is FacetBase, IBettingFacet {
         Bout storage bout = s.bouts[s.totalBouts];
         bout.id = s.totalBouts;
         bout.state = BoutState.Created;
-        bout.winner = BoutParticipant.Unknown;
-        bout.loser = BoutParticipant.Unknown;
-        bout.fighterIds[BoutParticipant.FighterA] = fighterA;
-        bout.fighterIds[BoutParticipant.FighterB] = fighterB;
+        bout.winner = BoutFighter.Unknown;
+        bout.loser = BoutFighter.Unknown;
+        bout.fighterIds[BoutFighter.FighterA] = fighterA;
+        bout.fighterIds[BoutFighter.FighterB] = fighterB;
 
         emit BoutCreated(s.totalBouts);
     }
@@ -114,12 +114,21 @@ contract BettingFacet is FacetBase, IBettingFacet {
             }
             uint8 r = (rPacked[rPackedIndex] >> ((3 - (i % 4)) * 2)) & 3;
             address supporter = bout.supporters[i + 1];
-            uint8 rawBet = bout.hiddenBets[supporter] - r;
+            uint8 rawBet;
+            if (bout.hiddenBets[supporter] >= r) {
+                rawBet = bout.hiddenBets[supporter] - r;
+            }
             // default to 0 if invalid
             if (rawBet != 0 && rawBet != 1) {
                 rawBet = 0;
             }
-            bout.revealedBets[supporter] = (rawBet == 0 ? BoutParticipant.FighterA : BoutParticipant.FighterB);
+
+            // update supporter bet data & fighter pot
+            bout.revealedBets[supporter] = (rawBet == 0 ? BoutFighter.FighterA : BoutFighter.FighterB);
+            BoutFighter fighter = bout.revealedBets[supporter];
+            bout.fighterPots[fighter] = bout.fighterPots[fighter].add(bout.betAmounts[supporter]);
+
+            // count
             bout.numRevealedBets++;
             count++;
         }
@@ -130,7 +139,7 @@ contract BettingFacet is FacetBase, IBettingFacet {
         emit BetsRevealed(boutNum, count);
     }
 
-    function endBout(uint boutNum, BoutParticipant winner) external isServer {
+    function endBout(uint boutNum, BoutFighter winner) external isServer {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
         Bout storage bout = s.bouts[boutNum];
@@ -143,14 +152,14 @@ contract BettingFacet is FacetBase, IBettingFacet {
             revert BoutAlreadyEndedError();
         }
 
-        if (winner != BoutParticipant.FighterA && winner != BoutParticipant.FighterB) {
+        if (winner != BoutFighter.FighterA && winner != BoutFighter.FighterB) {
             revert InvalidWinnerError();
         }
 
         bout.state = BoutState.Ended;
         bout.endTime = block.timestamp;
         bout.winner = winner;
-        bout.loser = (winner == BoutParticipant.FighterA ? BoutParticipant.FighterB : BoutParticipant.FighterA);
+        bout.loser = (winner == BoutFighter.FighterA ? BoutFighter.FighterB : BoutFighter.FighterA);
         s.boutsFinished++;
 
         emit BoutEnded(boutNum);

@@ -3,7 +3,7 @@ pragma solidity >=0.8.17 <0.9;
 
 import "forge-std/Test.sol";
 import "../src/Errors.sol";
-import { BoutNonMappingInfo, BoutParticipant, BoutState } from "../src/Objects.sol";
+import { BoutNonMappingInfo, BoutFighter, BoutState } from "../src/Objects.sol";
 import { Wallet, TestBaseContract } from "./utils/TestBaseContract.sol";
 import { LibConstants } from "../src/libs/LibConstants.sol";
 
@@ -42,12 +42,12 @@ contract Supporters is TestBaseContract {
         BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(1);
         assertEq(bout.id, 1, "bout id");
         assertEq(uint(bout.state), uint(BoutState.Created), "created");
-        assertEq(uint(bout.winner), uint(BoutParticipant.Unknown), "winner not set");
-        assertEq(uint(bout.loser), uint(BoutParticipant.Unknown), "loser not set");
+        assertEq(uint(bout.winner), uint(BoutFighter.Unknown), "winner not set");
+        assertEq(uint(bout.loser), uint(BoutFighter.Unknown), "loser not set");
 
         // check bout fighters
-        assertEq(proxy.getBoutFighterId(1, BoutParticipant.FighterA), fighterAId, "fighterAId");
-        assertEq(proxy.getBoutFighterId(1, BoutParticipant.FighterB), fighterBId, "fighterBId");
+        assertEq(proxy.getBoutFighterId(1, BoutFighter.FighterA), fighterAId, "fighterAId");
+        assertEq(proxy.getBoutFighterId(1, BoutFighter.FighterB), fighterBId, "fighterBId");
     }
 
     function testCreateBoutEmitsEvent() public {
@@ -239,7 +239,7 @@ contract Supporters is TestBaseContract {
         proxy.revealBets(1, rPacked);
     }
 
-    function testRevealBetsUpdatesState() public {
+    function testRevealBetsUpdatesBasicState() public {
         // create bout and place bets
         testBetNewBets();
 
@@ -257,7 +257,7 @@ contract Supporters is TestBaseContract {
         // create bout and place bets
         testBetNewBets();
 
-        uint8[] memory rPacked = new uint8[](0);
+        uint8[] memory rPacked = new uint8[](2);
 
         vm.recordLogs();
 
@@ -270,7 +270,40 @@ contract Supporters is TestBaseContract {
         assertEq(entries[0].topics[0], keccak256("BetsRevealed(uint256,uint256)"));
         (uint boutNum, uint count) = abi.decode(entries[0].data, (uint, uint));
         assertEq(boutNum, 1, "boutNum incorrect");
-        assertEq(count, 0, "count incorrect");
+        assertEq(count, 5, "count incorrect");
+    }
+
+    function testRevealBetsUpdatesPotsAndRevealedBets() public {
+        // create bout and place bets
+        testBetNewBets();
+
+        /*
+        5 players, odd ones will bet for fighterA, even for fighterB
+
+        Thus, 2 bytes with bit pattern:
+
+        01 00 01 00, 01 00 00 00
+        */
+        uint8[] memory rPacked = new uint8[](2);
+        rPacked[0] = 68; // 01000100
+        rPacked[1] = 64; // 01000000
+
+        vm.prank(server.addr);
+        proxy.revealBets(1, rPacked);
+
+        // now let's check the revealed bets
+        assertEq(uint(proxy.getBoutRevealedBet(1, player1.addr)), uint(BoutFighter.FighterA), "revealed bet 1");
+        assertEq(uint(proxy.getBoutRevealedBet(1, player2.addr)), uint(BoutFighter.FighterB), "revealed bet 2");
+        assertEq(uint(proxy.getBoutRevealedBet(1, player3.addr)), uint(BoutFighter.FighterA), "revealed bet 3");
+        assertEq(uint(proxy.getBoutRevealedBet(1, player4.addr)), uint(BoutFighter.FighterB), "revealed bet 4");
+        assertEq(uint(proxy.getBoutRevealedBet(1, player5.addr)), uint(BoutFighter.FighterA), "revealed bet 5");
+
+        // check the fighter pots
+        uint aPot = proxy.getBoutBetAmount(1, player1.addr) + proxy.getBoutBetAmount(1, player3.addr) + proxy.getBoutBetAmount(1, player5.addr);
+        assertEq(proxy.getBoutFighterPot(1, BoutFighter.FighterA), aPot, "fighter A pot");
+
+        uint bPot = proxy.getBoutBetAmount(1, player2.addr) + proxy.getBoutBetAmount(1, player4.addr);
+        assertEq(proxy.getBoutFighterPot(1, BoutFighter.FighterB), bPot, "fighter B pot");
     }
 
     // ------------------------------------------------------ //

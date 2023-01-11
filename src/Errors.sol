@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.17 <0.9;
 
-import { BoutState, BoutParticipant } from "./Objects.sol";
+import { BoutState, BoutFighter } from "./Objects.sol";
 
 error NotAllowedError();
 
@@ -20,6 +20,6 @@ error MinimumBetAmountError(); //uint boutNum, address supporter, uint amount);
 error InvalidBetTargetError(); //uint boutNum, address supporter, uint8 br);
 error BoutAlreadyFullyRevealedError(); //uint boutNum);
 error BoutAlreadyEndedError(); //uint boutNum);
-error InvalidWinnerError(); //uint boutNum, BoutParticipant winner);
+error InvalidWinnerError(); //uint boutNum, BoutFighter winner);
 
 error TokenBalanceInsufficient();
