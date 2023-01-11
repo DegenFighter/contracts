@@ -3,7 +3,7 @@ pragma solidity >=0.8.17 <0.9;
 
 import { BoutNonMappingInfo, BoutFighter } from "../Objects.sol";
 
-interface IBoutInfoFacet {
+interface IInfoFacet {
     function getTotalBouts() external view returns (uint);
 
     function getEndedBouts() external view returns (uint);

@@ -3,9 +3,9 @@ pragma solidity >=0.8.17 <0.9;
 
 import { FacetBase } from "../FacetBase.sol";
 import { AppStorage, LibAppStorage, Bout, BoutFighter, BoutNonMappingInfo } from "../Objects.sol";
-import { IBoutInfoFacet } from "../interfaces/IBoutInfoFacet.sol";
+import { IInfoFacet } from "../interfaces/IInfoFacet.sol";
 
-contract BoutInfoFacet is FacetBase, IBoutInfoFacet {
+contract InfoFacet is FacetBase, IInfoFacet {
     constructor() FacetBase() {}
 
     function getTotalBouts() external view returns (uint) {
