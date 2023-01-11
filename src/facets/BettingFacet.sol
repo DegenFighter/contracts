@@ -96,7 +96,7 @@ contract BettingFacet is FacetBase, IBettingFacet {
 
         Bout storage bout = s.bouts[boutNum];
 
-        if (bout.state != BoutState.Created && bout.state != BoutState.SupportRevealed) {
+        if (bout.state != BoutState.Created && bout.state != BoutState.BetsRevealed) {
             revert BoutInWrongStateError();
         }
 
@@ -104,8 +104,10 @@ contract BettingFacet is FacetBase, IBettingFacet {
             revert BoutAlreadyFullyRevealedError();
         }
 
-        bout.state = BoutState.SupportRevealed;
+        bout.state = BoutState.BetsRevealed;
         bout.revealTime = block.timestamp;
+
+        uint count;
 
         // do reveal
         for (uint i = bout.numRevealedBets; i < bout.numSupporters; i++) {
@@ -122,9 +124,10 @@ contract BettingFacet is FacetBase, IBettingFacet {
             }
             bout.revealedBets[supporter] = (rawBet == 0 ? BoutParticipant.FighterA : BoutParticipant.FighterB);
             bout.numRevealedBets++;
+            count++;
         }
 
-        emit BetsRevealed(boutNum, bout.numRevealedBets);
+        emit BetsRevealed(boutNum, count);
     }
 
     function endBout(uint boutNum, BoutParticipant winner) external isServer {
@@ -132,7 +135,7 @@ contract BettingFacet is FacetBase, IBettingFacet {
 
         Bout storage bout = s.bouts[boutNum];
 
-        if (bout.state != BoutState.SupportRevealed) {
+        if (bout.state != BoutState.BetsRevealed) {
             revert BoutInWrongStateError();
         }
 

@@ -31,15 +31,9 @@ contract Supporters is TestBaseContract {
     function testCreateBout() public {
         assertEq(proxy.getTotalBouts(), 0, "no bouts");
 
-        // create and check event
-        vm.recordLogs();
+        // create
         vm.prank(server.addr);
         proxy.createBout(fighterAId, fighterBId);
-        Vm.Log[] memory entries = vm.getRecordedLogs();
-        assertEq(entries[0].topics.length, 1, "Invalid event count");
-        assertEq(entries[0].topics[0], keccak256("BoutCreated(uint256)"));
-        uint boutNum = abi.decode(entries[0].data, (uint256));
-        assertEq(boutNum, 1, "Event boutNum incorrect");
 
         // check bout count updated
         assertEq(proxy.getTotalBouts(), 1, "1 bout");
@@ -56,15 +50,41 @@ contract Supporters is TestBaseContract {
         assertEq(proxy.getBoutFighterId(1, BoutParticipant.FighterB), fighterBId, "fighterBId");
     }
 
-    function testBetWithInvalidBoutId() public {
+    function testCreateBoutEmitsEvent() public {
+        assertEq(proxy.getTotalBouts(), 0, "no bouts");
+
+        vm.recordLogs();
+
+        // create
+        vm.prank(server.addr);
+        proxy.createBout(fighterAId, fighterBId);
+
+        // check logs
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        assertEq(entries[0].topics.length, 1, "Invalid event count");
+        assertEq(entries[0].topics[0], keccak256("BoutCreated(uint256)"));
+        uint boutNum = abi.decode(entries[0].data, (uint256));
+        assertEq(boutNum, 1, "Event boutNum incorrect");
+    }
+
+    function testBetWithInvalidBoutState() public {
         // create bout
         testCreateBout();
 
+        // state: Unknown
+        proxy._testSetBoutState(1, BoutState.Unknown);
         vm.expectRevert(BoutInWrongStateError.selector);
-        proxy.bet(2, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, 1, "0x", "0x");
+        proxy.bet(1, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, 1, "0x", "0x");
 
+        // state: BetsRevealed
+        proxy._testSetBoutState(1, BoutState.BetsRevealed);
         vm.expectRevert(BoutInWrongStateError.selector);
-        proxy.bet(0, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, 1, "0x", "0x");
+        proxy.bet(1, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, 1, "0x", "0x");
+
+        // state: Ended
+        proxy._testSetBoutState(1, BoutState.Ended);
+        vm.expectRevert(BoutInWrongStateError.selector);
+        proxy.bet(1, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, 1, "0x", "0x");
     }
 
     function testBetWithBadSigner() public {
@@ -145,7 +165,7 @@ contract Supporters is TestBaseContract {
             betAmounts[i] = LibConstants.MIN_BET_AMOUNT * (i + 1);
 
             // mint tokens
-            proxy.mintMeme(player.addr, betAmounts[i]);
+            proxy._testMintMeme(player.addr, betAmounts[i]);
 
             // do signature
             bytes32 digest = proxy.calculateBetSignature(server.addr, player.addr, 1, 1, betAmounts[i], block.timestamp + 1000);
@@ -169,5 +189,42 @@ contract Supporters is TestBaseContract {
             assertEq(proxy.getBoutHiddenBet(1, player.addr), 1, "supporter hidden bet");
             assertEq(proxy.getBoutBetAmount(1, player.addr), betAmounts[i - 1], "supporter bet amount");
         }
+    }
+
+    function testRevealBetsMustBeDoneByServer() public {
+        // create bout and place bets
+        testBetNewBets();
+
+        address dummyServer = vm.addr(123);
+
+        uint8[] memory rPacked = new uint8[](0);
+
+        vm.prank(dummyServer);
+        vm.expectRevert(CallerMustBeServerError.selector);
+        proxy.revealBets(1, rPacked);
+
+        proxy.setAddress(LibConstants.SERVER_ADDRESS, dummyServer);
+
+        vm.prank(dummyServer);
+        proxy.revealBets(1, rPacked);
+    }
+
+    function testRevealBetsInWrongState() public {
+        // create bout and place bets
+        testBetNewBets();
+
+        uint8[] memory rPacked = new uint8[](0);
+
+        // state: Unknown
+        proxy._testSetBoutState(1, BoutState.Unknown);
+        vm.prank(server.addr);
+        vm.expectRevert(BoutInWrongStateError.selector);
+        proxy.revealBets(1, rPacked);
+
+        // state: Ended
+        proxy._testSetBoutState(1, BoutState.Ended);
+        vm.prank(server.addr);
+        vm.expectRevert(BoutInWrongStateError.selector);
+        proxy.revealBets(1, rPacked);
     }
 }
