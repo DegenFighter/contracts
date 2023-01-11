@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.17 <0.9;
 
-import { BoutParticipant } from "../Base.sol";
+import { Bout, BoutParticipant } from "../Base.sol";
 
-interface ISupportFacet {
+interface IBettingFacet {
     event BoutCreated(uint indexed boutNum);
     event BetPlaced(uint indexed boutNum, address indexed supporter);
-    event BetsRevealed(uint indexed boutNum);
+    event BetsRevealed(uint indexed boutNum, uint indexed numBetsRevealed);
     event BoutEnded(uint indexed boutNum);
 
     function createBout(uint fighterA, uint fighterB) external returns (uint boutNum);

@@ -5,7 +5,7 @@ import "forge-std/Script.sol";
 import "forge-std/console2.sol";
 
 import { Proxy } from "src/Proxy.sol";
-import { IProxy } from "src/IProxy.sol";
+import { IProxy } from "src/interfaces/IProxy.sol";
 import { MemeToken } from "src/MemeToken.sol";
 import { LibConstants } from "src/libs/LibConstants.sol";
 import { LibGeneratedFacetHelpers } from "./generated/LibGeneratedFacetHelpers.sol";

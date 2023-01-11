@@ -2,15 +2,18 @@
 
 pragma solidity 0.8.17;
 
-import { DSTestPlusF, console2 } from "test/utils/DSTestPlusF.sol";
+import {DSTestPlusF, console2} from "test/utils/DSTestPlusF.sol";
 
-import { Bet, Winner, Pools } from "src/Bet.sol";
+import {Bet, Winner, Pools} from "src/Bet.sol";
 
-import { MockERC20 } from "solmate/test/utils/mocks/MockERC20.sol";
+import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 
 /// @return r random number (sent to server)
 /// @return pr obfuscated pick (stored on smart contracts)
-function pickFighter(Winner winner, uint256 randomNum) returns (uint256 r, uint256 pr) {
+function pickFighter(
+    Winner winner,
+    uint256 randomNum
+) returns (uint256 r, uint256 pr) {
     if (winner == Winner.FighterA) {
         r = randomNum;
         pr = randomNum;
@@ -20,13 +23,31 @@ function pickFighter(Winner winner, uint256 randomNum) returns (uint256 r, uint2
     }
 }
 
-function signBet(bytes32 doms, address serverSigner, address user, uint256 pr, uint256 boutNo, uint256 nonce, uint256 deadline) returns (bytes32 hash) {
+function signBet(
+    bytes32 doms,
+    address serverSigner,
+    address user,
+    uint256 pr,
+    uint256 boutNo,
+    uint256 nonce,
+    uint256 deadline
+) returns (bytes32 hash) {
     hash = keccak256(
         abi.encodePacked(
             "\x19\x01",
             doms,
             keccak256(
-                abi.encode(keccak256("Sign(address server,address user,uint256 pr,uint256 bout,uint256 nonce,uint256 deadline)"), serverSigner, user, pr, boutNo, nonce, deadline)
+                abi.encode(
+                    keccak256(
+                        "Sign(address server,address user,uint256 pr,uint256 bout,uint256 nonce,uint256 deadline)"
+                    ),
+                    serverSigner,
+                    user,
+                    pr,
+                    boutNo,
+                    nonce,
+                    deadline
+                )
             )
         )
     );
@@ -41,7 +62,12 @@ contract User is Bet {
     }
 
     /// @dev A user can place a bet
-    function placeBet(uint256 boutNum, Winner winner, uint256 amount, uint256 randomNum) public returns (uint256 boutNum_, uint256 r, uint256 pr) {
+    function placeBet(
+        uint256 boutNum,
+        Winner winner,
+        uint256 amount,
+        uint256 randomNum
+    ) public returns (uint256 boutNum_, uint256 r, uint256 pr) {
         (r, pr) = pickFighter(winner, randomNum);
         boutNum_ = bet2.bet(boutNum, amount, pr);
     }
@@ -58,7 +84,16 @@ contract User is Bet {
         bytes32 s
     ) public returns (uint256 boutNum_, uint256 randno, uint256 pr) {
         (randno, pr) = pickFighter(winner, randomNum);
-        boutNum_ = bet2.permitBet(boutNum, amount, pr, server, deadline, v, r, s);
+        boutNum_ = bet2.permitBet(
+            boutNum,
+            amount,
+            pr,
+            server,
+            deadline,
+            v,
+            r,
+            s
+        );
     }
 
     // function placeBetPool(uint256 boutPoolNo, Pools pool, Winner winner, uint256 amount, uint256 randomNum) public returns (uint256 boutPoolNo_, uint256 r, uint256 pr) {
@@ -67,7 +102,7 @@ contract User is Bet {
     // }
 }
 
-contract Server is Bet, DSTestPlusF {
+contract Server is Bet, TestBase {
     Bet bet2;
 
     constructor(Bet bet) {
@@ -82,13 +117,24 @@ contract Server is Bet, DSTestPlusF {
     mapping(uint256 => mapping(Pools => uint256[])) S_poolAmounts; // boutId => pool => bet amounts
     mapping(uint256 => mapping(Pools => uint256[])) S_poolRandno; // boutId => pool => bet amounts
 
-    function record(uint256 boutNo, address user, uint256 amount, uint256 randno) public {
+    function record(
+        uint256 boutNo,
+        address user,
+        uint256 amount,
+        uint256 randno
+    ) public {
         S_users[boutNo].push(user);
         S_amounts[boutNo].push(amount);
         S_randno[boutNo].push(randno);
     }
 
-    function recordPool(uint256 boutNo, Pools pool, address user, uint256 amount, uint256 randno) public {
+    function recordPool(
+        uint256 boutNo,
+        Pools pool,
+        address user,
+        uint256 amount,
+        uint256 randno
+    ) public {
         S_poolUsers[boutNo][pool].push(user);
         S_poolAmounts[boutNo][pool].push(amount);
         S_poolRandno[boutNo][pool].push(randno);
@@ -112,10 +158,25 @@ contract Server is Bet, DSTestPlusF {
     //     bet2.judgePool(boutNo, pool, winner);
     // }
 
-    function createSign(address server, address user, uint256 pr, uint256 nonce, uint256 deadline) public returns (address signer, address server2) {
+    function createSign(
+        address server,
+        address user,
+        uint256 pr,
+        uint256 nonce,
+        uint256 deadline
+    ) public returns (address signer, address server2) {
         server2 = vm.addr(12345);
         bytes32 hash2222 = keccak256(
-            abi.encode(keccak256("Sign(address server,address user,uint256 pr,uint256 nonce,uint256 deadline)"), server, user, pr, nonces[owner]++, deadline)
+            abi.encode(
+                keccak256(
+                    "Sign(address server,address user,uint256 pr,uint256 nonce,uint256 deadline)"
+                ),
+                server,
+                user,
+                pr,
+                nonces[owner]++,
+                deadline
+            )
         );
 
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(12345, hash2222);
@@ -123,7 +184,9 @@ contract Server is Bet, DSTestPlusF {
         // assertEq(server2, signer);
     }
 
-    function validateBets(uint256 boutId) public returns (uint256[] memory picks) {}
+    function validateBets(
+        uint256 boutId
+    ) public returns (uint256[] memory picks) {}
 }
 
 contract BetTest is DSTestPlusF {
@@ -153,10 +216,12 @@ contract BetTest is DSTestPlusF {
         alice2 = new User(bet);
         bob2 = new User(bet);
 
-        dfight = new MockERC20("DegenFighter Token", "DFIGHT", 18);
-        usdc = new MockERC20("USDC Token", "USDC", 6);
-
-        writeTokenBalance(address(bet), address(this), address(dfight), 100 ether);
+        writeTokenBalance(
+            address(bet),
+            address(this),
+            address(dfight),
+            100 ether
+        );
 
         usdc.mint(address(alice2), 100 ether);
         usdc.mint(address(bob2), 100 ether);
@@ -205,7 +270,15 @@ contract BetTest is DSTestPlusF {
         //     abi.encode(keccak256("Sign(address server,address user,uint256 pr,uint256 bout,uint256 nonce,uint256 deadline)"), serverSigner, user, pr, boutNo, nonce, deadline)
         // );
 
-        bytes32 hash = signBet(bet.DOMAIN_SEPARATOR(), serverSigner, alice, pr, boutNo, nonce, deadline);
+        bytes32 hash = signBet(
+            bet.DOMAIN_SEPARATOR(),
+            serverSigner,
+            alice,
+            pr,
+            boutNo,
+            nonce,
+            deadline
+        );
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(serverPk, hash);
         address signer = ecrecover(hash, v, r, s);
         assertEq(serverSigner, signer, "invalid signer");
@@ -216,7 +289,15 @@ contract BetTest is DSTestPlusF {
 
         server.record(boutNo, address(alice), 1 ether, randno);
 
-        hash = signBet(bet.DOMAIN_SEPARATOR(), serverSigner, bob, pr, boutNo, nonce + 1, deadline);
+        hash = signBet(
+            bet.DOMAIN_SEPARATOR(),
+            serverSigner,
+            bob,
+            pr,
+            boutNo,
+            nonce + 1,
+            deadline
+        );
         (v, r, s) = vm.sign(serverPk, hash);
         vm.prank(bob);
         bet.permitBet(boutNo, 1 ether, pr, serverSigner, deadline, v, r, s);
@@ -237,7 +318,12 @@ contract BetTest is DSTestPlusF {
         bet.setTreasury(address(dfTreasury));
 
         uint256 randno1 = 100;
-        (, , uint256 pr) = alice2.placeBet(boutNo, Winner.FighterA, 1 ether, randno1);
+        (, , uint256 pr) = alice2.placeBet(
+            boutNo,
+            Winner.FighterA,
+            1 ether,
+            randno1
+        );
 
         server.record(boutNo, address(alice2), 1 ether, randno1);
 
@@ -267,7 +353,12 @@ contract BetTest is DSTestPlusF {
         bet.setTreasury(address(dfTreasury));
 
         uint256 randno1 = 100;
-        (, , uint256 pr) = alice2.placeBet(boutNo, Winner.FighterA, 1 ether, randno1);
+        (, , uint256 pr) = alice2.placeBet(
+            boutNo,
+            Winner.FighterA,
+            1 ether,
+            randno1
+        );
 
         server.record(boutNo, address(alice2), 1 ether, randno1);
 
@@ -297,7 +388,12 @@ contract BetTest is DSTestPlusF {
         bet.setTreasury(address(dfTreasury));
 
         uint256 randno1 = 100;
-        (, , uint256 pr) = alice2.placeBet(boutNo, Winner.FighterA, 1 ether, randno1);
+        (, , uint256 pr) = alice2.placeBet(
+            boutNo,
+            Winner.FighterA,
+            1 ether,
+            randno1
+        );
 
         server.record(boutNo, address(alice2), 1 ether, randno1);
 

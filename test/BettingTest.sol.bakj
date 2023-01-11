@@ -1,0 +1,24 @@
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.8.17 <0.9;
+
+import { Vm } from "forge-std/Vm.sol";
+import { TestBaseContract } from "./utils/TestBaseContract.sol";
+
+contract Supporters is TestBaseContract {
+    uint fighterAId = 1;
+    uint fighterBId = 2;
+
+    function setUp() {
+        super.setUp();
+    }
+
+    function testCreateBoutBadAuth() public {
+        vm.prank(address(0));
+        vm.expectRevert("Not server");
+        vm.proxy.createBout(fighterAId, fighterBId);
+    }
+
+    function testCreateBout() public {
+        proxy.createBout(fighterAId, fighterBId);
+    }
+}

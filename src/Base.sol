@@ -19,11 +19,29 @@ struct Bout {
     uint numSupporters;
     mapping(uint => address) supporters;
     mapping(address => uint8) hiddenBets;
-    mapping(address => uint8) revealedBets;
+    uint numRevealedBets;
+    mapping(address => BoutParticipant) revealedBets;
     mapping(address => uint) betAmounts;
     mapping(BoutParticipant => uint) fighterIds;
     mapping(BoutParticipant => uint) fighterPots;
     mapping(BoutParticipant => uint) fighterPotBalances;
+    uint totalPot;
+    uint revealTime;
+    uint endTime;
+    BoutParticipant winner;
+    BoutParticipant loser;
+}
+
+/**
+ * @dev Same as Bout, except with mapping fields removed.
+ *
+ * This is used to return Bout data from external calls.
+ */
+struct BoutNonMappingInfo {
+    uint id;
+    BoutState state;
+    uint numSupporters;
+    uint numRevealedBets;
     uint totalPot;
     uint revealTime;
     uint endTime;

@@ -11,7 +11,7 @@ contract SettingsFacet is ISettingsFacet, Modifiers {
         return s.addresses[key];
     }
 
-    function setAddress(bytes32 key, address value) external {
+    function setAddress(bytes32 key, address value) external isAdmin {
         AppStorage storage s = LibAppStorage.diamondStorage();
         s.addresses[key] = value;
     }

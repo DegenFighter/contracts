@@ -5,12 +5,12 @@ import { SafeMath } from "lib/openzeppelin-contracts/contracts/utils/math/SafeMa
 import { ERC2771Context } from "lib/openzeppelin-contracts/contracts/metatx/ERC2771Context.sol";
 
 import { AppStorage, LibAppStorage, Bout, BoutState, BoutParticipant } from "../Base.sol";
-import { ISupportFacet } from "../interfaces/ISupportFacet.sol";
+import { IBettingFacet } from "../interfaces/IBettingFacet.sol";
 import { Modifiers } from "../Modifiers.sol";
 import { LibConstants } from "../libs/LibConstants.sol";
 import { LibEip712 } from "../libs/LibEip712.sol";
 
-contract SupportFacet is ISupportFacet, Modifiers, ERC2771Context {
+contract BettingFacet is IBettingFacet, Modifiers, ERC2771Context {
     using SafeMath for uint;
 
     constructor() ERC2771Context(address(0)) {}
@@ -84,24 +84,30 @@ contract SupportFacet is ISupportFacet, Modifiers, ERC2771Context {
 
         Bout storage bout = s.bouts[boutNum];
 
-        require(bout.state == BoutState.Created, "Bout not in created state");
-        require(bout.revealTime == 0, "Already revealed");
+        require((bout.state == BoutState.Created && bout.numRevealedBets == 0) || (bout.state == BoutState.SupportRevealed && bout.numRevealedBets > 0), "Invalid state");
+        require(bout.numRevealedBets < bout.numSupporters, "Already fully revealed");
+
         bout.state = BoutState.SupportRevealed;
         bout.revealTime = block.timestamp;
 
         // do reveal
-        for (uint i = 0; i < bout.numSupporters; i++) {
+        for (uint i = bout.numRevealedBets; i < bout.numSupporters; i++) {
+            uint rPackedIndex = (i - bout.numRevealedBets) >> 2;
+            if (rPackedIndex >= rPacked.length) {
+                break;
+            }
+            uint8 r = (rPacked[rPackedIndex] >> ((3 - (i % 4)) * 2)) & 3;
             address supporter = bout.supporters[i + 1];
-            uint8 r = (rPacked[i >> 2] >> ((3 - (i % 4)) * 2)) & 3;
             uint8 rawBet = bout.hiddenBets[supporter] - r;
             // default to 0 if invalid
             if (rawBet != 0 && rawBet != 1) {
                 rawBet = 0;
             }
-            bout.revealedBets[supporter] = rawBet;
+            bout.revealedBets[supporter] = (rawBet == 0 ? BoutParticipant.FighterA : BoutParticipant.FighterB);
+            bout.numRevealedBets++;
         }
 
-        emit BetsRevealed(boutNum);
+        emit BetsRevealed(boutNum, bout.numRevealedBets);
     }
 
     function endBout(uint boutNum, BoutParticipant winner) external {
@@ -162,7 +168,7 @@ contract SupportFacet is ISupportFacet, Modifiers, ERC2771Context {
 
         Bout storage bout = s.bouts[boutNum];
 
-        if (uint(bout.winner) == (bout.revealedBets[wallet] + 1)) {
+        if (bout.winner == bout.revealedBets[wallet]) {
             // how much of losing pot do we get?
             uint ratio = (bout.betAmounts[wallet] * 1000 ether) / bout.fighterPots[bout.winner];
             won = (ratio * bout.fighterPots[bout.loser]) / 1000 ether;
