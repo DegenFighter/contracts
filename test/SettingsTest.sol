@@ -2,6 +2,7 @@
 pragma solidity >=0.8.17 <0.9;
 
 import "forge-std/Test.sol";
+import "../src/Errors.sol";
 import { TestBaseContract } from "./utils/TestBaseContract.sol";
 
 contract SettingsTest is TestBaseContract {
@@ -11,7 +12,7 @@ contract SettingsTest is TestBaseContract {
 
     function testSetAddressMustBeDoneByAdmin() public {
         vm.prank(address(0));
-        vm.expectRevert(ERROR_MUST_BE_ADMIN);
+        vm.expectRevert(CallerMustBeAdminError.selector);
         proxy.setAddress("test", address(0));
     }
 

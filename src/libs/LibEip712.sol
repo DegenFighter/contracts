@@ -2,7 +2,7 @@
 pragma solidity >=0.8.17 <0.9;
 
 import { ECDSA } from "lib/openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
-import { AppStorage, LibAppStorage } from "../Base.sol";
+import { AppStorage, LibAppStorage } from "../Objects.sol";
 
 // Based on https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/cryptography/EIP712.sol
 library LibEip712 {

@@ -11,7 +11,7 @@ import { IDiamondLoupe } from "lib/diamond-2-hardhat/contracts/interfaces/IDiamo
 import { IERC165 } from "lib/diamond-2-hardhat/contracts/interfaces/IERC165.sol";
 import { IERC173 } from "lib/diamond-2-hardhat/contracts/interfaces/IERC173.sol";
 import { DiamondInit } from "lib/diamond-2-hardhat/contracts/upgradeInitializers/DiamondInit.sol";
-import { AppStorage, LibAppStorage } from "./Base.sol";
+import { AppStorage, LibAppStorage } from "./Objects.sol";
 import { LibConstants } from "./libs/LibConstants.sol";
 import { LibEip712 } from "./libs/LibEip712.sol";
 

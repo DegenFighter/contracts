@@ -2,20 +2,20 @@
 pragma solidity >=0.8.17 <0.9;
 
 import { SafeMath } from "lib/openzeppelin-contracts/contracts/utils/math/SafeMath.sol";
-import { ERC2771Context } from "lib/openzeppelin-contracts/contracts/metatx/ERC2771Context.sol";
 
-import { AppStorage, LibAppStorage, Bout, BoutState, BoutParticipant } from "../Base.sol";
+import "../Errors.sol";
+import { AppStorage, LibAppStorage, Bout, BoutState, BoutParticipant } from "../Objects.sol";
 import { IBettingFacet } from "../interfaces/IBettingFacet.sol";
-import { Modifiers } from "../Modifiers.sol";
+import { FacetBase } from "../FacetBase.sol";
 import { LibConstants } from "../libs/LibConstants.sol";
 import { LibEip712 } from "../libs/LibEip712.sol";
 
-contract BettingFacet is IBettingFacet, Modifiers, ERC2771Context {
+contract BettingFacet is FacetBase, IBettingFacet {
     using SafeMath for uint;
 
-    constructor() ERC2771Context(address(0)) {}
+    constructor() FacetBase() {}
 
-    function createBout(uint fighterA, uint fighterB) external isServer returns (uint boutNum) {
+    function createBout(uint fighterA, uint fighterB) external isServer {
         AppStorage storage s = LibAppStorage.diamondStorage();
         s.totalBouts++;
         Bout storage bout = s.bouts[s.totalBouts];
@@ -25,21 +25,23 @@ contract BettingFacet is IBettingFacet, Modifiers, ERC2771Context {
         bout.loser = BoutParticipant.Unknown;
         bout.fighterIds[BoutParticipant.FighterA] = fighterA;
         bout.fighterIds[BoutParticipant.FighterB] = fighterB;
+
         emit BoutCreated(s.totalBouts);
-        return s.totalBouts;
     }
 
     function calculateBetSignature(address server, address supporter, uint256 boutNum, uint8 br, uint256 amount, uint256 deadline) public returns (bytes32) {
         return
-            keccak256(
-                abi.encode(
-                    keccak256("calculateBetSignature(address server,address supporter,uint256 boutNum,uint8 br,uint256 amount,uint256 deadline)"),
-                    server,
-                    supporter,
-                    boutNum,
-                    br,
-                    amount,
-                    deadline
+            LibEip712.hashTypedDataV4(
+                keccak256(
+                    abi.encode(
+                        keccak256("calculateBetSignature(address server,address supporter,uint256 boutNum,uint8 br,uint256 amount,uint256 deadline)"),
+                        server,
+                        supporter,
+                        boutNum,
+                        br,
+                        amount,
+                        deadline
+                    )
                 )
             );
     }
@@ -49,34 +51,45 @@ contract BettingFacet is IBettingFacet, Modifiers, ERC2771Context {
 
         Bout storage bout = s.bouts[boutNum];
 
+        if (bout.state == BoutState.Created) {
+            revert BoutInWrongStateError(boutNum, bout.state);
+        }
+
         address server = s.addresses[LibConstants.SERVER_ADDRESS];
+        address supporter = _msgSender();
 
-        address sender = _msgSender();
-
-        bytes32 digest = LibEip712.hashTypedDataV4(calculateBetSignature(server, sender, boutNum, br, amount, deadline));
-
+        // recover signer
+        bytes32 digest = calculateBetSignature(server, supporter, boutNum, br, amount, deadline);
         address signer = LibEip712.recover(digest, signature);
-        require(signer == server, "Not signed by server");
-        require(block.timestamp < deadline, "Signature expired");
-        require(amount >= LibConstants.MIN_SUPPORT_AMOUNT, "Not enough amount");
 
-        require(bout.state == BoutState.Created, "Bout not in created state");
-        require(br != 0, "Invalid B+R");
+        // final checks
+        if (signer != server) {
+            revert SignerMustBeServerError();
+        }
+        if (block.timestamp >= deadline) {
+            revert SignatureExpiredError();
+        }
+        if (amount < LibConstants.MIN_BET_AMOUNT) {
+            revert MinimumBetAmountError(boutNum, supporter, amount);
+        }
+        if (br < 1 || br > 3) {
+            revert InvalidBetTargetError(boutNum, supporter, br);
+        }
 
         // replace old bet?
-        if (bout.hiddenBets[sender] != 0) {
-            bout.totalPot = bout.totalPot.sub(bout.betAmounts[sender]).add(amount);
+        if (bout.hiddenBets[supporter] != 0) {
+            bout.totalPot = bout.totalPot.sub(bout.betAmounts[supporter]).add(amount);
         }
         // new bet?
         else {
             bout.totalPot = bout.totalPot.add(amount);
             bout.numSupporters += 1;
-            bout.supporters[bout.numSupporters] = sender;
+            bout.supporters[bout.numSupporters] = supporter;
         }
-        bout.betAmounts[sender] = amount;
-        bout.hiddenBets[sender] = br;
+        bout.betAmounts[supporter] = amount;
+        bout.hiddenBets[supporter] = br;
 
-        emit BetPlaced(boutNum, sender);
+        emit BetPlaced(boutNum, supporter);
     }
 
     function revealBets(uint boutNum, uint8[] calldata rPacked) external {
@@ -84,8 +97,13 @@ contract BettingFacet is IBettingFacet, Modifiers, ERC2771Context {
 
         Bout storage bout = s.bouts[boutNum];
 
-        require((bout.state == BoutState.Created && bout.numRevealedBets == 0) || (bout.state == BoutState.SupportRevealed && bout.numRevealedBets > 0), "Invalid state");
-        require(bout.numRevealedBets < bout.numSupporters, "Already fully revealed");
+        if (bout.state != BoutState.Created && bout.state != BoutState.SupportRevealed) {
+            revert BoutInWrongStateError(boutNum, bout.state);
+        }
+
+        if (bout.numRevealedBets == bout.numSupporters) {
+            revert BoutAlreadyFullyRevealedError(boutNum);
+        }
 
         bout.state = BoutState.SupportRevealed;
         bout.revealTime = block.timestamp;
@@ -115,9 +133,18 @@ contract BettingFacet is IBettingFacet, Modifiers, ERC2771Context {
 
         Bout storage bout = s.bouts[boutNum];
 
-        require(bout.state == BoutState.SupportRevealed, "Bout not revealed");
-        require(bout.endTime == 0, "Already ended");
-        require(winner == BoutParticipant.FighterA || winner == BoutParticipant.FighterB, "Invalid winner");
+        if (bout.state != BoutState.SupportRevealed) {
+            revert BoutInWrongStateError(boutNum, bout.state);
+        }
+
+        if (bout.endTime != 0) {
+            revert BoutAlreadyEndedError(boutNum);
+        }
+
+        if (winner != BoutParticipant.FighterA && winner != BoutParticipant.FighterB) {
+            revert InvalidWinnerError(boutNum, winner);
+        }
+
         bout.state = BoutState.Ended;
         bout.endTime = block.timestamp;
         bout.winner = winner;

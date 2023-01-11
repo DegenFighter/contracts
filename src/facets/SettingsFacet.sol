@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.17 <0.9;
 
-import { AppStorage, LibAppStorage } from "../Base.sol";
+import { AppStorage, LibAppStorage } from "../Objects.sol";
 import { ISettingsFacet } from "../interfaces/ISettingsFacet.sol";
-import { Modifiers } from "../Modifiers.sol";
+import { FacetBase } from "../FacetBase.sol";
 
-contract SettingsFacet is ISettingsFacet, Modifiers {
+contract SettingsFacet is FacetBase, ISettingsFacet {
+    constructor() FacetBase() {}
+
     function getAddress(bytes32 key) external view returns (address) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         return s.addresses[key];

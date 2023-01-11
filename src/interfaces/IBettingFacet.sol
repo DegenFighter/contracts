@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.17 <0.9;
 
-import { Bout, BoutParticipant } from "../Base.sol";
+import { Bout, BoutParticipant } from "../Objects.sol";
 
 interface IBettingFacet {
     event BoutCreated(uint boutNum);
@@ -9,11 +9,11 @@ interface IBettingFacet {
     event BetsRevealed(uint boutNum, uint numBetsRevealed);
     event BoutEnded(uint boutNum);
 
-    function createBout(uint fighterA, uint fighterB) external returns (uint boutNum);
+    function createBout(uint fighterA, uint fighterB) external;
 
     function calculateBetSignature(address server, address supporter, uint boutNum, uint8 br, uint amount, uint deadline) external returns (bytes32);
 
-    function bet(uint boutNum, uint8 br, uint amount, uint deadline, bytes memory signature) external;
+    function bet(uint boutNum, uint8 br, uint amount, uint deadline, bytes calldata signature) external;
 
     function revealBets(uint boutNum, uint8[] calldata rPacked) external;
 

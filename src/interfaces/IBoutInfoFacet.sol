@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.17 <0.9;
 
-import { BoutNonMappingInfo, BoutParticipant } from "../Base.sol";
+import { BoutNonMappingInfo, BoutParticipant } from "../Objects.sol";
 
 interface IBoutInfoFacet {
     function getTotalBouts() external view returns (uint);

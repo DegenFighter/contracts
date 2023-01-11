@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.17 <0.9;
 
-import { AppStorage, LibAppStorage } from "../Base.sol";
+import { FacetBase } from "../FacetBase.sol";
+import { NotAllowedError } from "../Errors.sol";
+import { AppStorage, LibAppStorage } from "../Objects.sol";
 import { ITokenImplFacet } from "../interfaces/ITokenImplFacet.sol";
 
-contract TokenImplFacet is ITokenImplFacet {
+contract TokenImplFacet is FacetBase, ITokenImplFacet {
+    constructor() FacetBase() {}
+
     function tokenName(uint tokenId) external view returns (string memory) {
         return "Meme";
     }
@@ -28,7 +32,7 @@ contract TokenImplFacet is ITokenImplFacet {
     }
 
     function tokenTransfer(uint tokenId, address to, uint256 amount) external returns (bool) {
-        revert("not allowed");
+        revert NotAllowedError();
     }
 
     function tokenAllowance(uint tokenId, address owner, address spender) external view returns (uint256) {
@@ -36,10 +40,10 @@ contract TokenImplFacet is ITokenImplFacet {
     }
 
     function tokenApprove(uint tokenId, address spender, uint256 amount) external returns (bool) {
-        revert("not allowed");
+        revert NotAllowedError();
     }
 
     function tokenTransferFrom(uint tokenId, address from, address to, uint256 amount) external returns (bool) {
-        revert("not allowed");
+        revert NotAllowedError();
     }
 }

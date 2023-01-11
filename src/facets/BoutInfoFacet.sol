@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.17 <0.9;
 
-import { AppStorage, LibAppStorage, Bout, BoutParticipant, BoutNonMappingInfo } from "../Base.sol";
+import { FacetBase } from "../FacetBase.sol";
+import { AppStorage, LibAppStorage, Bout, BoutParticipant, BoutNonMappingInfo } from "../Objects.sol";
 import { IBoutInfoFacet } from "../interfaces/IBoutInfoFacet.sol";
 
-contract BoutInfoFacet is IBoutInfoFacet {
+contract BoutInfoFacet is FacetBase, IBoutInfoFacet {
+    constructor() FacetBase() {}
+
     function getTotalBouts() external view returns (uint) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         return s.totalBouts;

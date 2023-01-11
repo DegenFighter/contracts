@@ -12,9 +12,12 @@ import { MemeToken } from "../../src/MemeToken.sol";
 contract TestBaseContract is Test {
     using stdStorage for StdStorage;
 
+    bytes internal constant ERROR_CALLER_MUST_BE_ADMIN = "LibDiamond: Must be contract owner";
+
     address internal immutable account0 = address(this);
-    bytes internal constant ERROR_MUST_BE_ADMIN = "LibDiamond: Must be contract owner";
-    bytes internal constant ERROR_MUST_BE_SERVER = "Must be server";
+
+    uint internal constant SERVER_PRIVATE_KEY = 12345;
+    address internal serverAddress;
 
     address internal proxyAddress;
     IProxy internal proxy;
@@ -44,7 +47,8 @@ contract TestBaseContract is Test {
         proxy.setAddress(LibConstants.MEME_TOKEN_ADDRESS, memeTokenAddress);
 
         // set server address
-        proxy.setAddress(LibConstants.SERVER_ADDRESS, account0);
+        serverAddress = vm.addr(SERVER_PRIVATE_KEY);
+        proxy.setAddress(LibConstants.SERVER_ADDRESS, serverAddress);
 
         // set ownership
         proxy.transferOwnership(account0);

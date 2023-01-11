@@ -2,7 +2,7 @@
 pragma solidity >=0.8.17 <0.9;
 
 import "forge-std/Test.sol";
-import { BoutNonMappingInfo, BoutParticipant, BoutState } from "../src/Base.sol";
+import { BoutNonMappingInfo, BoutParticipant, BoutState } from "../src/Objects.sol";
 import { TestBaseContract } from "./utils/TestBaseContract.sol";
 import { LibConstants } from "../src/libs/LibConstants.sol";
 
@@ -30,6 +30,7 @@ contract Supporters is TestBaseContract {
 
         // create and check event
         vm.recordLogs();
+        vm.prank(serverAddress);
         proxy.createBout(fighterAId, fighterBId);
         Vm.Log[] memory entries = vm.getRecordedLogs();
         assertEq(entries[0].topics.length, 1, "Invalid event count");
@@ -50,5 +51,29 @@ contract Supporters is TestBaseContract {
         // check bout fighters
         assertEq(proxy.getBoutFighterId(1, BoutParticipant.FighterA), fighterAId, "fighterAId");
         assertEq(proxy.getBoutFighterId(1, BoutParticipant.FighterB), fighterBId, "fighterBId");
+    }
+
+    function testBetWithInvalidBoutId() public {
+        // create bout
+        testCreateBout();
+
+        vm.expectRevert(ERROR_INVALID_BOUT);
+        proxy.bet(2, 1, 100, 100, new bytes(0));
+
+        vm.expectRevert(ERROR_INVALID_BOUT);
+        proxy.bet(0, 1, 100, 100, new bytes(0));
+    }
+
+    function testBetWithBadSigner() public {
+        // create bout
+        testCreateBout();
+
+        // do signature
+        address signer = vm.addr(123);
+        bytes32 digest = proxy.calculateBetSignature(signer, account0, 1, 1, 100, 100);
+        bytes memory sig = vm.sign(signer, digest);
+
+        vm.expectRevert(ERROR_INVALID_BOUT);
+        proxy.bet(2, 1, 100, 100, sig);
     }
 }
