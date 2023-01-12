@@ -166,16 +166,11 @@ contract BettingTest is TestBaseContract {
         // create bout
         testCreateBout();
 
-        Wallet[] memory players = getPlayers();
-        uint[] memory betAmounts = new uint[](players.length);
+        (Wallet[] memory players, uint[] memory betAmounts, , , , , ) = _getScenario1();
 
         // place bets
         for (uint i = 0; i < players.length; i += 1) {
             Wallet memory player = players[i];
-
-            // increasing bet amounts
-            betAmounts[i] = LibConstants.MIN_BET_AMOUNT * (i + 1);
-
             _bet(player.addr, 1, 1, betAmounts[i]);
         }
 
@@ -312,16 +307,7 @@ contract BettingTest is TestBaseContract {
         // create bout and place bets
         testBetNewBets();
 
-        /*
-        5 players, odd ones will bet for fighterA, even for fighterB
-
-        Thus, 2 bytes with bit pattern:
-
-        01 00 01 00, 01 00 00 00
-        */
-        uint8[] memory rPacked = new uint8[](2);
-        rPacked[0] = 68; // 01000100
-        rPacked[1] = 64; // 01000000
+        (Wallet[] memory players, uint[] memory betAmounts, BoutFighter[] memory betTargets, uint8[] memory rPacked, , , ) = _getScenario1();
 
         vm.prank(server.addr);
         proxy.revealBets(1, 5, rPacked);
@@ -333,17 +319,15 @@ contract BettingTest is TestBaseContract {
         assertEq(bout.numRevealedBets, 5, "num revealed bets (1st call)");
 
         // now let's check the revealed bets
-        assertEq(uint(proxy.getBoutRevealedBet(1, player1.addr)), uint(BoutFighter.FighterA), "revealed bet 1");
-        assertEq(uint(proxy.getBoutRevealedBet(1, player2.addr)), uint(BoutFighter.FighterB), "revealed bet 2");
-        assertEq(uint(proxy.getBoutRevealedBet(1, player3.addr)), uint(BoutFighter.FighterA), "revealed bet 3");
-        assertEq(uint(proxy.getBoutRevealedBet(1, player4.addr)), uint(BoutFighter.FighterB), "revealed bet 4");
-        assertEq(uint(proxy.getBoutRevealedBet(1, player5.addr)), uint(BoutFighter.FighterA), "revealed bet 5");
+        for (uint i = 0; i < players.length; i++) {
+            assertEq(uint(proxy.getBoutRevealedBet(1, players[i].addr)), uint(betTargets[i]), "revealed bet");
+        }
 
         // check the fighter pots
-        uint aPot = proxy.getBoutBetAmount(1, player1.addr) + proxy.getBoutBetAmount(1, player3.addr) + proxy.getBoutBetAmount(1, player5.addr);
+        uint aPot = betAmounts[0] + betAmounts[2] + betAmounts[4];
         assertEq(proxy.getBoutFighterPot(1, BoutFighter.FighterA), aPot, "fighter A pot");
 
-        uint bPot = proxy.getBoutBetAmount(1, player2.addr) + proxy.getBoutBetAmount(1, player4.addr);
+        uint bPot = betAmounts[1] + betAmounts[3];
         assertEq(proxy.getBoutFighterPot(1, BoutFighter.FighterB), bPot, "fighter B pot");
     }
 
@@ -351,29 +335,21 @@ contract BettingTest is TestBaseContract {
         // create bout and place bets
         testBetNewBets();
 
-        /*
-        5 players, odd ones will bet for fighterA, even for fighterB
+        (Wallet[] memory players, uint[] memory betAmounts, BoutFighter[] memory betTargets, uint8[] memory rPacked, , , ) = _getScenario1();
 
-        Thus, 2 bytes with bit pattern:
-
-        01 00 01 00, 01 00 00 00
-
-        We'll do 2 calls, 1 for each byte
-        */
         uint8[] memory rPacked1 = new uint8[](1);
-        rPacked1[0] = 68; // 01 00 01 00
+        rPacked1[0] = rPacked[0];
         uint8[] memory rPacked2 = new uint8[](1);
-        rPacked2[0] = 64; // 01 00 00 00
+        rPacked2[0] = rPacked[1];
 
         // first call
         vm.prank(server.addr);
         proxy.revealBets(1, 4, rPacked1);
 
         assertEq(proxy.getBoutNonMappingInfo(1).numRevealedBets, 4, "num revealed bets (1st call)");
-        assertEq(uint(proxy.getBoutRevealedBet(1, player1.addr)), uint(BoutFighter.FighterA), "revealed bet 1");
-        assertEq(uint(proxy.getBoutRevealedBet(1, player2.addr)), uint(BoutFighter.FighterB), "revealed bet 2");
-        assertEq(uint(proxy.getBoutRevealedBet(1, player3.addr)), uint(BoutFighter.FighterA), "revealed bet 3");
-        assertEq(uint(proxy.getBoutRevealedBet(1, player4.addr)), uint(BoutFighter.FighterB), "revealed bet 4");
+        for (uint i = 0; i < 4; i++) {
+            assertEq(uint(proxy.getBoutRevealedBet(1, players[i].addr)), uint(betTargets[i]), "revealed bet");
+        }
         assertEq(uint(proxy.getBoutRevealedBet(1, player5.addr)), uint(BoutFighter.Unknown), "revealed bet 5");
 
         // 2nd call
@@ -384,10 +360,10 @@ contract BettingTest is TestBaseContract {
         assertEq(uint(proxy.getBoutRevealedBet(1, player5.addr)), uint(BoutFighter.FighterA), "revealed bet 5");
 
         // check the fighter pots
-        uint aPot = proxy.getBoutBetAmount(1, player1.addr) + proxy.getBoutBetAmount(1, player3.addr) + proxy.getBoutBetAmount(1, player5.addr);
+        uint aPot = betAmounts[0] + betAmounts[2] + betAmounts[4];
         assertEq(proxy.getBoutFighterPot(1, BoutFighter.FighterA), aPot, "fighter A pot");
 
-        uint bPot = proxy.getBoutBetAmount(1, player2.addr) + proxy.getBoutBetAmount(1, player4.addr);
+        uint bPot = betAmounts[1] + betAmounts[3];
         assertEq(proxy.getBoutFighterPot(1, BoutFighter.FighterB), bPot, "fighter B pot");
     }
 
@@ -511,15 +487,17 @@ contract BettingTest is TestBaseContract {
         // create bout, place bets, reveal bets
         testRevealBets();
 
+        (, , , , BoutFighter winner, BoutFighter loser, ) = _getScenario1();
+
         vm.prank(server.addr);
-        proxy.endBout(1, BoutFighter.FighterB);
+        proxy.endBout(1, winner);
 
         // check the state
         BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(1);
         assertEq(uint(bout.state), uint(BoutState.Ended), "state");
         assertGt(bout.endTime, 0, "end time");
-        assertEq(uint(bout.winner), uint(BoutFighter.FighterB), "winner");
-        assertEq(uint(bout.loser), uint(BoutFighter.FighterA), "loser");
+        assertEq(uint(bout.winner), uint(winner), "winner");
+        assertEq(uint(bout.loser), uint(loser), "loser");
 
         // check global state
         assertEq(proxy.getEndedBouts(), 1, "ended bouts");
@@ -530,6 +508,22 @@ contract BettingTest is TestBaseContract {
     // Claim winnings
     //
     // ------------------------------------------------------ //
+
+    function _testGetClaimableWinningsSingleBout() public {
+        // create bout, place bets, reveal bets, end bout
+        testEndBout();
+
+        (Wallet[] memory players, , , , , , uint[] memory expectedWinnings) = _getScenario1();
+
+        // check claimable winnings
+        for (uint i = 0; i < players.length; i++) {
+            Wallet memory player = players[i];
+
+            uint winnings = proxy.getClaimableWinnings(player.addr);
+
+            assertEq(winnings, expectedWinnings[i], "winnings");
+        }
+    }
 
     // TODO...
 
@@ -549,5 +543,66 @@ contract BettingTest is TestBaseContract {
 
         vm.prank(supporter);
         proxy.bet(boutNum, br, amount, block.timestamp + 1000, v, r, s);
+    }
+
+    function _getScenario1()
+        internal
+        returns (
+            Wallet[] memory players,
+            uint[] memory betAmounts,
+            BoutFighter[] memory betTargets,
+            uint8[] memory rPacked,
+            BoutFighter winner,
+            BoutFighter loser,
+            uint[] memory expectedWinnings
+        )
+    {
+        players = new Wallet[](5);
+        players[0] = player1;
+        players[1] = player2;
+        players[2] = player3;
+        players[3] = player4;
+        players[4] = player5;
+
+        betAmounts = new uint[](5);
+        uint winningPot;
+        uint losingPot;
+        for (uint i = 0; i < 5; i++) {
+            betAmounts[i] = LibConstants.MIN_BET_AMOUNT * (i + 1);
+            if (i % 2 == 0) {
+                winningPot += betAmounts[i];
+            } else {
+                losingPot += betAmounts[i];
+            }
+        }
+
+        /*
+        5 players, odd ones will bet for fighterA, even for fighterB
+
+        Thus, 2 bytes with bit pattern:
+
+        01 00 01 00, 01 00 00 00
+        */
+
+        betTargets = new BoutFighter[](5);
+        betTargets[0] = BoutFighter.FighterA;
+        betTargets[1] = BoutFighter.FighterB;
+        betTargets[2] = BoutFighter.FighterA;
+        betTargets[3] = BoutFighter.FighterB;
+        betTargets[4] = BoutFighter.FighterA;
+
+        rPacked = new uint8[](2);
+        rPacked[0] = 68; // 01000100
+        rPacked[1] = 64; // 01000000
+
+        winner = BoutFighter.FighterB;
+        loser = BoutFighter.FighterA;
+
+        expectedWinnings = new uint[](5);
+        expectedWinnings[0] = 0;
+        expectedWinnings[1] = betAmounts[1] + ((((betAmounts[1] * 1000 ether) / winningPot) * losingPot) / 1000 ether);
+        expectedWinnings[2] = 0;
+        expectedWinnings[3] = betAmounts[3] + ((((betAmounts[3] * 1000 ether) / winningPot) * losingPot) / 1000 ether);
+        expectedWinnings[4] = 0;
     }
 }
