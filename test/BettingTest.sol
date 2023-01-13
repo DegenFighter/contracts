@@ -790,9 +790,9 @@ contract BettingTest is TestBaseContract {
     //
     // ------------------------------------------------------ //
 
-    function testWhenAllBetsAreOnOneFighter() public {
-        // TODO...
-    }
+    // function testWhenAllBetsAreOnOneFighter() public {
+    //     // TODO...
+    // }
 
     // ------------------------------------------------------ //
     //
