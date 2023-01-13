@@ -24,6 +24,8 @@ interface IInfoFacet {
 
     function getBoutBetAmount(uint boutNum, address supporter) external view returns (uint);
 
+    function getBoutWinningsClaimed(uint boutNum, address supporter) external view returns (bool);
+
     function getBoutFighterId(uint boutNum, BoutFighter p) external view returns (uint);
 
     function getBoutFighterPot(uint boutNum, BoutFighter p) external view returns (uint);

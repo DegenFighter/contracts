@@ -206,6 +206,7 @@ contract BettingFacet is FacetBase, IBettingFacet {
                 Bout storage bout = s.bouts[boutNum];
                 bout.fighterPotBalances[bout.winner] = bout.fighterPotBalances[bout.winner].sub(selfAmount);
                 bout.fighterPotBalances[bout.loser] = bout.fighterPotBalances[bout.loser].sub(won);
+                bout.winningsClaimed[wallet] = true;
                 totalWinnings = totalWinnings.add(total);
             }
 

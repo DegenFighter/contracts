@@ -64,6 +64,12 @@ contract InfoFacet is FacetBase, IInfoFacet {
         return bout.betAmounts[supporter];
     }
 
+    function getBoutWinningsClaimed(uint boutNum, address supporter) external view returns (bool) {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        Bout storage bout = s.bouts[boutNum];
+        return bout.winningsClaimed[supporter];
+    }
+
     function getBoutFighterId(uint boutNum, BoutFighter p) external view returns (uint) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         Bout storage bout = s.bouts[boutNum];

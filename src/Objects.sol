@@ -16,21 +16,22 @@ enum BoutFighter {
 
 struct Bout {
     uint id;
-    BoutState state;
     uint numSupporters;
-    mapping(uint => address) supporters;
-    mapping(address => uint8) hiddenBets;
     uint numRevealedBets;
-    mapping(address => BoutFighter) revealedBets;
-    mapping(address => uint) betAmounts;
-    mapping(BoutFighter => uint) fighterIds;
-    mapping(BoutFighter => uint) fighterPots;
-    mapping(BoutFighter => uint) fighterPotBalances;
     uint totalPot;
     uint revealTime;
     uint endTime;
+    BoutState state;
     BoutFighter winner;
     BoutFighter loser;
+    mapping(uint => address) supporters;
+    mapping(address => uint8) hiddenBets;
+    mapping(address => BoutFighter) revealedBets;
+    mapping(address => uint) betAmounts;
+    mapping(address => bool) winningsClaimed;
+    mapping(BoutFighter => uint) fighterIds;
+    mapping(BoutFighter => uint) fighterPots;
+    mapping(BoutFighter => uint) fighterPotBalances;
 }
 
 /**
