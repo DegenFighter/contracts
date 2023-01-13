@@ -78,6 +78,9 @@ contract BettingFacet is FacetBase, IBettingFacet {
             // add to supporter list
             bout.numSupporters += 1;
             bout.supporters[bout.numSupporters] = supporter;
+            // update user data
+            s.userBoutsSupported[supporter] += 1;
+            s.userBoutsSupportedByIndex[supporter][s.userBoutsSupported[supporter]] = boutNum;
         }
 
         // add to pot
@@ -158,51 +161,7 @@ contract BettingFacet is FacetBase, IBettingFacet {
         emit BoutEnded(boutNum);
     }
 
-    function getClaimableWinnings(address wallet) external view returns (uint) {
-        AppStorage storage s = LibAppStorage.diamondStorage();
-
-        uint winnings = 0;
-
-        for (uint i = s.userBoutsClaimed[wallet] + 1; i <= s.userBoutsSupported[wallet]; i++) {
-            uint boutNum = s.userBoutSupportList[wallet][i];
-            (uint total, , ) = _calculateBoutWinnings(wallet, boutNum);
-            winnings = winnings.add(total);
-        }
-
-        return winnings;
-    }
-
-    function claimWinnings(address wallet, uint maxBoutsToClaim) external {
-        AppStorage storage s = LibAppStorage.diamondStorage();
-
-        uint totalWinnings = 0;
-        uint count = 0;
-
-        for (uint i = s.userBoutsClaimed[wallet] + 1; i <= s.userBoutsSupported[wallet] && count < maxBoutsToClaim; i++) {
-            uint boutNum = s.userBoutSupportList[wallet][i];
-
-            (uint total, uint selfAmount, uint won) = _calculateBoutWinnings(wallet, boutNum);
-
-            if (total > 0) {
-                Bout storage bout = s.bouts[boutNum];
-                bout.fighterPotBalances[bout.winner] = bout.fighterPotBalances[bout.winner].sub(selfAmount);
-                bout.fighterPotBalances[bout.loser] = bout.fighterPotBalances[bout.loser].sub(won);
-                totalWinnings = totalWinnings.add(total);
-            }
-
-            s.userBoutsClaimed[wallet]++;
-            count++;
-        }
-
-        // transfer winnings
-        if (totalWinnings > 0) {
-            LibToken.transfer(LibConstants.TOKEN_MEME, address(this), wallet, totalWinnings);
-        }
-    }
-
-    // Internal methods
-
-    function _calculateBoutWinnings(address wallet, uint boutNum) private view returns (uint total, uint selfAmount, uint won) {
+    function getBoutWinnings(address wallet, uint boutNum) public view returns (uint total, uint selfAmount, uint won) {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
         Bout storage bout = s.bouts[boutNum];
@@ -215,6 +174,48 @@ contract BettingFacet is FacetBase, IBettingFacet {
             selfAmount = bout.betAmounts[wallet];
             // total winnings
             total = selfAmount + won;
+        }
+    }
+
+    function getClaimableWinnings(address wallet) external view returns (uint) {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+
+        uint winnings = 0;
+
+        for (uint i = s.userBoutsWinningsClaimed[wallet] + 1; i <= s.userBoutsSupported[wallet]; i++) {
+            uint boutNum = s.userBoutsSupportedByIndex[wallet][i];
+            (uint total, , ) = getBoutWinnings(wallet, boutNum);
+            winnings = winnings.add(total);
+        }
+
+        return winnings;
+    }
+
+    function claimWinnings(address wallet, uint maxBoutsToClaim) external {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+
+        uint totalWinnings = 0;
+        uint count = 0;
+
+        for (uint i = s.userBoutsWinningsClaimed[wallet] + 1; i <= s.userBoutsSupported[wallet] && count < maxBoutsToClaim; i++) {
+            uint boutNum = s.userBoutsSupportedByIndex[wallet][i];
+
+            (uint total, uint selfAmount, uint won) = getBoutWinnings(wallet, boutNum);
+
+            if (total > 0) {
+                Bout storage bout = s.bouts[boutNum];
+                bout.fighterPotBalances[bout.winner] = bout.fighterPotBalances[bout.winner].sub(selfAmount);
+                bout.fighterPotBalances[bout.loser] = bout.fighterPotBalances[bout.loser].sub(won);
+                totalWinnings = totalWinnings.add(total);
+            }
+
+            s.userBoutsWinningsClaimed[wallet]++;
+            count++;
+        }
+
+        // transfer winnings
+        if (totalWinnings > 0) {
+            LibToken.transfer(LibConstants.TOKEN_MEME, address(this), wallet, totalWinnings);
         }
     }
 }

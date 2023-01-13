@@ -8,6 +8,12 @@ interface IInfoFacet {
 
     function getEndedBouts() external view returns (uint);
 
+    function getUserBoutsWinningsClaimed(address wallet) external view returns (uint);
+
+    function getUserBoutsSupported(address wallet) external view returns (uint);
+
+    function getUserSupportedBoutAtIndex(address wallet, uint index) external view returns (uint);
+
     function getBoutNonMappingInfo(uint boutNum) external view returns (BoutNonMappingInfo memory);
 
     function getBoutSupporter(uint boutNum, uint supporterNum) external view returns (address);

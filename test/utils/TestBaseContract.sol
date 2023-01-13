@@ -64,14 +64,4 @@ contract TestBaseContract is Test {
         // set ownership
         proxy.transferOwnership(account0);
     }
-
-    function getPlayers() internal returns (Wallet[] memory) {
-        Wallet[] memory w = new Wallet[](5);
-        w[0] = player1;
-        w[1] = player2;
-        w[2] = player3;
-        w[3] = player4;
-        w[4] = player5;
-        return w;
-    }
 }

@@ -18,6 +18,21 @@ contract InfoFacet is FacetBase, IInfoFacet {
         return s.endedBouts;
     }
 
+    function getUserBoutsWinningsClaimed(address wallet) external view returns (uint) {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        return s.userBoutsWinningsClaimed[wallet];
+    }
+
+    function getUserBoutsSupported(address wallet) external view returns (uint) {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        return s.userBoutsSupported[wallet];
+    }
+
+    function getUserSupportedBoutAtIndex(address wallet, uint index) external view returns (uint) {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        return s.userBoutsSupportedByIndex[wallet][index];
+    }
+
     function getBoutNonMappingInfo(uint boutNum) external view returns (BoutNonMappingInfo memory) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         Bout storage bout = s.bouts[boutNum];

@@ -19,6 +19,8 @@ interface IBettingFacet {
 
     function endBout(uint boutNum, BoutFighter winner) external;
 
+    function getBoutWinnings(address wallet, uint boutNum) external view returns (uint total, uint selfAmount, uint won);
+
     function getClaimableWinnings(address wallet) external view returns (uint);
 
     function claimWinnings(address wallet, uint maxBoutsToClaim) external;

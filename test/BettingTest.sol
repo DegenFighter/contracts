@@ -187,6 +187,8 @@ contract BettingTest is TestBaseContract {
             assertEq(proxy.getBoutSupporter(1, i), player.addr, "supporter address");
             assertEq(proxy.getBoutHiddenBet(1, player.addr), 1, "supporter hidden bet");
             assertEq(proxy.getBoutBetAmount(1, player.addr), betAmounts[i - 1], "supporter bet amount");
+
+            assertEq(proxy.getUserBoutsSupported(player.addr), 1, "user supported bouts");
         }
 
         // check MEME balances
@@ -211,10 +213,11 @@ contract BettingTest is TestBaseContract {
         assertEq(bout.numSupporters, 1, "no. of supporters");
         assertEq(bout.totalPot, LibConstants.MIN_BET_AMOUNT * 5, "total pot");
 
-        // // check supporter data
+        // check supporter data
         assertEq(proxy.getBoutSupporter(1, 1), player1.addr, "supporter address");
         assertEq(proxy.getBoutHiddenBet(1, player1.addr), 1, "supporter hidden bet");
         assertEq(proxy.getBoutBetAmount(1, player1.addr), bout.totalPot, "supporter bet amount");
+        assertEq(proxy.getUserBoutsSupported(player1.addr), 1, "user supported bouts");
 
         // check MEME balances
         assertEq(memeToken.balanceOf(player1.addr), LibConstants.MIN_BET_AMOUNT * 10, "MEME balance");
@@ -509,7 +512,7 @@ contract BettingTest is TestBaseContract {
     //
     // ------------------------------------------------------ //
 
-    function _testGetClaimableWinningsSingleBout() public {
+    function testGetClaimableWinningsForSingleBout() public {
         // create bout, place bets, reveal bets, end bout
         testEndBout();
 
@@ -547,6 +550,7 @@ contract BettingTest is TestBaseContract {
 
     function _getScenario1()
         internal
+        view
         returns (
             Wallet[] memory players,
             uint[] memory betAmounts,
@@ -570,11 +574,14 @@ contract BettingTest is TestBaseContract {
         for (uint i = 0; i < 5; i++) {
             betAmounts[i] = LibConstants.MIN_BET_AMOUNT * (i + 1);
             if (i % 2 == 0) {
-                winningPot += betAmounts[i];
-            } else {
                 losingPot += betAmounts[i];
+            } else {
+                winningPot += betAmounts[i];
             }
         }
+
+        require(winningPot == LibConstants.MIN_BET_AMOUNT * 6, "winning pot");
+        require(losingPot == LibConstants.MIN_BET_AMOUNT * 9, "losing pot");
 
         /*
         5 players, odd ones will bet for fighterA, even for fighterB

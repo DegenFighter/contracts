@@ -98,9 +98,9 @@ struct AppStorage {
     // wallet => no. of bouts supported
     mapping(address => uint) userBoutsSupported;
     // wallet => no. of bouts where winnings claimed
-    mapping(address => uint) userBoutsClaimed;
+    mapping(address => uint) userBoutsWinningsClaimed;
     // wallet => list of bouts supported
-    mapping(address => mapping(uint => uint)) userBoutSupportList;
+    mapping(address => mapping(uint => uint)) userBoutsSupportedByIndex;
 }
 
 library LibAppStorage {
