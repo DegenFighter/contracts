@@ -34,18 +34,14 @@ contract BettingTest is TestBaseContract {
         proxy.createBout(fighterAId, fighterBId);
     }
 
-    function testCreateBout() public {
+    function testCreateBout() public returns (uint boutNum) {
         assertEq(proxy.getTotalBouts(), 0, "no bouts");
 
-        // create
         vm.prank(server.addr);
         proxy.createBout(fighterAId, fighterBId);
 
-        // check bout count updated
-        assertEq(proxy.getTotalBouts(), 1, "1 bout");
-
         // check basic bout info
-        BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(1);
+        BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(proxy.getTotalBouts());
         assertEq(bout.id, 1, "bout id");
         assertEq(uint(bout.state), uint(BoutState.Created), "created");
         assertEq(uint(bout.winner), uint(BoutFighter.Unknown), "winner not set");
@@ -54,6 +50,9 @@ contract BettingTest is TestBaseContract {
         // check bout fighters
         assertEq(proxy.getBoutFighterId(1, BoutFighter.FighterA), fighterAId, "fighterAId");
         assertEq(proxy.getBoutFighterId(1, BoutFighter.FighterB), fighterBId, "fighterBId");
+
+        // for use in tests which call this test
+        boutNum = bout.id;
     }
 
     function testCreateBoutEmitsEvent() public {
@@ -81,27 +80,27 @@ contract BettingTest is TestBaseContract {
 
     function testBetWithInvalidBoutState() public {
         // create bout
-        testCreateBout();
+        uint boutNum = testCreateBout();
 
         // state: Unknown
-        proxy._testSetBoutState(1, BoutState.Unknown);
+        proxy._testSetBoutState(boutNum, BoutState.Unknown);
         vm.expectRevert(BoutInWrongStateError.selector);
-        proxy.bet(1, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, 1, "0x", "0x");
+        proxy.bet(boutNum, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, 1, "0x", "0x");
 
         // state: BetsRevealed
-        proxy._testSetBoutState(1, BoutState.BetsRevealed);
+        proxy._testSetBoutState(boutNum, BoutState.BetsRevealed);
         vm.expectRevert(BoutInWrongStateError.selector);
-        proxy.bet(1, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, 1, "0x", "0x");
+        proxy.bet(boutNum, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, 1, "0x", "0x");
 
         // state: Ended
-        proxy._testSetBoutState(1, BoutState.Ended);
+        proxy._testSetBoutState(boutNum, BoutState.Ended);
         vm.expectRevert(BoutInWrongStateError.selector);
-        proxy.bet(1, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, 1, "0x", "0x");
+        proxy.bet(boutNum, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, 1, "0x", "0x");
     }
 
     function testBetWithBadSigner() public {
         // create bout
-        testCreateBout();
+        uint boutNum = testCreateBout();
 
         // do signature
         address signer = vm.addr(123);
@@ -109,73 +108,73 @@ contract BettingTest is TestBaseContract {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(123, digest);
 
         vm.expectRevert(SignerMustBeServerError.selector);
-        proxy.bet(1, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, v, r, s);
+        proxy.bet(boutNum, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, v, r, s);
     }
 
     function testBetWithExpiredDeadline() public {
         // create bout
-        testCreateBout();
+        uint boutNum = testCreateBout();
 
         // do signature
         bytes32 digest = proxy.calculateBetSignature(server.addr, account0, 1, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp - 1);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(server.privateKey, digest);
 
         vm.expectRevert(SignatureExpiredError.selector);
-        proxy.bet(1, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp - 1, v, r, s);
+        proxy.bet(boutNum, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp - 1, v, r, s);
     }
 
     function testBetWithInsufficientBetAmount() public {
         // create bout
-        testCreateBout();
+        uint boutNum = testCreateBout();
 
         // do signature
         bytes32 digest = proxy.calculateBetSignature(server.addr, account0, 1, 1, LibConstants.MIN_BET_AMOUNT - 1, block.timestamp + 1000);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(server.privateKey, digest);
 
         vm.expectRevert(MinimumBetAmountError.selector);
-        proxy.bet(1, 1, LibConstants.MIN_BET_AMOUNT - 1, block.timestamp + 1000, v, r, s);
+        proxy.bet(boutNum, 1, LibConstants.MIN_BET_AMOUNT - 1, block.timestamp + 1000, v, r, s);
     }
 
     function testBetWithInvalidBetTarget(uint8 br) public {
         vm.assume(br < 1 || br > 3); // Invalid bet target
 
         // create bout
-        testCreateBout();
+        uint boutNum = testCreateBout();
 
         // do signature
         bytes32 digest = proxy.calculateBetSignature(server.addr, account0, 1, br, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(server.privateKey, digest);
 
         vm.expectRevert(InvalidBetTargetError.selector);
-        proxy.bet(1, br, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, v, r, s);
+        proxy.bet(boutNum, br, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, v, r, s);
     }
 
     function testBetWithInsufficentTokens() public {
         // create bout
-        testCreateBout();
+        uint boutNum = testCreateBout();
 
         // do signature
         bytes32 digest = proxy.calculateBetSignature(server.addr, account0, 1, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(server.privateKey, digest);
 
         vm.expectRevert(TokenBalanceInsufficient.selector);
-        proxy.bet(1, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, v, r, s);
+        proxy.bet(boutNum, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, v, r, s);
     }
 
-    function testBetNewBets() public {
+    function testBetNewBets() public returns (uint boutNum) {
         // create bout
-        testCreateBout();
+        boutNum = testCreateBout();
 
         (Wallet[] memory players, uint[] memory betAmounts, , , , , ) = _getScenario1();
 
         // place bets
         for (uint i = 0; i < players.length; i += 1) {
             Wallet memory player = players[i];
-            _bet(player.addr, 1, 1, betAmounts[i]);
+            _bet(player.addr, boutNum, 1, betAmounts[i]);
         }
 
         // check bout basic state
-        BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(1);
+        BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(boutNum);
         assertEq(uint(bout.state), uint(BoutState.Created), "created");
         assertEq(bout.numSupporters, 5, "no. of supporters");
         assertEq(bout.totalPot, LibConstants.MIN_BET_AMOUNT * 15, "total pot");
@@ -184,9 +183,9 @@ contract BettingTest is TestBaseContract {
         for (uint i = 1; i <= players.length; i += 1) {
             Wallet memory player = players[i - 1];
 
-            assertEq(proxy.getBoutSupporter(1, i), player.addr, "supporter address");
-            assertEq(proxy.getBoutHiddenBet(1, player.addr), 1, "supporter hidden bet");
-            assertEq(proxy.getBoutBetAmount(1, player.addr), betAmounts[i - 1], "supporter bet amount");
+            assertEq(proxy.getBoutSupporter(boutNum, i), player.addr, "supporter address");
+            assertEq(proxy.getBoutHiddenBet(boutNum, player.addr), 1, "supporter hidden bet");
+            assertEq(proxy.getBoutBetAmount(boutNum, player.addr), betAmounts[i - 1], "supporter bet amount");
 
             assertEq(proxy.getUserBoutsSupported(player.addr), 1, "user supported bouts");
         }
@@ -201,23 +200,23 @@ contract BettingTest is TestBaseContract {
 
     function testBetReplaceBets() public {
         // create bout
-        testCreateBout();
+        uint boutNum = testCreateBout();
 
         for (uint i = 1; i <= 5; i += 1) {
-            _bet(player1.addr, 1, 1, LibConstants.MIN_BET_AMOUNT * i);
+            _bet(player1.addr, boutNum, 1, LibConstants.MIN_BET_AMOUNT * i);
         }
 
         // check bout basic state
-        BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(1);
+        BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(boutNum);
         assertEq(uint(bout.state), uint(BoutState.Created), "created");
         assertEq(bout.numSupporters, 1, "no. of supporters");
         assertEq(bout.totalPot, LibConstants.MIN_BET_AMOUNT * 5, "total pot");
 
         // check supporter data
-        assertEq(proxy.getBoutSupporter(1, 1), player1.addr, "supporter address");
-        assertEq(proxy.getBoutHiddenBet(1, player1.addr), 1, "supporter hidden bet");
-        assertEq(proxy.getBoutBetAmount(1, player1.addr), bout.totalPot, "supporter bet amount");
-        assertEq(proxy.getUserBoutsSupported(player1.addr), 1, "user supported bouts");
+        assertEq(proxy.getBoutSupporter(boutNum, 1), player1.addr, "supporter address");
+        assertEq(proxy.getBoutHiddenBet(boutNum, player1.addr), 1, "supporter hidden bet");
+        assertEq(proxy.getBoutBetAmount(boutNum, player1.addr), bout.totalPot, "supporter bet amount");
+        assertEq(proxy.getUserBoutsSupported(player1.addr), boutNum, "user supported bouts");
 
         // check MEME balances
         assertEq(memeToken.balanceOf(player1.addr), LibConstants.MIN_BET_AMOUNT * 10, "MEME balance");
@@ -226,20 +225,20 @@ contract BettingTest is TestBaseContract {
 
     function testBetEmitsEvent() public {
         // create bout
-        testCreateBout();
+        uint boutNum = testCreateBout();
 
         uint amount = LibConstants.MIN_BET_AMOUNT;
 
         vm.recordLogs();
 
-        _bet(player1.addr, 1, 1, amount);
+        _bet(player1.addr, boutNum, 1, amount);
 
         // check logs
         Vm.Log[] memory entries = vm.getRecordedLogs();
         assertEq(entries[0].topics.length, 1, "Invalid event count");
         assertEq(entries[0].topics[0], keccak256("BetPlaced(uint256,address)"));
-        (uint boutNum, address supporter) = abi.decode(entries[0].data, (uint256, address));
-        assertEq(boutNum, 1, "boutNum incorrect");
+        (uint eBoutNum, address supporter) = abi.decode(entries[0].data, (uint256, address));
+        assertEq(eBoutNum, boutNum, "boutNum incorrect");
         assertEq(supporter, player1.addr, "supporter incorrect");
     }
 
@@ -251,7 +250,7 @@ contract BettingTest is TestBaseContract {
 
     function testRevealBetsMustBeDoneByServer() public {
         // create bout and place bets
-        testBetNewBets();
+        uint boutNum = testBetNewBets();
 
         address dummyServer = vm.addr(123);
 
@@ -259,84 +258,86 @@ contract BettingTest is TestBaseContract {
 
         vm.prank(dummyServer);
         vm.expectRevert(CallerMustBeServerError.selector);
-        proxy.revealBets(1, 0, rPacked);
+        proxy.revealBets(boutNum, 0, rPacked);
 
         proxy.setAddress(LibConstants.SERVER_ADDRESS, dummyServer);
 
         vm.prank(dummyServer);
-        proxy.revealBets(1, 0, rPacked);
+        proxy.revealBets(boutNum, 0, rPacked);
     }
 
     function testRevealBetsInWrongState() public {
         // create bout and place bets
-        testBetNewBets();
+        uint boutNum = testBetNewBets();
 
         uint8[] memory rPacked = new uint8[](0);
 
         // state: Unknown
-        proxy._testSetBoutState(1, BoutState.Unknown);
+        proxy._testSetBoutState(boutNum, BoutState.Unknown);
         vm.prank(server.addr);
         vm.expectRevert(BoutInWrongStateError.selector);
-        proxy.revealBets(1, 0, rPacked);
+        proxy.revealBets(boutNum, 0, rPacked);
 
         // state: Ended
-        proxy._testSetBoutState(1, BoutState.Ended);
+        proxy._testSetBoutState(boutNum, BoutState.Ended);
         vm.prank(server.addr);
         vm.expectRevert(BoutInWrongStateError.selector);
-        proxy.revealBets(1, 0, rPacked);
+        proxy.revealBets(boutNum, 0, rPacked);
     }
 
     function testRevealBetsEmitsEvent() public {
         // create bout and place bets
-        testBetNewBets();
+        uint boutNum = testBetNewBets();
 
         uint8[] memory rPacked = new uint8[](2);
 
         vm.recordLogs();
 
         vm.prank(server.addr);
-        proxy.revealBets(1, 3, rPacked);
+        proxy.revealBets(boutNum, 3, rPacked);
 
         // check logs
         Vm.Log[] memory entries = vm.getRecordedLogs();
         assertEq(entries[0].topics.length, 1, "Invalid event count");
         assertEq(entries[0].topics[0], keccak256("BetsRevealed(uint256,uint256)"));
-        (uint boutNum, uint count) = abi.decode(entries[0].data, (uint, uint));
-        assertEq(boutNum, 1, "boutNum incorrect");
+        (uint eBoutNum, uint count) = abi.decode(entries[0].data, (uint, uint));
+        assertEq(eBoutNum, boutNum, "boutNum incorrect");
         assertEq(count, 3, "count incorrect");
     }
 
-    function testRevealBets() public {
+    function testRevealBets() public returns (uint boutNum) {
         // create bout and place bets
-        testBetNewBets();
+        boutNum = testBetNewBets();
 
         (Wallet[] memory players, uint[] memory betAmounts, BoutFighter[] memory betTargets, uint8[] memory rPacked, , , ) = _getScenario1();
 
         vm.prank(server.addr);
-        proxy.revealBets(1, 5, rPacked);
+        proxy.revealBets(boutNum, 5, rPacked);
 
         // num of revealed bets
-        BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(1);
+        BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(boutNum);
         assertEq(uint(bout.state), uint(BoutState.BetsRevealed), "state");
         assertGt(bout.revealTime, 0, "reveal time");
         assertEq(bout.numRevealedBets, 5, "num revealed bets (1st call)");
 
         // now let's check the revealed bets
         for (uint i = 0; i < players.length; i++) {
-            assertEq(uint(proxy.getBoutRevealedBet(1, players[i].addr)), uint(betTargets[i]), "revealed bet");
+            assertEq(uint(proxy.getBoutRevealedBet(boutNum, players[i].addr)), uint(betTargets[i]), "revealed bet");
         }
 
         // check the fighter pots
         uint aPot = betAmounts[0] + betAmounts[2] + betAmounts[4];
-        assertEq(proxy.getBoutFighterPot(1, BoutFighter.FighterA), aPot, "fighter A pot");
+        assertEq(proxy.getBoutFighterPot(boutNum, BoutFighter.FighterA), aPot, "fighter A pot");
+        assertEq(proxy.getBoutFighterPotBalance(boutNum, BoutFighter.FighterA), aPot, "fighter A pot balance");
 
         uint bPot = betAmounts[1] + betAmounts[3];
-        assertEq(proxy.getBoutFighterPot(1, BoutFighter.FighterB), bPot, "fighter B pot");
+        assertEq(proxy.getBoutFighterPot(boutNum, BoutFighter.FighterB), bPot, "fighter B pot");
+        assertEq(proxy.getBoutFighterPotBalance(boutNum, BoutFighter.FighterB), bPot, "fighter B pot balance");
     }
 
     function testRevealBetsWithMultipleCalls() public {
         // create bout and place bets
-        testBetNewBets();
+        uint boutNum = testBetNewBets();
 
         (Wallet[] memory players, uint[] memory betAmounts, BoutFighter[] memory betTargets, uint8[] memory rPacked, , , ) = _getScenario1();
 
@@ -347,32 +348,32 @@ contract BettingTest is TestBaseContract {
 
         // first call
         vm.prank(server.addr);
-        proxy.revealBets(1, 4, rPacked1);
+        proxy.revealBets(boutNum, 4, rPacked1);
 
-        assertEq(proxy.getBoutNonMappingInfo(1).numRevealedBets, 4, "num revealed bets (1st call)");
+        assertEq(proxy.getBoutNonMappingInfo(boutNum).numRevealedBets, 4, "num revealed bets (1st call)");
         for (uint i = 0; i < 4; i++) {
-            assertEq(uint(proxy.getBoutRevealedBet(1, players[i].addr)), uint(betTargets[i]), "revealed bet");
+            assertEq(uint(proxy.getBoutRevealedBet(boutNum, players[i].addr)), uint(betTargets[i]), "revealed bet");
         }
-        assertEq(uint(proxy.getBoutRevealedBet(1, player5.addr)), uint(BoutFighter.Unknown), "revealed bet 5");
+        assertEq(uint(proxy.getBoutRevealedBet(boutNum, player5.addr)), uint(BoutFighter.Unknown), "revealed bet 5");
 
         // 2nd call
         vm.prank(server.addr);
-        proxy.revealBets(1, 1, rPacked2);
+        proxy.revealBets(boutNum, 1, rPacked2);
 
-        assertEq(proxy.getBoutNonMappingInfo(1).numRevealedBets, 5, "num revealed bets (2nd call)");
-        assertEq(uint(proxy.getBoutRevealedBet(1, player5.addr)), uint(BoutFighter.FighterA), "revealed bet 5");
+        assertEq(proxy.getBoutNonMappingInfo(boutNum).numRevealedBets, 5, "num revealed bets (2nd call)");
+        assertEq(uint(proxy.getBoutRevealedBet(boutNum, player5.addr)), uint(BoutFighter.FighterA), "revealed bet 5");
 
         // check the fighter pots
         uint aPot = betAmounts[0] + betAmounts[2] + betAmounts[4];
-        assertEq(proxy.getBoutFighterPot(1, BoutFighter.FighterA), aPot, "fighter A pot");
+        assertEq(proxy.getBoutFighterPot(boutNum, BoutFighter.FighterA), aPot, "fighter A pot");
 
         uint bPot = betAmounts[1] + betAmounts[3];
-        assertEq(proxy.getBoutFighterPot(1, BoutFighter.FighterB), bPot, "fighter B pot");
+        assertEq(proxy.getBoutFighterPot(boutNum, BoutFighter.FighterB), bPot, "fighter B pot");
     }
 
     function testRevealBetsWithBadRValues() public {
         // create bout and place bets
-        testBetNewBets();
+        uint boutNum = testBetNewBets();
 
         /*
         Since B+R = 1, we'll use 2 and 3 here to cause an underflow. 
@@ -385,31 +386,31 @@ contract BettingTest is TestBaseContract {
         rPacked[1] = 192; // 11 00 00 00
 
         vm.prank(server.addr);
-        proxy.revealBets(1, 5, rPacked);
+        proxy.revealBets(boutNum, 5, rPacked);
 
         // now let's check the revealed bets
-        assertEq(uint(proxy.getBoutRevealedBet(1, player1.addr)), uint(BoutFighter.FighterA), "revealed bet 1");
-        assertEq(uint(proxy.getBoutRevealedBet(1, player2.addr)), uint(BoutFighter.FighterA), "revealed bet 2");
-        assertEq(uint(proxy.getBoutRevealedBet(1, player3.addr)), uint(BoutFighter.FighterA), "revealed bet 3");
-        assertEq(uint(proxy.getBoutRevealedBet(1, player4.addr)), uint(BoutFighter.FighterA), "revealed bet 4");
-        assertEq(uint(proxy.getBoutRevealedBet(1, player5.addr)), uint(BoutFighter.FighterA), "revealed bet 5");
+        assertEq(uint(proxy.getBoutRevealedBet(boutNum, player1.addr)), uint(BoutFighter.FighterA), "revealed bet 1");
+        assertEq(uint(proxy.getBoutRevealedBet(boutNum, player2.addr)), uint(BoutFighter.FighterA), "revealed bet 2");
+        assertEq(uint(proxy.getBoutRevealedBet(boutNum, player3.addr)), uint(BoutFighter.FighterA), "revealed bet 3");
+        assertEq(uint(proxy.getBoutRevealedBet(boutNum, player4.addr)), uint(BoutFighter.FighterA), "revealed bet 4");
+        assertEq(uint(proxy.getBoutRevealedBet(boutNum, player5.addr)), uint(BoutFighter.FighterA), "revealed bet 5");
 
         // check the fighter pots
-        assertEq(proxy.getBoutFighterPot(1, BoutFighter.FighterA), proxy.getBoutNonMappingInfo(1).totalPot, "fighter A pot");
-        assertEq(proxy.getBoutFighterPot(1, BoutFighter.FighterB), 0, "fighter B pot");
+        assertEq(proxy.getBoutFighterPot(boutNum, BoutFighter.FighterA), proxy.getBoutNonMappingInfo(boutNum).totalPot, "fighter A pot");
+        assertEq(proxy.getBoutFighterPot(boutNum, BoutFighter.FighterB), 0, "fighter B pot");
     }
 
     function testRevealBetsWhenAlreadyFullyRevealed() public {
         // create bout and place bets
-        testBetNewBets();
+        uint boutNum = testBetNewBets();
 
         vm.startPrank(server.addr);
 
         uint8[] memory rPacked = new uint8[](2);
-        proxy.revealBets(1, 5, rPacked);
+        proxy.revealBets(boutNum, 5, rPacked);
 
         vm.expectRevert(BoutAlreadyFullyRevealedError.selector);
-        proxy.revealBets(1, 1, rPacked);
+        proxy.revealBets(boutNum, 1, rPacked);
 
         vm.stopPrank();
     }
@@ -422,88 +423,88 @@ contract BettingTest is TestBaseContract {
 
     function testEndBoutMustBeDoneByServer() public {
         // create bout, place bets, reveal bets
-        testRevealBets();
+        uint boutNum = testRevealBets();
 
         address dummyServer = vm.addr(123);
 
         vm.prank(dummyServer);
         vm.expectRevert(CallerMustBeServerError.selector);
-        proxy.endBout(1, BoutFighter.FighterA);
+        proxy.endBout(boutNum, BoutFighter.FighterA);
 
         proxy.setAddress(LibConstants.SERVER_ADDRESS, dummyServer);
 
         vm.prank(dummyServer);
-        proxy.endBout(1, BoutFighter.FighterA);
+        proxy.endBout(boutNum, BoutFighter.FighterA);
     }
 
     function testEndBoutEmitsEvent() public {
         // create bout, place bets, reveal bets
-        testRevealBets();
+        uint boutNum = testRevealBets();
 
         vm.recordLogs();
 
         vm.prank(server.addr);
-        proxy.endBout(1, BoutFighter.FighterA);
+        proxy.endBout(boutNum, BoutFighter.FighterA);
 
         // check logs
         Vm.Log[] memory entries = vm.getRecordedLogs();
         assertEq(entries[0].topics.length, 1, "Invalid event count");
         assertEq(entries[0].topics[0], keccak256("BoutEnded(uint256)"));
-        uint boutNum = abi.decode(entries[0].data, (uint));
-        assertEq(boutNum, 1, "boutNum incorrect");
+        uint eBoutNum = abi.decode(entries[0].data, (uint));
+        assertEq(eBoutNum, boutNum, "boutNum incorrect");
     }
 
     function testEndBoutWithInvalidState() public {
         // create bout, place bets, reveal bets
-        testRevealBets();
+        uint boutNum = testRevealBets();
 
         vm.startPrank(server.addr);
 
         // state: Unknown
-        proxy._testSetBoutState(1, BoutState.Unknown);
+        proxy._testSetBoutState(boutNum, BoutState.Unknown);
         vm.expectRevert(BoutInWrongStateError.selector);
-        proxy.endBout(1, BoutFighter.FighterA);
+        proxy.endBout(boutNum, BoutFighter.FighterA);
 
         // state: Created
-        proxy._testSetBoutState(1, BoutState.Created);
+        proxy._testSetBoutState(boutNum, BoutState.Created);
         vm.expectRevert(BoutInWrongStateError.selector);
-        proxy.endBout(1, BoutFighter.FighterA);
+        proxy.endBout(boutNum, BoutFighter.FighterA);
 
         // state: Ended
-        proxy._testSetBoutState(1, BoutState.Ended);
+        proxy._testSetBoutState(boutNum, BoutState.Ended);
         vm.expectRevert(BoutInWrongStateError.selector);
-        proxy.endBout(1, BoutFighter.FighterA);
+        proxy.endBout(boutNum, BoutFighter.FighterA);
 
         vm.stopPrank();
     }
 
     function testEndBoutWithInvalidWinner() public {
         // create bout, place bets, reveal bets
-        testRevealBets();
+        uint boutNum = testRevealBets();
 
         vm.prank(server.addr);
         vm.expectRevert(InvalidWinnerError.selector);
-        proxy.endBout(1, BoutFighter.Unknown);
+        proxy.endBout(boutNum, BoutFighter.Unknown);
     }
 
-    function testEndBout() public {
+    function testEndBout() public returns (uint boutNum) {
         // create bout, place bets, reveal bets
-        testRevealBets();
+        boutNum = testRevealBets();
 
         (, , , , BoutFighter winner, BoutFighter loser, ) = _getScenario1();
 
         vm.prank(server.addr);
-        proxy.endBout(1, winner);
+        proxy.endBout(boutNum, winner);
 
         // check the state
-        BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(1);
+        BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(boutNum);
         assertEq(uint(bout.state), uint(BoutState.Ended), "state");
         assertGt(bout.endTime, 0, "end time");
         assertEq(uint(bout.winner), uint(winner), "winner");
         assertEq(uint(bout.loser), uint(loser), "loser");
 
         // check global state
-        assertEq(proxy.getEndedBouts(), 1, "ended bouts");
+        assertEq(proxy.getEndedBouts(), boutNum, "ended bouts");
     }
 
     // ------------------------------------------------------ //
@@ -528,7 +529,83 @@ contract BettingTest is TestBaseContract {
         }
     }
 
-    // TODO...
+    struct ClaimWinningsLoopValues {
+        uint winnerPotPrevBalance;
+        uint loserPotPrevBalance;
+        uint winnerPotPostBalance;
+        uint loserPotPostBalance;
+        uint proxyMemeTokenBalance;
+        uint total;
+        uint selfAmount;
+        uint won;
+    }
+
+    function testClaimWinningsForSingleBout() public {
+        // create bout, place bets, reveal bets, end bout
+        uint boutNum = testEndBout();
+
+        (
+            Wallet[] memory players,
+            uint[] memory betAmounts,
+            BoutFighter[] memory betTargets,
+            ,
+            BoutFighter winner,
+            BoutFighter loser,
+            uint[] memory expectedWinnings
+        ) = _getScenario1();
+
+        ClaimWinningsLoopValues memory v;
+        Wallet memory player;
+
+        // check claimable winnings
+        for (uint i = 0; i < players.length; i++) {
+            player = players[i];
+
+            // get fighter pot balances
+            v.winnerPotPrevBalance = proxy.getBoutFighterPotBalance(boutNum, winner);
+            v.loserPotPrevBalance = proxy.getBoutFighterPotBalance(boutNum, loser);
+
+            // get meme token balance of proxy
+            v.proxyMemeTokenBalance = memeToken.balanceOf(proxyAddress);
+
+            // get bout winnings for this player
+            (v.total, v.selfAmount, v.won) = proxy.getBoutWinnings(boutNum, player.addr);
+
+            // make claim
+            proxy.claimWinnings(player.addr, 1);
+
+            // check fighter pot balances
+            v.winnerPotPostBalance = proxy.getBoutFighterPotBalance(boutNum, winner);
+            v.loserPotPostBalance = proxy.getBoutFighterPotBalance(boutNum, loser);
+            if (betTargets[i] == winner) {
+                assertEq(v.winnerPotPostBalance, v.winnerPotPrevBalance - v.selfAmount);
+                assertEq(v.loserPotPostBalance, v.loserPotPrevBalance - v.won);
+            } else {
+                assertEq(v.winnerPotPostBalance, v.winnerPotPrevBalance);
+                assertEq(v.loserPotPostBalance, v.loserPotPrevBalance);
+            }
+
+            // check bout winnings claimed status
+            assertEq(proxy.getBoutWinningsClaimed(boutNum, player.addr), true, "bout winnings claimed");
+
+            // check that tokens were transferred
+            assertEq(memeToken.balanceOf(player.addr), v.total, "total winnings");
+            assertEq(memeToken.balanceOf(proxyAddress), v.proxyMemeTokenBalance - v.total, "proxy meme token balance");
+
+            // check that there no more winnings to claim for this player
+            assertEq(proxy.getClaimableWinnings(player.addr), 0, "all winnings claimed");
+        }
+    }
+
+    // ------------------------------------------------------ //
+    //
+    // Edge cases
+    //
+    // ------------------------------------------------------ //
+
+    function testWhenAllBetsAreOnOneFighter() public {
+        // TODO...
+    }
 
     // ------------------------------------------------------ //
     //

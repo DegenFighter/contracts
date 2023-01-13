@@ -41,12 +41,12 @@ struct Bout {
  */
 struct BoutNonMappingInfo {
     uint id;
-    BoutState state;
     uint numSupporters;
     uint numRevealedBets;
     uint totalPot;
     uint revealTime;
     uint endTime;
+    BoutState state;
     BoutFighter winner;
     BoutFighter loser;
 }
