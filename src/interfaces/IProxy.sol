@@ -9,5 +9,6 @@ import { ITokenImplFacet } from "./ITokenImplFacet.sol";
 import { ISettingsFacet } from "./ISettingsFacet.sol";
 import { IBettingFacet } from "./IBettingFacet.sol";
 import { IInfoFacet } from "./IInfoFacet.sol";
+import { IMemeMarketFacet } from "./IMemeMarketFacet.sol";
 
-interface IProxy is IERC173, IERC165, IDiamondCut, IDiamondLoupe, ITokenImplFacet, ISettingsFacet, IBettingFacet, IInfoFacet {}
+interface IProxy is IERC173, IERC165, IDiamondCut, IDiamondLoupe, ITokenImplFacet, ISettingsFacet, IBettingFacet, IInfoFacet, IMemeMarketFacet {}
