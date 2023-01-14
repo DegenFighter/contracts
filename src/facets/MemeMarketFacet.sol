@@ -10,41 +10,46 @@ import { LibConstants } from "../libs/LibConstants.sol";
 import { LibToken } from "src/libs/LibToken.sol";
 import { LibERC20 } from "src/erc20/LibERC20.sol";
 import { LibUniswapV3Twap } from "src/libs/LibUniswapV3Twap.sol";
-
-address constant WMATIC_POLYGON_ADDRESS = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
-address constant TREASURY_ADDRESS = address(0xDFDFDFDF);
+import { FixedPoint96 } from "@uniswap/v3-core/contracts/libraries/FixedPoint96.sol";
 
 contract MemeMarketFacet is FacetBase {
     constructor() FacetBase() {}
 
-    function buyMeme(MemeBuySize size) external {
-        address uniswapV3Pool = 0xA374094527e1673A86dE625aa59517c5dE346d32; //wmatic-usdc fee=500
-        uint32 twapInterval = 4800; // todo adjust this value
-        uint160 sqrtPriceX96 = LibUniswapV3Twap.getSqrtTwapX96(uniswapV3Pool, twapInterval);
+    function buyMeme(MemeBuySize size) external returns (uint160 sqrtPriceX96, uint256 priceX96, uint256 amount, uint256 buyAmount) {
+        // address uniswapV3Pool = 0xA374094527e1673A86dE625aa59517c5dE346d32; //wmatic-usdc fee=500
+        address uniswapV3Pool = 0x9B08288C3Be4F62bbf8d1C20Ac9C5e6f9467d8B7; //wmatic-usdt fee=500
+        uint32 twapInterval = 0; // todo adjust this value
+        sqrtPriceX96 = LibUniswapV3Twap.getSqrtTwapX96(uniswapV3Pool, twapInterval);
 
-        uint256 priceX96 = LibUniswapV3Twap.getPriceX96FromSqrtPriceX96(sqrtPriceX96);
+        priceX96 = LibUniswapV3Twap.getPriceX96FromSqrtPriceX96(sqrtPriceX96);
+
         // get price of matic
         // amount of matic needed to purchase 1000 meme
 
-        uint256 amount;
+        amount;
 
-        uint256 buyAmount;
+        buyAmount;
 
         if (size == MemeBuySize.Five) {
             buyAmount = 1_000 ether;
-            amount = 5 ether / priceX96; //todo fix
+            amount = (priceX96 * 5e30) / FixedPoint96.Q96;
         } else if (size == MemeBuySize.Ten) {
             buyAmount = 2_500 ether;
+            amount = (priceX96 * 10e30) / FixedPoint96.Q96;
         } else if (size == MemeBuySize.Twenty) {
             buyAmount = 6_000 ether;
+            amount = (priceX96 * 20e30) / FixedPoint96.Q96;
         } else if (size == MemeBuySize.Fifty) {
             buyAmount = 20_000 ether;
+            amount = (priceX96 * 50e30) / FixedPoint96.Q96;
         } else if (size == MemeBuySize.Hundred) {
             buyAmount = 50_000 ether;
+            amount = (priceX96 * 100e30) / FixedPoint96.Q96;
         }
 
         // first, transfer wmatic to treasury
-        LibERC20.transfer(WMATIC_POLYGON_ADDRESS, TREASURY_ADDRESS, amount);
+        LibERC20.transferFrom(LibConstants.WMATIC_POLYGON_ADDRESS, msg.sender, LibConstants.TREASURY_ADDRESS, amount);
+        // LibERC20.transferFrom(LibConstants.WMATIC_POLYGON_ADDRESS, msg.sender, address(this), amount);
 
         LibToken.mint(LibConstants.TOKEN_MEME, msg.sender, buyAmount);
     }
