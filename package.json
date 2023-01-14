@@ -15,7 +15,6 @@
     "Ramesh Nair <ram@hiddentao.com>"
   ],
   "license": "MIT",
-  "private": true,
   "devDependencies": {
     "chalk": "^4.1.2",
     "dotenv": "^16.0.1",
