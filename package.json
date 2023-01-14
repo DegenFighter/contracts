@@ -1,10 +1,19 @@
 {
-  "name": "@degenfighter/betting-contracts",
+  "name": "@degenfighter/contracts",
   "version": "1.0.0",
-  "description": "Betting contracts for DegenFighter",
+  "description": "Contracts for DegenFighter",
   "main": "index.js",
-  "repository": "https://github.com/DegenFighter/betting-platform.git",
-  "author": "Kevin Park <kevin@fruitful.gg>",
+  "files": [
+    "index.js",
+    "out/IProxy.sol/**",
+    "out/IERC20.sol/**",
+    "out/IERC173.sol/**"
+  ],
+  "repository": "https://github.com/DegenFighter/contracts.git",
+  "contributors": [
+    "Kevin Park <kevin@fruitful.gg>",
+    "Ramesh Nair <ram@hiddentao.com>"
+  ],
   "license": "MIT",
   "private": true,
   "devDependencies": {
