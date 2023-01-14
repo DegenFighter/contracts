@@ -7,8 +7,16 @@
     "index.js",
     "out/IProxy.sol/**",
     "out/IERC20.sol/**",
-    "out/IERC173.sol/**"
+    "out/IERC173.sol/**",
+    "README.md",
+    "package.json",
+    "package-lock.json",
+    "CHANGELOG.md",
+    "LICENSE.md"
   ],
+  "scripts": {
+    "prepare": "husky install"
+  },
   "repository": "https://github.com/DegenFighter/contracts.git",
   "contributors": [
     "Kevin Park <kevin@fruitful.gg>",
@@ -16,6 +24,11 @@
   ],
   "license": "MIT",
   "devDependencies": {
+    "@commitlint/cli": "^16.2.3",
+    "@commitlint/config-conventional": "^16.2.1",
+    "@semantic-release/changelog": "^6.0.1",
+    "@semantic-release/exec": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
     "chalk": "^4.1.2",
     "dotenv": "^16.0.1",
     "eslint": "^8.18.0",
@@ -28,15 +41,25 @@
     "ethereum-waffle": "^3.4.4",
     "ethers": "^5.6.9",
     "glob": "^8.0.3",
+    "husky": "^7.0.4",
     "prettier": "^2.7.1",
     "prettier-plugin-solidity": "^1.0.0-beta.19",
     "solc": "^0.8.16",
     "solhint": "^3.3.7",
     "solidity-coverage": "^0.7.21",
-    "solidity-docgen": "^0.5.17"
-  },
-  "dependencies": {
+    "solidity-docgen": "^0.5.17",
+    "standard-version": "^9.3.2",
     "yarn": "^1.22.19"
+  },
+  "husky": {
+    "hooks": {
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
   },
   "standard-version": {
     "types": [
