@@ -18,6 +18,7 @@ artifacts
 # Foundry files
 forge-artifacts
 out
+broadcast/
 
 # Project specific
 .staging
@@ -38,6 +39,3 @@ bin/
 .idea/runConfigurations.xml
 .idea/vcs.xml
 
-broadcast/**/31337/*
-
-broadcast/**/dry-run
