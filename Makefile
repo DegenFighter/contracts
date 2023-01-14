@@ -101,3 +101,7 @@ deploy-local: ## deploy Bet contract to local node with sender 0xf39Fd6e51aad88F
 
 anvil-proxy: ## start anvil and deploy Bet contract
 	anvil && make deploy-proxy
+
+
+release:
+	yarn standard-version && git push --follow-tags

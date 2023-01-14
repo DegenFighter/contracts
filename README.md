@@ -38,3 +38,9 @@ The contact addresses will be output as follows:
   Address[memeToken]:  0x238213078DbD09f2D15F4c14c02300FA1b2A81BB
   Address[multicall]:  0xd85BdcdaE4db1FAEB8eF93331525FE68D7C8B3f0
 ```
+
+## Publish NPM package
+
+Run `make release`. This will update the NPM version, the `CHANGELOG` and trigger Github Actions to publish a new NPM package.
+
+The current package is always available at: https://github.com/DegenFighter/contracts/pkgs/npm/contracts
