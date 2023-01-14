@@ -1,6 +1,6 @@
-# betting-platform
+# DegenFighter contracts
 
-The EVM smart contract betting platform for DegenFighter.
+The EVM smart contracts for DegenFighter.
 
 ## Development
 
