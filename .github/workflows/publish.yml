@@ -18,7 +18,7 @@ jobs:
       packages: write
     timeout-minutes: 15
     container:
-      image: ghcr.io/nayms/contracts-builder:latest
+      image: ghcr.io/degenfighter/contracts-builder:latest
     steps:
       - uses: actions/checkout@v3
         with:
