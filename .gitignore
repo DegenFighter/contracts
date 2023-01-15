@@ -39,3 +39,5 @@ bin/
 .idea/runConfigurations.xml
 .idea/vcs.xml
 
+# Typescript output
+dist/

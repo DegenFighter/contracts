@@ -2,9 +2,10 @@
   "name": "@degenfighter/contracts",
   "version": "1.1.0",
   "description": "Contracts for DegenFighter",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "files": [
-    "index.js",
+    "dist",
     "out/IProxy.sol/**",
     "out/IERC20.sol/**",
     "out/IERC173.sol/**",
@@ -49,6 +50,8 @@
     "solidity-coverage": "^0.7.21",
     "solidity-docgen": "^0.5.17",
     "standard-version": "^9.3.2",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.9.4",
     "yarn": "^1.22.19"
   },
   "husky": {
@@ -96,5 +99,8 @@
         "hidden": true
       }
     ]
+  },
+  "dependencies": {
+    "@ethersproject/contracts": "^5.7.0"
   }
 }

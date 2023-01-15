@@ -3,7 +3,6 @@ src = 'src'
 out = 'out'
 libs = ['lib']
 fs_permissions = [
-    { access = "read-write", path = "./deployedAddresses.json" },
     { access = "read", path = "./forge-artifacts/" },
     { access = "read", path = "./broadcast/" },
 ]
