@@ -14,7 +14,7 @@ enum BoutFighter {
     FighterB
 }
 
-enum MemeBuySize {
+enum MemeBuySizeDollars {
     Five,
     Ten,
     Twenty,
