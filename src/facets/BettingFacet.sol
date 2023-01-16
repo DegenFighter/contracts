@@ -27,7 +27,7 @@ contract BettingFacet is FacetBase, IBettingFacet {
         bout.fighterIds[BoutFighter.FighterA] = fighterA;
         bout.fighterIds[BoutFighter.FighterB] = fighterB;
 
-        emit BoutCreated(s.totalBouts);
+        emit BoutCreated(bout.id);
     }
 
     function calculateBetSignature(address server, address supporter, uint256 boutNum, uint8 br, uint256 amount, uint256 deadline) public returns (bytes32) {
