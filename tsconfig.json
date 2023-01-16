@@ -11,6 +11,6 @@
     "outDir": "dist"
   },
   "include": [
-    "src/index.ts"
+    "script/generated/index.ts"
   ]
 }

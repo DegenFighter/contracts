@@ -6,9 +6,7 @@
   "types": "dist/index.d.ts",
   "files": [
     "dist",
-    "out/IProxy.sol/**",
-    "out/IERC20.sol/**",
-    "out/IERC173.sol/**",
+    "out",
     "README.md",
     "package.json",
     "package-lock.json",

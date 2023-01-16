@@ -33,7 +33,7 @@ prep-build:
 	node ./script/prep-build.js
 
 build: ## forge build
-	forge build --names --sizes && yarn tsc
+	forge build --names --sizes && node ./script/write-index.js && yarn tsc
 
 b: build
 
