@@ -68,7 +68,7 @@ enum FacetAddressIndex {
 library LibGeneratedFacetHelpers {
   function getFacetNames() internal pure returns (string[] memory facetNames) {
     facetNames = new string[](${facetNames.length});
-    ${facetNames.map((n, i) => `facetNames[${i}] = "${n}";`).join("\n    ")}
+    ${facetNames.map((n, i) => `facetNames[uint256(FacetAddressIndex.${n})] = "${n}";`).join("\n    ")}
   }
 
   function createDiamondFunctionsCut(address[] memory facetAddresses) internal pure returns (IDiamondCut.FacetCut[] memory cut) {
