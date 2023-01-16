@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.2](https://github.com/DegenFighter/contracts/compare/v1.1.1...v1.1.2) (2023-01-16)
+
+
+### Bug Fixes
+
+* import error ([f4a0521](https://github.com/DegenFighter/contracts/commit/f4a05213765d9101a00cd1a7a335c23ed6cf0ce8))
+
 ### [1.1.1](https://github.com/DegenFighter/contracts/compare/v1.1.0...v1.1.1) (2023-01-15)
 
 ## 1.1.0 (2023-01-14)
