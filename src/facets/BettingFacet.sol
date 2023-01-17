@@ -103,10 +103,6 @@ contract BettingFacet is FacetBase, IBettingFacet {
             revert BoutInWrongStateError();
         }
 
-        if (bout.numRevealedBets == bout.numSupporters) {
-            revert BoutAlreadyFullyRevealedError();
-        }
-
         uint count;
 
         // do reveal

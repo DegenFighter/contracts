@@ -409,8 +409,10 @@ contract BettingTest is TestBaseContract {
         uint8[] memory rPacked = new uint8[](2);
         proxy.revealBets(boutNum, 5, rPacked);
 
-        vm.expectRevert(BoutAlreadyFullyRevealedError.selector);
+        // doing again should do nothing
         proxy.revealBets(boutNum, 1, rPacked);
+
+        assertEq(proxy.getBoutNonMappingInfo(boutNum).numRevealedBets, 5, "num revealed bets");
 
         vm.stopPrank();
     }
