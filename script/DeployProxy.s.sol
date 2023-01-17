@@ -18,10 +18,10 @@ contract DeployProxy is Script {
     function setUp() public {}
 
     function run() public {
-        vm.broadcast();
+        vm.startBroadcast();
 
         // deploy proxy
-        address proxyAddress = address(new Proxy(address(this)));
+        address proxyAddress = address(new Proxy(msg.sender));
         console.log("Address[proxy]: ", proxyAddress);
         LibGeneratedFacetHelpers.deployAndCutFacets(proxyAddress);
 
@@ -35,12 +35,11 @@ contract DeployProxy is Script {
         // set server address
         proxy.setAddress(LibConstants.SERVER_ADDRESS, msg.sender);
 
-        // set ownership
-        proxy.transferOwnership(msg.sender);
-
         // deploy multicall
         address multicallAddress = deployBytecode(MULTICALL);
         console.log("Address[multicall]: ", multicallAddress);
+
+        vm.stopBroadcast();
     }
 
     function deployBytecode(bytes memory bytecode) internal returns (address) {
