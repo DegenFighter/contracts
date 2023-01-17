@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.4](https://github.com/DegenFighter/contracts/compare/v1.1.3...v1.1.4) (2023-01-17)
+
+
+### Bug Fixes
+
+* facets were not being deployed properly ([a666a8f](https://github.com/DegenFighter/contracts/commit/a666a8f3bd93b2d7b07a3db6c84241509a5a0154))
+
 ### [1.1.3](https://github.com/DegenFighter/contracts/compare/v1.1.2...v1.1.3) (2023-01-16)
 
 ### [1.1.2](https://github.com/DegenFighter/contracts/compare/v1.1.1...v1.1.2) (2023-01-16)
