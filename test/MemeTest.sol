@@ -22,19 +22,35 @@ contract MemeTest is TestBaseContract {
         super.setUp();
     }
 
+    function testBuyMemeWithInsufficientWMatic() public {
+        proxy.setAddress(LibConstants.TREASURY_ADDRESS, address(proxy));
+
+        IERC20 wmatic = IERC20(LibConstants.WMATIC_POLYGON_ADDRESS);
+
+        vm.expectRevert();
+        proxy.buyMeme(MemeBuySizeDollars.Five);
+    }
+
     function testPurchaseMeme() public {
         proxy.setAddress(LibConstants.TREASURY_ADDRESS, address(proxy));
         writeTokenBalance(address(this), address(proxy), LibConstants.WMATIC_POLYGON_ADDRESS, 10000e18);
 
         IERC20 wmatic = IERC20(LibConstants.WMATIC_POLYGON_ADDRESS);
 
-        wmatic.balanceOf(address(this));
+        uint256 prevBal = wmatic.balanceOf(address(this));
         proxy.buyMeme(MemeBuySizeDollars.Five);
 
+        uint256 newBal = wmatic.balanceOf(address(this));
+        console2.log("new balance", newBal);
         assertEq(memeToken.balanceOf(address(this)), 1000 ether);
-        // proxy.buyMeme(MemeBuySizeDollars.Ten);
-        // proxy.buyMeme(MemeBuySizeDollars.Twenty);
-        // proxy.buyMeme(MemeBuySizeDollars.Fifty);
-        // proxy.buyMeme(MemeBuySizeDollars.Hundred);
+
+        uint256 balProxy = wmatic.balanceOf(address(proxy));
+        assertEq(newBal + balProxy, prevBal, "wmatic balances are not correct");
+
+        // todo add more checks
+        proxy.buyMeme(MemeBuySizeDollars.Ten);
+        proxy.buyMeme(MemeBuySizeDollars.Twenty);
+        proxy.buyMeme(MemeBuySizeDollars.Fifty);
+        proxy.buyMeme(MemeBuySizeDollars.Hundred);
     }
 }
