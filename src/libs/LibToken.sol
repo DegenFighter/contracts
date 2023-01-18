@@ -35,8 +35,8 @@ library LibToken {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
         unchecked {
-            s.tokenBalances[tokenId][wallet] - amount;
-            s.tokenSupply[tokenId] - amount;
+            s.tokenBalances[tokenId][wallet] -= amount;
+            s.tokenSupply[tokenId] -= amount;
         }
         emit Transfer(wallet, address(0), amount);
     }

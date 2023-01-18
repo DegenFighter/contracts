@@ -30,6 +30,11 @@ contract ItemsTest is TestBaseContract {
     function testBuyItem() public {
         proxy.createItem(LibTokenIds.BROADCAST_MSG, 100e18);
 
-        proxy.buyItem(LibTokenIds.BROADCAST_MSG, 1);
+        uint256 amount = 10;
+        uint256 memeBal = proxy.tokenBalanceOf(LibTokenIds.TOKEN_MEME, address(this));
+        proxy.buyItem(LibTokenIds.BROADCAST_MSG, amount);
+
+        assertEq(proxy.tokenBalanceOf(LibTokenIds.BROADCAST_MSG, address(this)), amount);
+        assertEq(proxy.tokenBalanceOf(LibTokenIds.TOKEN_MEME, address(this)), memeBal - amount * 100e18);
     }
 }
