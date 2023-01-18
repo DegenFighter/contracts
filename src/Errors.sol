@@ -10,14 +10,10 @@ error CallerMustBeServerError();
 error SignerMustBeServerError();
 error SignatureExpiredError();
 
-/*
-TODO: I haven't yet figured out how to encode the error and parameters 
-in test code in order to check the revert bytes, so for now we'll omit 
-parameters from error.
- */
-error BoutInWrongStateError(); //uint boutNum, BoutState state);
-error MinimumBetAmountError(); //uint boutNum, address supporter, uint amount);
-error InvalidBetTargetError(); //uint boutNum, address supporter, uint8 br);
-error InvalidWinnerError(); //uint boutNum, BoutFighter winner);
+error BoutInWrongStateError(uint boutNum, BoutState state);
+error MinimumBetAmountError(uint boutNum, address supporter, uint amount);
+error InvalidBetTargetError(uint boutNum, address supporter, uint8 br);
+error BoutAlreadyFullyRevealedError(uint boutNum);
+error InvalidWinnerError(uint boutNum, BoutFighter winner);
 
-error TokenBalanceInsufficient();
+error TokenBalanceInsufficient(uint256 userBalance, uint256 amount);

@@ -12,7 +12,7 @@ library LibToken {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
         if (amount > s.tokenBalances[tokenId][from]) {
-            revert TokenBalanceInsufficient();
+            revert TokenBalanceInsufficient(s.tokenBalances[tokenId][from], amount);
         }
 
         if (from != to) {

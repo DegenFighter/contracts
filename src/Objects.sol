@@ -14,6 +14,14 @@ enum BoutFighter {
     FighterB
 }
 
+enum MemeBuySizeDollars {
+    Five,
+    Ten,
+    Twenty,
+    Fifty,
+    Hundred
+}
+
 struct Bout {
     uint id;
     uint numSupporters;

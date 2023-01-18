@@ -84,17 +84,17 @@ contract BettingTest is TestBaseContract {
 
         // state: Unknown
         proxy._testSetBoutState(boutNum, BoutState.Unknown);
-        vm.expectRevert(BoutInWrongStateError.selector);
+        vm.expectRevert(abi.encodePacked(BoutInWrongStateError.selector, uint256(1), uint256(BoutState.Unknown)));
         proxy.bet(boutNum, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, 1, "0x", "0x");
 
         // state: BetsRevealed
         proxy._testSetBoutState(boutNum, BoutState.BetsRevealed);
-        vm.expectRevert(BoutInWrongStateError.selector);
+        vm.expectRevert(abi.encodePacked(BoutInWrongStateError.selector, uint256(1), uint256(BoutState.BetsRevealed)));
         proxy.bet(boutNum, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, 1, "0x", "0x");
 
         // state: Ended
         proxy._testSetBoutState(boutNum, BoutState.Ended);
-        vm.expectRevert(BoutInWrongStateError.selector);
+        vm.expectRevert(abi.encodePacked(BoutInWrongStateError.selector, uint256(1), uint256(BoutState.Ended)));
         proxy.bet(boutNum, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, 1, "0x", "0x");
     }
 
@@ -131,7 +131,7 @@ contract BettingTest is TestBaseContract {
         bytes32 digest = proxy.calculateBetSignature(server.addr, account0, 1, 1, LibConstants.MIN_BET_AMOUNT - 1, block.timestamp + 1000);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(server.privateKey, digest);
 
-        vm.expectRevert(MinimumBetAmountError.selector);
+        vm.expectRevert(abi.encodeWithSignature("MinimumBetAmountError(uint256,address,uint256)", 1, address(this), LibConstants.MIN_BET_AMOUNT - 1));
         proxy.bet(boutNum, 1, LibConstants.MIN_BET_AMOUNT - 1, block.timestamp + 1000, v, r, s);
     }
 
@@ -145,7 +145,7 @@ contract BettingTest is TestBaseContract {
         bytes32 digest = proxy.calculateBetSignature(server.addr, account0, 1, br, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(server.privateKey, digest);
 
-        vm.expectRevert(InvalidBetTargetError.selector);
+        vm.expectRevert(abi.encodeWithSelector(InvalidBetTargetError.selector, 1, address(this), br));
         proxy.bet(boutNum, br, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, v, r, s);
     }
 
@@ -157,8 +157,17 @@ contract BettingTest is TestBaseContract {
         bytes32 digest = proxy.calculateBetSignature(server.addr, account0, 1, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(server.privateKey, digest);
 
-        vm.expectRevert(TokenBalanceInsufficient.selector);
+        uint256 userBalance = proxy.tokenBalanceOf(LibConstants.TOKEN_MEME, address(this));
+        uint256 proxyBalance = proxy.tokenBalanceOf(LibConstants.TOKEN_MEME, address(proxy));
+
         proxy.bet(boutNum, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, v, r, s);
+
+        assertEq(proxy.tokenBalanceOf(LibConstants.TOKEN_MEME, address(this)), 0, "supporter balance should be 0");
+        assertEq(
+            proxy.tokenBalanceOf(LibConstants.TOKEN_MEME, address(proxy)),
+            proxyBalance + LibConstants.MIN_BET_AMOUNT,
+            "proxy balance should have increased by the min bet amount"
+        );
     }
 
     function testBetNewBets() public returns (uint boutNum) {
@@ -275,13 +284,13 @@ contract BettingTest is TestBaseContract {
         // state: Unknown
         proxy._testSetBoutState(boutNum, BoutState.Unknown);
         vm.prank(server.addr);
-        vm.expectRevert(BoutInWrongStateError.selector);
+        vm.expectRevert(abi.encodeWithSelector(BoutInWrongStateError.selector, 1, BoutState.Unknown));
         proxy.revealBets(boutNum, 0, rPacked);
 
         // state: Ended
         proxy._testSetBoutState(boutNum, BoutState.Ended);
         vm.prank(server.addr);
-        vm.expectRevert(BoutInWrongStateError.selector);
+        vm.expectRevert(abi.encodeWithSelector(BoutInWrongStateError.selector, 1, BoutState.Ended));
         proxy.revealBets(boutNum, 0, rPacked);
     }
 
@@ -464,17 +473,17 @@ contract BettingTest is TestBaseContract {
 
         // state: Unknown
         proxy._testSetBoutState(boutNum, BoutState.Unknown);
-        vm.expectRevert(BoutInWrongStateError.selector);
+        vm.expectRevert(abi.encodeWithSelector(BoutInWrongStateError.selector, 1, BoutState.Unknown));
         proxy.endBout(boutNum, BoutFighter.FighterA);
 
         // state: Created
         proxy._testSetBoutState(boutNum, BoutState.Created);
-        vm.expectRevert(BoutInWrongStateError.selector);
+        vm.expectRevert(abi.encodeWithSelector(BoutInWrongStateError.selector, 1, BoutState.Created));
         proxy.endBout(boutNum, BoutFighter.FighterA);
 
         // state: Ended
         proxy._testSetBoutState(boutNum, BoutState.Ended);
-        vm.expectRevert(BoutInWrongStateError.selector);
+        vm.expectRevert(abi.encodeWithSelector(BoutInWrongStateError.selector, 1, BoutState.Ended));
         proxy.endBout(boutNum, BoutFighter.FighterA);
 
         vm.stopPrank();
@@ -485,7 +494,7 @@ contract BettingTest is TestBaseContract {
         uint boutNum = testRevealBets();
 
         vm.prank(server.addr);
-        vm.expectRevert(InvalidWinnerError.selector);
+        vm.expectRevert(abi.encodeWithSelector(InvalidWinnerError.selector, 1, BoutFighter.Unknown));
         proxy.endBout(boutNum, BoutFighter.Unknown);
     }
 

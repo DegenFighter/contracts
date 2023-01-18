@@ -43,7 +43,7 @@ contract BettingFacet is FacetBase, IBettingFacet {
         Bout storage bout = s.bouts[boutNum];
 
         if (bout.state != BoutState.Created) {
-            revert BoutInWrongStateError();
+            revert BoutInWrongStateError(boutNum, bout.state);
         }
 
         address server = s.addresses[LibConstants.SERVER_ADDRESS];
@@ -61,10 +61,10 @@ contract BettingFacet is FacetBase, IBettingFacet {
             revert SignatureExpiredError();
         }
         if (amount < LibConstants.MIN_BET_AMOUNT) {
-            revert MinimumBetAmountError();
+            revert MinimumBetAmountError(boutNum, supporter, amount);
         }
         if (br < 1 || br > 3) {
-            revert InvalidBetTargetError();
+            revert InvalidBetTargetError(boutNum, supporter, br);
         }
 
         // replace old bet?
@@ -89,7 +89,16 @@ contract BettingFacet is FacetBase, IBettingFacet {
         bout.hiddenBets[supporter] = br;
 
         // transfer bet
-        LibToken.transfer(LibConstants.TOKEN_MEME, supporter, address(this), amount);
+
+        uint256 supporterBalance = s.tokenBalances[LibConstants.TOKEN_MEME][supporter];
+        // if supporter has less than the min bet amount, then mint them enough to make a min bet
+        if (supporterBalance < LibConstants.MIN_BET_AMOUNT) {
+            LibToken.mint(LibConstants.TOKEN_MEME, supporter, LibConstants.MIN_BET_AMOUNT - supporterBalance);
+
+            LibToken.transfer(LibConstants.TOKEN_MEME, supporter, address(this), LibConstants.MIN_BET_AMOUNT);
+        } else {
+            LibToken.transfer(LibConstants.TOKEN_MEME, supporter, address(this), amount);
+        }
 
         emit BetPlaced(boutNum, supporter);
     }
@@ -100,7 +109,11 @@ contract BettingFacet is FacetBase, IBettingFacet {
         Bout storage bout = s.bouts[boutNum];
 
         if (bout.state != BoutState.Created && bout.state != BoutState.BetsRevealed) {
-            revert BoutInWrongStateError();
+            revert BoutInWrongStateError(boutNum, bout.state);
+        }
+
+        if (bout.numRevealedBets == bout.numSupporters) {
+            revert BoutAlreadyFullyRevealedError(boutNum);
         }
 
         uint count;
@@ -142,11 +155,11 @@ contract BettingFacet is FacetBase, IBettingFacet {
         Bout storage bout = s.bouts[boutNum];
 
         if (bout.state != BoutState.BetsRevealed) {
-            revert BoutInWrongStateError();
+            revert BoutInWrongStateError(boutNum, bout.state);
         }
 
         if (winner != BoutFighter.FighterA && winner != BoutFighter.FighterB) {
-            revert InvalidWinnerError();
+            revert InvalidWinnerError(boutNum, winner);
         }
 
         bout.state = BoutState.Ended;
