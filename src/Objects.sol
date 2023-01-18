@@ -70,6 +70,7 @@ struct EIP712 {
 }
 
 struct AppStorage {
+    bool diamondInitialized;
     ///
     /// EIP712
     ///

@@ -100,5 +100,36 @@ deploy-local: ## deploy contracts to local node with sender 0xf39Fd6e51aad88F6F4
 		--broadcast \
 		-vvvv 
 
+# Deployment defaults
+facetsToCutIn="[]"
+newDiamond=false
+initNewDiamond=false
+facetAction=1
+senderAddress=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+
+deploy-polygon: ## deploy contracts to polygon with sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+	@forge script SmartDeploy \
+		-s "smartDeploy(bool, bool, uint8, string[] memory)" ${newDiamond} ${initNewDiamond} ${facetAction} ${facetsToCutIn} \
+		-f ${ALCHEMY_ETH_GOERLI_RPC_URL} \
+		--chain-id 5 \
+		--etherscan-api-key ${ETHERSCAN_API_KEY} \
+		--sender ${senderAddress} \
+		--private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
+		-vv \
+		--ffi \
+		--broadcast \
+		--verify --delay 30 --retries 10
+
+deploy-sim: ## simulate smart deploy to polygon
+	forge script SmartDeploy \
+		-s "smartDeploy(bool, bool, uint8, string[] memory)" ${newDiamond} ${initNewDiamond} ${facetAction} ${facetsToCutIn} \
+		-f ${ALCHEMY_POLYGON_RPC_URL} \
+		--chain-id 137 \
+		--etherscan-api-key ${ETHERSCAN_API_KEY} \
+		--sender ${senderAddress} \
+		--private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
+		-vv \
+		--ffi
+
 release: build
 	yarn standard-version && git push --follow-tags
