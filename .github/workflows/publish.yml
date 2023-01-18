@@ -1,0 +1,38 @@
+name: Publish to Github Packages
+
+on:
+  push:
+    tags:
+      - v*
+
+# on:
+#   release:
+#     types: [created]
+
+jobs:
+  publish:
+    name: Publish npm package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    timeout-minutes: 15
+    container:
+      image: ghcr.io/degenfighter/contracts-builder:latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"
+          registry-url: "https://npm.pkg.github.com"
+      - run: echo "/root/.cargo/bin:/root/.foundry/bin" >> $GITHUB_PATH
+      - run: svm install 0.8.17 && svm use 0.8.17
+      - run: forge install
+      - run: npm i
+      - run: make prep-build
+      - run: make build
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

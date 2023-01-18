@@ -17,6 +17,7 @@ import { LibEip712 } from "./libs/LibEip712.sol";
 
 contract Proxy is Diamond {
     constructor(address _contractOwner) payable Diamond(_contractOwner, address(new DiamondCutFacet())) {
+        // add core facets
         _initCoreFacets();
 
         // setup ERC165 data
@@ -40,18 +41,18 @@ contract Proxy is Diamond {
         IDiamondCut.FacetCut[] memory cut = new IDiamondCut.FacetCut[](2);
 
         address _diamondLoupeFacet = address(new DiamondLoupeFacet());
-        bytes4[] memory functionSelectors = new bytes4[](4);
-        functionSelectors[0] = IDiamondLoupe.facets.selector;
-        functionSelectors[1] = IDiamondLoupe.facetFunctionSelectors.selector;
-        functionSelectors[2] = IDiamondLoupe.facetAddresses.selector;
-        functionSelectors[3] = IDiamondLoupe.facetAddress.selector;
-        cut[0] = IDiamondCut.FacetCut({ facetAddress: _diamondLoupeFacet, action: IDiamondCut.FacetCutAction.Add, functionSelectors: functionSelectors });
+        bytes4[] memory f1 = new bytes4[](4);
+        f1[0] = IDiamondLoupe.facets.selector;
+        f1[1] = IDiamondLoupe.facetFunctionSelectors.selector;
+        f1[2] = IDiamondLoupe.facetAddresses.selector;
+        f1[3] = IDiamondLoupe.facetAddress.selector;
+        cut[0] = IDiamondCut.FacetCut({ facetAddress: _diamondLoupeFacet, action: IDiamondCut.FacetCutAction.Add, functionSelectors: f1 });
 
         address _ownershipFacet = address(new OwnershipFacet());
-        functionSelectors = new bytes4[](2);
-        functionSelectors[0] = IERC173.owner.selector;
-        functionSelectors[1] = IERC173.transferOwnership.selector;
-        cut[1] = IDiamondCut.FacetCut({ facetAddress: _ownershipFacet, action: IDiamondCut.FacetCutAction.Add, functionSelectors: functionSelectors });
+        bytes4[] memory f2 = new bytes4[](2);
+        f2[0] = IERC173.owner.selector;
+        f2[1] = IERC173.transferOwnership.selector;
+        cut[1] = IDiamondCut.FacetCut({ facetAddress: _ownershipFacet, action: IDiamondCut.FacetCutAction.Add, functionSelectors: f2 });
 
         LibDiamond.diamondCut(cut, address(0), "");
     }

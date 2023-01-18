@@ -27,7 +27,7 @@ contract BettingFacet is FacetBase, IBettingFacet {
         bout.fighterIds[BoutFighter.FighterA] = fighterA;
         bout.fighterIds[BoutFighter.FighterB] = fighterB;
 
-        emit BoutCreated(s.totalBouts);
+        emit BoutCreated(bout.id);
     }
 
     function calculateBetSignature(address server, address supporter, uint256 boutNum, uint8 br, uint256 amount, uint256 deadline) public returns (bytes32) {
@@ -136,6 +136,7 @@ contract BettingFacet is FacetBase, IBettingFacet {
             bout.revealedBets[supporter] = (rawBet == 0 ? BoutFighter.FighterA : BoutFighter.FighterB);
             BoutFighter fighter = bout.revealedBets[supporter];
             bout.fighterPots[fighter] = bout.fighterPots[fighter].add(bout.betAmounts[supporter]);
+            bout.fighterPotBalances[fighter] = bout.fighterPotBalances[fighter].add(bout.betAmounts[supporter]);
 
             // count
             bout.numRevealedBets++;
@@ -170,7 +171,7 @@ contract BettingFacet is FacetBase, IBettingFacet {
         emit BoutEnded(boutNum);
     }
 
-    function getBoutWinnings(address wallet, uint boutNum) public view returns (uint total, uint selfAmount, uint won) {
+    function getBoutWinnings(uint boutNum, address wallet) public view returns (uint total, uint selfAmount, uint won) {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
         Bout storage bout = s.bouts[boutNum];
@@ -193,7 +194,7 @@ contract BettingFacet is FacetBase, IBettingFacet {
 
         for (uint i = s.userBoutsWinningsClaimed[wallet] + 1; i <= s.userBoutsSupported[wallet]; i++) {
             uint boutNum = s.userBoutsSupportedByIndex[wallet][i];
-            (uint total, , ) = getBoutWinnings(wallet, boutNum);
+            (uint total, , ) = getBoutWinnings(boutNum, wallet);
             winnings = winnings.add(total);
         }
 
@@ -209,13 +210,15 @@ contract BettingFacet is FacetBase, IBettingFacet {
         for (uint i = s.userBoutsWinningsClaimed[wallet] + 1; i <= s.userBoutsSupported[wallet] && count < maxBoutsToClaim; i++) {
             uint boutNum = s.userBoutsSupportedByIndex[wallet][i];
 
-            (uint total, uint selfAmount, uint won) = getBoutWinnings(wallet, boutNum);
+            (uint total, uint selfAmount, uint won) = getBoutWinnings(boutNum, wallet);
+
+            Bout storage bout = s.bouts[boutNum];
+
+            bout.winningsClaimed[wallet] = true;
 
             if (total > 0) {
-                Bout storage bout = s.bouts[boutNum];
                 bout.fighterPotBalances[bout.winner] = bout.fighterPotBalances[bout.winner].sub(selfAmount);
                 bout.fighterPotBalances[bout.loser] = bout.fighterPotBalances[bout.loser].sub(won);
-                bout.winningsClaimed[wallet] = true;
                 totalWinnings = totalWinnings.add(total);
             }
 

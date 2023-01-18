@@ -33,7 +33,8 @@ prep-build:
 	node ./script/prep-build.js
 
 build: ## forge build
-	forge build --names --sizes
+	forge build --names --sizes && node ./script/write-index.js && yarn tsc
+
 b: build
 
 bscript: ## build forge scripts
@@ -91,7 +92,7 @@ lcov-fork: ## coverage report (lcov) for mainnet fork
 anvil-fork: ## fork goerli locally with anvil
 	anvil -f ${ALCHEMY_ETH_GOERLI_RPC_URL}
 
-deploy-local: ## deploy Bet contract to local node with sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+deploy-local: ## deploy contracts to local node with sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 	forge script DeployProxy \
 		-f http:\\127.0.0.1:8545 \
 		--sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 \
@@ -99,5 +100,5 @@ deploy-local: ## deploy Bet contract to local node with sender 0xf39Fd6e51aad88F
 		--broadcast \
 		-vvvv 
 
-anvil-proxy: ## start anvil and deploy Bet contract
-	anvil && make deploy-proxy
+release: build
+	yarn standard-version && git push --follow-tags
