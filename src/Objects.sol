@@ -110,6 +110,8 @@ struct AppStorage {
     mapping(address => uint) userBoutsWinningsClaimed;
     // wallet => list of bouts supported
     mapping(address => mapping(uint => uint)) userBoutsSupportedByIndex;
+    // tokenId => is this an item being sold by DegenFighter?
+    mapping(uint256 => bool) itemForSale;
 }
 
 library LibAppStorage {
