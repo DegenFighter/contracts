@@ -8,6 +8,8 @@ import { SafeMath } from "lib/openzeppelin-contracts/contracts/utils/math/SafeMa
 library LibToken {
     using SafeMath for uint;
 
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
     function transfer(uint tokenId, address from, address to, uint amount) internal {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
@@ -25,5 +27,17 @@ library LibToken {
         AppStorage storage s = LibAppStorage.diamondStorage();
         s.tokenBalances[tokenId][wallet] = s.tokenBalances[tokenId][wallet].add(amount);
         s.tokenSupply[tokenId] = s.tokenSupply[tokenId].add(amount);
+
+        emit Transfer(address(0), wallet, amount);
+    }
+
+    function burn(uint tokenId, address wallet, uint amount) internal {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+
+        unchecked {
+            s.tokenBalances[tokenId][wallet] - amount;
+            s.tokenSupply[tokenId] - amount;
+        }
+        emit Transfer(wallet, address(0), amount);
     }
 }

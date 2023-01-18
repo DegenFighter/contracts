@@ -12,18 +12,6 @@ contract Items is IERC1155 {
         impl = ITokenImplFacet(_impl);
     }
 
-    // function name() external view returns (string memory) {
-    //     return impl.tokenName(LibConstants.TOKEN_MEME);
-    // }
-
-    // function symbol() external view returns (string memory) {
-    //     return impl.tokenSymbol(LibConstants.TOKEN_MEME);
-    // }
-
-    // function decimals() external view returns (uint256) {
-    //     return impl.tokenDecimals(LibConstants.TOKEN_MEME);
-    // }
-
     // function totalSupply() external view override returns (uint256) {
     //     return impl.tokenTotalSupply(LibConstants.TOKEN_MEME);
     // }

@@ -28,7 +28,7 @@ contract ItemsTest is TestBaseContract {
     }
 
     function testBuyItem() public {
-        proxy.createItem(LibTokenIds.BROADCAST_MSG);
+        proxy.createItem(LibTokenIds.BROADCAST_MSG, 100e18);
 
         proxy.buyItem(LibTokenIds.BROADCAST_MSG, 1);
     }
