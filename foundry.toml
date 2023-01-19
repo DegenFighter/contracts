@@ -3,8 +3,11 @@ src = 'src'
 out = 'out'
 libs = ['lib']
 fs_permissions = [
-    { access = "read", path = "./forge-artifacts/" },
+    { access = "read", path = "./out/" },
     { access = "read", path = "./broadcast/" },
+    { access = "read", path = "./mnemonic.txt" },
+    { access = "read-write", path = "./facetsdeployed.txt" },
+    { access = "read-write", path = "./deployedAddresses.json" },
 ]
 
 [rpc_endpoints]
