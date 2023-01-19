@@ -203,18 +203,6 @@ contract DeploymentHelpers is Test {
     }
 
     /**
-     * @notice OLD WAY TO MAKE COVERAGE WORK. Deploys a new facet by its name (calling deploySelectFacet()) and creates the Cut struct
-     */
-
-    // function deployFacetAndCreateFacetCutOLD(string memory facetName) public returns (IDiamondCut.FacetCut memory cut) {
-    //     cut.facetAddress = LibGeneratedFacetHelpers.deployFacetsByName(facetName);
-
-    //     (, cut.functionSelectors) = generateSelectors(facetName);
-
-    //     cut.action = IDiamondCut.FacetCutAction.Add;
-    // }
-
-    /**
      * @notice Pass in the facet deployment pattern that is desired. The various facet deployment patterns are explained in the FacetDeploymentAction enum.
      */
     function facetDeploymentAndCut(
@@ -236,7 +224,6 @@ contract DeploymentHelpers is Test {
             for (uint256 i; i < numberOfFacets; i++) {
                 // note: bring this back once coverage covers deployments from bytecode
                 cut[i] = deployFacetAndCreateFacetCut(allFacetNames[i]);
-                // cut[i] = deployFacetAndCreateFacetCutOLD(allFacetNames[i]);
             }
         } else if (facetDeploymentAction == FacetDeploymentAction.UpgradeFacetsWithChangesOnly) {
             // V1: check if facet bytecode is different. If so, then deploy facet and add, remove, replace methods.
