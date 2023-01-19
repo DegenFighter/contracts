@@ -105,15 +105,16 @@ facetsToCutIn="[]"
 newDiamond=false
 initNewDiamond=false
 facetAction=1
-senderAddress=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
-deploy-polygon: ## deploy contracts to goerli with sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+senderAddress=0x90C36636E885BEE8096E4d12a7372866ab782091
+deploy-goerli: ## deploy contracts to goerli with sender 0x90C36636E885BEE8096E4d12a7372866ab782091
 	@forge script SmartDeploy \
 		-s "smartDeploy(bool, bool, uint8, string[] memory)" ${newDiamond} ${initNewDiamond} ${facetAction} ${facetsToCutIn} \
 		-f ${ALCHEMY_ETH_GOERLI_RPC_URL} \
-		--chain-id 137 \
+		--chain-id 5 \
 		--etherscan-api-key ${ETHERSCAN_API_KEY} \
 		--sender ${senderAddress} \
-		--private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
+		--mnemonic-paths ./mnemonic.txt \
+		--mnemonic-indexes 0 \
 		-vv \
 		--ffi \
 		--broadcast \
@@ -123,10 +124,11 @@ deploy-sim: ## simulate smart deploy to goerli
 	forge script SmartDeploy \
 		-s "smartDeploy(bool, bool, uint8, string[] memory)" ${newDiamond} ${initNewDiamond} ${facetAction} ${facetsToCutIn} \
 		-f ${ALCHEMY_ETH_GOERLI_RPC_URL} \
-		--chain-id 137 \
+		--chain-id 5 \
 		--etherscan-api-key ${ETHERSCAN_API_KEY} \
 		--sender ${senderAddress} \
-		--private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
+		--mnemonic-paths ./mnemonic.txt \
+		--mnemonic-indexes 0 \
 		-vvvv \
 		--ffi
 
