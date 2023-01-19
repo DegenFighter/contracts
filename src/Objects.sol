@@ -70,6 +70,7 @@ struct EIP712 {
 }
 
 struct AppStorage {
+    bool diamondInitialized;
     ///
     /// EIP712
     ///
@@ -114,6 +115,10 @@ struct AppStorage {
     mapping(uint256 => bool) itemForSale;
     // tokenId => cost of item in MEMEs
     mapping(uint256 => uint256) costOfItem;
+    ///
+    /// ERC2771 meta transactions
+    ///
+    address trustedForwarder;
 }
 
 library LibAppStorage {

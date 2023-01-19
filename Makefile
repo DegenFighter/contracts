@@ -100,5 +100,37 @@ deploy-local: ## deploy contracts to local node with sender 0xf39Fd6e51aad88F6F4
 		--broadcast \
 		-vvvv 
 
+# Deployment defaults
+facetsToCutIn="[]"
+newDiamond=false
+initNewDiamond=false
+facetAction=1
+senderAddress=0x90C36636E885BEE8096E4d12a7372866ab782091
+deploy-goerli: ## deploy contracts to goerli with sender 0x90C36636E885BEE8096E4d12a7372866ab782091
+	@forge script SmartDeploy \
+		-s "smartDeploy(bool, bool, uint8, string[] memory)" ${newDiamond} ${initNewDiamond} ${facetAction} ${facetsToCutIn} \
+		-f ${ALCHEMY_ETH_GOERLI_RPC_URL} \
+		--chain-id 5 \
+		--etherscan-api-key ${ETHERSCAN_API_KEY} \
+		--sender ${senderAddress} \
+		--mnemonic-paths ./mnemonic.txt \
+		--mnemonic-indexes 0 \
+		-vv \
+		--ffi \
+		--broadcast \
+		--verify --delay 30 --retries 10
+
+deploy-sim: ## simulate smart deploy to goerli
+	forge script SmartDeploy \
+		-s "smartDeploy(bool, bool, uint8, string[] memory)" ${newDiamond} ${initNewDiamond} ${facetAction} ${facetsToCutIn} \
+		-f ${ALCHEMY_ETH_GOERLI_RPC_URL} \
+		--chain-id 5 \
+		--etherscan-api-key ${ETHERSCAN_API_KEY} \
+		--sender ${senderAddress} \
+		--mnemonic-paths ./mnemonic.txt \
+		--mnemonic-indexes 0 \
+		-vvvv \
+		--ffi
+
 release: build
 	yarn standard-version && git push --follow-tags

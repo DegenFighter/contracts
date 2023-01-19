@@ -7,6 +7,7 @@ typechain
 results.sarif
 
 # SECURITY
+mnemonic.txt
 
 # yarn v1, node
 node_modules
