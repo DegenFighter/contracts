@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 import "../src/Errors.sol";
 import { BoutNonMappingInfo, BoutFighter, BoutState } from "../src/Objects.sol";
 import { Wallet, TestBaseContract } from "./utils/TestBaseContract.sol";
-import { LibConstants } from "../src/libs/LibConstants.sol";
+import { LibConstants, LibTokenIds } from "../src/libs/LibConstants.sol";
 
 contract BettingTest is TestBaseContract {
     uint fighterAId = 1;
@@ -157,14 +157,14 @@ contract BettingTest is TestBaseContract {
         bytes32 digest = proxy.calculateBetSignature(server.addr, account0, 1, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(server.privateKey, digest);
 
-        uint256 userBalance = proxy.tokenBalanceOf(LibConstants.TOKEN_MEME, address(this));
-        uint256 proxyBalance = proxy.tokenBalanceOf(LibConstants.TOKEN_MEME, address(proxy));
+        uint256 userBalance = proxy.tokenBalanceOf(LibTokenIds.TOKEN_MEME, address(this));
+        uint256 proxyBalance = proxy.tokenBalanceOf(LibTokenIds.TOKEN_MEME, address(proxy));
 
         proxy.bet(boutNum, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, v, r, s);
 
-        assertEq(proxy.tokenBalanceOf(LibConstants.TOKEN_MEME, address(this)), 0, "supporter balance should be 0");
+        assertEq(proxy.tokenBalanceOf(LibTokenIds.TOKEN_MEME, address(this)), 0, "supporter balance should be 0");
         assertEq(
-            proxy.tokenBalanceOf(LibConstants.TOKEN_MEME, address(proxy)),
+            proxy.tokenBalanceOf(LibTokenIds.TOKEN_MEME, address(proxy)),
             proxyBalance + LibConstants.MIN_BET_AMOUNT,
             "proxy balance should have increased by the min bet amount"
         );

@@ -24,7 +24,7 @@ contract TokenImplFacet is FacetBase, ITokenImplFacet {
 
     function tokenTotalSupply(uint tokenId) external view returns (uint256) {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        return s.tokenSupply[LibConstants.TOKEN_MEME];
+        return s.tokenSupply[tokenId];
     }
 
     function tokenBalanceOf(uint tokenId, address account) external view returns (uint256) {

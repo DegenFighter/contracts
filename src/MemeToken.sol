@@ -3,7 +3,7 @@ pragma solidity >=0.8.17 <0.9;
 
 import { IERC20 } from "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import { ITokenImplFacet } from "./interfaces/ITokenImplFacet.sol";
-import { LibConstants } from "./libs/LibConstants.sol";
+import { LibTokenIds } from "./libs/LibConstants.sol";
 
 contract MemeToken is IERC20 {
     ITokenImplFacet public impl;
@@ -13,38 +13,38 @@ contract MemeToken is IERC20 {
     }
 
     function name() external view returns (string memory) {
-        return impl.tokenName(LibConstants.TOKEN_MEME);
+        return impl.tokenName(LibTokenIds.TOKEN_MEME);
     }
 
     function symbol() external view returns (string memory) {
-        return impl.tokenSymbol(LibConstants.TOKEN_MEME);
+        return impl.tokenSymbol(LibTokenIds.TOKEN_MEME);
     }
 
     function decimals() external view returns (uint256) {
-        return impl.tokenDecimals(LibConstants.TOKEN_MEME);
+        return impl.tokenDecimals(LibTokenIds.TOKEN_MEME);
     }
 
     function totalSupply() external view override returns (uint256) {
-        return impl.tokenTotalSupply(LibConstants.TOKEN_MEME);
+        return impl.tokenTotalSupply(LibTokenIds.TOKEN_MEME);
     }
 
     function balanceOf(address wallet) external view override returns (uint256) {
-        return impl.tokenBalanceOf(LibConstants.TOKEN_MEME, wallet);
+        return impl.tokenBalanceOf(LibTokenIds.TOKEN_MEME, wallet);
     }
 
     function transfer(address recipient, uint256 amount) external override returns (bool) {
-        return impl.tokenTransfer(LibConstants.TOKEN_MEME, recipient, amount);
+        return impl.tokenTransfer(LibTokenIds.TOKEN_MEME, recipient, amount);
     }
 
     function allowance(address owner, address spender) external view override returns (uint256) {
-        return impl.tokenAllowance(LibConstants.TOKEN_MEME, owner, spender);
+        return impl.tokenAllowance(LibTokenIds.TOKEN_MEME, owner, spender);
     }
 
     function approve(address spender, uint256 amount) external override returns (bool) {
-        return impl.tokenApprove(LibConstants.TOKEN_MEME, spender, amount);
+        return impl.tokenApprove(LibTokenIds.TOKEN_MEME, spender, amount);
     }
 
     function transferFrom(address sender, address recipient, uint256 amount) external override returns (bool) {
-        return impl.tokenTransferFrom(LibConstants.TOKEN_MEME, sender, recipient, amount);
+        return impl.tokenTransferFrom(LibTokenIds.TOKEN_MEME, sender, recipient, amount);
     }
 }

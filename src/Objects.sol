@@ -119,6 +119,13 @@ struct AppStorage {
     /// ERC2771 meta transactions
     ///
     address trustedForwarder;
+    ///
+    /// Uniswap
+    ///
+    address priceOracle;
+    uint32 twapInterval;
+    // the ERC20 address that is accepted to purchase MEME tokens
+    address currencyAddress;
 }
 
 library LibAppStorage {

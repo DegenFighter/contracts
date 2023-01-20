@@ -7,7 +7,7 @@ import "../Errors.sol";
 import { AppStorage, LibAppStorage, Bout, BoutState, BoutFighter } from "../Objects.sol";
 import { IBettingFacet } from "../interfaces/IBettingFacet.sol";
 import { FacetBase } from "../FacetBase.sol";
-import { LibConstants } from "../libs/LibConstants.sol";
+import { LibConstants, LibTokenIds } from "../libs/LibConstants.sol";
 import { LibEip712 } from "../libs/LibEip712.sol";
 import { LibToken } from "../libs/LibToken.sol";
 
@@ -71,7 +71,7 @@ contract BettingFacet is FacetBase, IBettingFacet {
         if (bout.hiddenBets[supporter] != 0) {
             // refund old bet
             bout.totalPot = bout.totalPot.sub(bout.betAmounts[supporter]);
-            LibToken.transfer(LibConstants.TOKEN_MEME, address(this), supporter, bout.betAmounts[supporter]);
+            LibToken.transfer(LibTokenIds.TOKEN_MEME, address(this), supporter, bout.betAmounts[supporter]);
         }
         // new bet?
         else {
@@ -90,14 +90,14 @@ contract BettingFacet is FacetBase, IBettingFacet {
 
         // transfer bet
 
-        uint256 supporterBalance = s.tokenBalances[LibConstants.TOKEN_MEME][supporter];
+        uint256 supporterBalance = s.tokenBalances[LibTokenIds.TOKEN_MEME][supporter];
         // if supporter has less than the min bet amount, then mint them enough to make a min bet
         if (supporterBalance < LibConstants.MIN_BET_AMOUNT) {
-            LibToken.mint(LibConstants.TOKEN_MEME, supporter, LibConstants.MIN_BET_AMOUNT - supporterBalance);
+            LibToken.mint(LibTokenIds.TOKEN_MEME, supporter, LibConstants.MIN_BET_AMOUNT - supporterBalance);
 
-            LibToken.transfer(LibConstants.TOKEN_MEME, supporter, address(this), LibConstants.MIN_BET_AMOUNT);
+            LibToken.transfer(LibTokenIds.TOKEN_MEME, supporter, address(this), LibConstants.MIN_BET_AMOUNT);
         } else {
-            LibToken.transfer(LibConstants.TOKEN_MEME, supporter, address(this), amount);
+            LibToken.transfer(LibTokenIds.TOKEN_MEME, supporter, address(this), amount);
         }
 
         emit BetPlaced(boutNum, supporter);
@@ -228,7 +228,7 @@ contract BettingFacet is FacetBase, IBettingFacet {
 
         // transfer winnings
         if (totalWinnings > 0) {
-            LibToken.transfer(LibConstants.TOKEN_MEME, address(this), wallet, totalWinnings);
+            LibToken.transfer(LibTokenIds.TOKEN_MEME, address(this), wallet, totalWinnings);
         }
     }
 }
