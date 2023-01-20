@@ -132,5 +132,17 @@ deploy-sim: ## simulate smart deploy to goerli
 		-vvvv \
 		--ffi
 
+update-twap: ## Update params related to TWAP oracle
+	forge script UpdateParams \
+		-f ${ALCHEMY_ETH_GOERLI_RPC_URL} \
+		--chain-id 5 \
+		--etherscan-api-key ${ETHERSCAN_API_KEY} \
+		--sender ${senderAddress} \
+		--mnemonic-paths ./mnemonic.txt \
+		--mnemonic-indexes 0 \
+		-vvvv \
+		--ffi \
+		--broadcast
+
 release: build
 	yarn standard-version && git push --follow-tags
