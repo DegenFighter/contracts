@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import "forge-std/console2.sol";
 import "forge-std/Test.sol";
 import { strings } from "lib/solidity-stringutils/src/strings.sol";
 import "solmate/utils/CREATE3.sol";
@@ -24,6 +23,8 @@ contract DeploymentHelpers is Test {
     string public constant artifactsPath = "out/";
     // File that is being parsed for the diamond address. If we are deploying a new diamond, then the address will be overwritten here.
     string public deployFile = "deployedAddresses.json";
+
+    string public keyForDiamondAddress = string.concat(".", vm.toString(block.chainid), ".Diamond.address");
 
     address internal sDiamondAddress;
 
@@ -73,12 +74,11 @@ contract DeploymentHelpers is Test {
         removeSelectors.pop(); // delete the last item
     }
 
-    function getDiamondAddressFromFile() internal returns (address diamondAddress) {
+    function getDiamondAddressFromFile() internal view returns (address diamondAddress) {
         // Read in current diamond address
         string memory deployData = vm.readFile(deployFile);
 
-        string memory key = string.concat(".DiamondAddress.", vm.toString(block.chainid));
-        bytes memory parsed = vm.parseJson(deployData, key);
+        bytes memory parsed = vm.parseJson(deployData, keyForDiamondAddress);
         diamondAddress = abi.decode(parsed, (address));
     }
 
@@ -92,8 +92,7 @@ contract DeploymentHelpers is Test {
             // Output diamond address
 
             // solhint-disable quotes
-            string memory writeToKey = string.concat(".", vm.toString(block.chainid), ".Diamond.address");
-            vm.writeJson(vm.toString(address(diamondAddress)), "./deployedAddresses.json", writeToKey);
+            vm.writeJson(vm.toString(address(diamondAddress)), "./deployedAddresses.json", keyForDiamondAddress);
         } else {
             // Read in current diamond address
             diamondAddress = getDiamondAddressFromFile();
@@ -430,7 +429,7 @@ contract DeploymentHelpers is Test {
         cutAndInit(diamondAddress, cut, initDiamond);
     }
 
-    function debugDeployment(address diamondAddress, string[] memory facetsToCutIn, FacetDeploymentAction facetDeploymentAction) internal {
+    function debugDeployment(address diamondAddress, string[] memory facetsToCutIn, FacetDeploymentAction facetDeploymentAction) internal view {
         uint256 addCount;
         uint256 replaceCount;
         uint256 removeCount;

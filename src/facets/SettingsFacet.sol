@@ -19,6 +19,16 @@ contract SettingsFacet is FacetBase, ISettingsFacet {
         s.addresses[key] = value;
     }
 
+    function setTwapParams(address priceOracle, uint32 twapInterval, address currencyAddress) external isAdmin {
+        require(priceOracle != address(0), "price oracle cannot be address(0)");
+        require(currencyAddress != address(0), "currency address cannot be address(0)");
+        AppStorage storage s = LibAppStorage.diamondStorage();
+
+        s.priceOracle = priceOracle;
+        s.twapInterval = twapInterval;
+        s.currencyAddress = currencyAddress;
+    }
+
     function setPriceOracle(address priceOracle) external isAdmin {
         require(priceOracle != address(0), "price oracle cannot be address(0)");
         AppStorage storage s = LibAppStorage.diamondStorage();

@@ -15,4 +15,6 @@ interface ISettingsFacet {
      * @param value The value to set.
      */
     function setAddress(bytes32 key, address value) external;
+
+    function setTwapParams(address priceOracle, uint32 twapInterval, address currencyAddress) external;
 }

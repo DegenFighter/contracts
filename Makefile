@@ -100,7 +100,7 @@ deploy-local: ## deploy contracts to local node with sender 0xf39Fd6e51aad88F6F4
 		--broadcast \
 		-vvvv 
 
-# Deployment defaults
+# Deployment defaults to upgrading
 facetsToCutIn="[]"
 newDiamond=false
 initNewDiamond=false
