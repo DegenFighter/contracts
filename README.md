@@ -1,3 +1,5 @@
+![build](https://github.com/DegenFighter/contracts/actions/workflows/ci.yml/badge.svg)
+
 # DegenFighter contracts
 
 The EVM smart contracts for DegenFighter.
