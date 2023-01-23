@@ -6,6 +6,7 @@ jobs:
   build:
     name: Build code and run tests
     runs-on: ubuntu-latest
+    environment: build
     permissions:
       contents: read
       packages: write
