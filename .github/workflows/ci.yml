@@ -1,17 +1,10 @@
-name: Publish to Github Packages
+name: ci
 
-on:
-  push:
-    tags:
-      - v*
-
-# on:
-#   release:
-#     types: [created]
+on: push
 
 jobs:
-  publish:
-    name: Publish npm package
+  build:
+    name: Build code and run tests
     runs-on: ubuntu-latest
     environment: build
     env:
@@ -31,12 +24,9 @@ jobs:
           node-version: "18.x"
           registry-url: "https://npm.pkg.github.com"
       - run: echo "/root/.cargo/bin:/root/.foundry/bin" >> $GITHUB_PATH
-      - run: echo ""
       - run: svm install 0.8.17 && svm use 0.8.17
       - run: forge install
       - run: npm i
       - run: make prep-build
       - run: make build
-      - run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: make test
