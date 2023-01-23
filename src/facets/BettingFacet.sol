@@ -89,16 +89,7 @@ contract BettingFacet is FacetBase, IBettingFacet {
         bout.hiddenBets[supporter] = br;
 
         // transfer bet
-
-        uint256 supporterBalance = s.tokenBalances[LibTokenIds.TOKEN_MEME][supporter];
-        // if supporter has less than the min bet amount, then mint them enough to make a min bet
-        if (supporterBalance < LibConstants.MIN_BET_AMOUNT) {
-            LibToken.mint(LibTokenIds.TOKEN_MEME, supporter, LibConstants.MIN_BET_AMOUNT - supporterBalance);
-
-            LibToken.transfer(LibTokenIds.TOKEN_MEME, supporter, address(this), LibConstants.MIN_BET_AMOUNT);
-        } else {
-            LibToken.transfer(LibTokenIds.TOKEN_MEME, supporter, address(this), amount);
-        }
+        LibToken.transfer(LibTokenIds.TOKEN_MEME, supporter, address(this), amount);
 
         emit BetPlaced(boutNum, supporter);
     }
@@ -110,10 +101,6 @@ contract BettingFacet is FacetBase, IBettingFacet {
 
         if (bout.state != BoutState.Created && bout.state != BoutState.BetsRevealed) {
             revert BoutInWrongStateError(boutNum, bout.state);
-        }
-
-        if (bout.numRevealedBets == bout.numSupporters) {
-            revert BoutAlreadyFullyRevealedError(boutNum);
         }
 
         uint count;

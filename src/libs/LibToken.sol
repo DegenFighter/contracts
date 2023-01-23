@@ -21,6 +21,8 @@ library LibToken {
             s.tokenBalances[tokenId][from] = s.tokenBalances[tokenId][from].sub(amount);
             s.tokenBalances[tokenId][to] = s.tokenBalances[tokenId][to].add(amount);
         }
+
+        emit Transfer(from, to, amount);
     }
 
     function mint(uint tokenId, address wallet, uint amount) internal {

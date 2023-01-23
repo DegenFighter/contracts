@@ -48,15 +48,15 @@ contract ItemsMarketFacet is FacetBase {
             revert("item not for sale");
         }
 
-        uint256 userBalance = s.tokenBalances[LibTokenIds.TOKEN_MEME][msg.sender];
+        uint256 userBalance = s.tokenBalances[LibTokenIds.TOKEN_MEME][_msgSender()];
         uint256 totalCost = s.costOfItem[itemId] * amount;
         require(userBalance >= totalCost, "not enough meme");
 
         // burn
-        LibToken.burn(LibTokenIds.TOKEN_MEME, msg.sender, totalCost);
+        LibToken.burn(LibTokenIds.TOKEN_MEME, _msgSender(), totalCost);
 
-        s.tokenBalances[itemId][msg.sender] += amount;
-        emit TransferSingle(msg.sender, address(0), msg.sender, itemId, amount);
+        s.tokenBalances[itemId][_msgSender()] += amount;
+        emit TransferSingle(_msgSender(), address(0), _msgSender(), itemId, amount);
     }
 
     function buyItems(uint256[] memory itemIds, uint256[] memory amounts) external {
@@ -68,7 +68,7 @@ contract ItemsMarketFacet is FacetBase {
             }
         }
 
-        uint256 userBalance = s.tokenBalances[LibTokenIds.TOKEN_MEME][msg.sender];
+        uint256 userBalance = s.tokenBalances[LibTokenIds.TOKEN_MEME][_msgSender()];
         uint256 totalCost;
 
         for (uint256 i = 0; i < amounts.length; i++) {
@@ -77,12 +77,12 @@ contract ItemsMarketFacet is FacetBase {
 
         require(userBalance >= totalCost, "not enough meme");
 
-        LibToken.burn(LibTokenIds.TOKEN_MEME, msg.sender, totalCost);
+        LibToken.burn(LibTokenIds.TOKEN_MEME, _msgSender(), totalCost);
 
         for (uint256 i = 0; i < itemIds.length; i++) {
-            s.tokenBalances[itemIds[i]][msg.sender] += amounts[i];
+            s.tokenBalances[itemIds[i]][_msgSender()] += amounts[i];
         }
 
-        emit TransferBatch(msg.sender, address(0), msg.sender, itemIds, amounts);
+        emit TransferBatch(_msgSender(), address(0), _msgSender(), itemIds, amounts);
     }
 }

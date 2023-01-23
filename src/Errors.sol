@@ -13,7 +13,6 @@ error SignatureExpiredError();
 error BoutInWrongStateError(uint boutNum, BoutState state);
 error MinimumBetAmountError(uint boutNum, address supporter, uint amount);
 error InvalidBetTargetError(uint boutNum, address supporter, uint8 br);
-error BoutAlreadyFullyRevealedError(uint boutNum);
 error InvalidWinnerError(uint boutNum, BoutFighter winner);
 
 error TokenBalanceInsufficient(uint256 userBalance, uint256 amount);

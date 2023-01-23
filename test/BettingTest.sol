@@ -131,7 +131,7 @@ contract BettingTest is TestBaseContract {
         bytes32 digest = proxy.calculateBetSignature(server.addr, account0, 1, 1, LibConstants.MIN_BET_AMOUNT - 1, block.timestamp + 1000);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(server.privateKey, digest);
 
-        vm.expectRevert(abi.encodeWithSignature("MinimumBetAmountError(uint256,address,uint256)", 1, address(this), LibConstants.MIN_BET_AMOUNT - 1));
+        vm.expectRevert(abi.encodeWithSelector(MinimumBetAmountError.selector, 1, address(this), LibConstants.MIN_BET_AMOUNT - 1));
         proxy.bet(boutNum, 1, LibConstants.MIN_BET_AMOUNT - 1, block.timestamp + 1000, v, r, s);
     }
 
@@ -158,16 +158,9 @@ contract BettingTest is TestBaseContract {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(server.privateKey, digest);
 
         uint256 userBalance = proxy.tokenBalanceOf(LibTokenIds.TOKEN_MEME, address(this));
-        uint256 proxyBalance = proxy.tokenBalanceOf(LibTokenIds.TOKEN_MEME, address(proxy));
 
+        vm.expectRevert(abi.encodeWithSelector(TokenBalanceInsufficient.selector, userBalance, LibConstants.MIN_BET_AMOUNT));
         proxy.bet(boutNum, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, v, r, s);
-
-        assertEq(proxy.tokenBalanceOf(LibTokenIds.TOKEN_MEME, address(this)), 0, "supporter balance should be 0");
-        assertEq(
-            proxy.tokenBalanceOf(LibTokenIds.TOKEN_MEME, address(proxy)),
-            proxyBalance + LibConstants.MIN_BET_AMOUNT,
-            "proxy balance should have increased by the min bet amount"
-        );
     }
 
     function testBetNewBets() public returns (uint boutNum) {
@@ -244,9 +237,10 @@ contract BettingTest is TestBaseContract {
 
         // check logs
         Vm.Log[] memory entries = vm.getRecordedLogs();
-        assertEq(entries[0].topics.length, 1, "Invalid event count");
-        assertEq(entries[0].topics[0], keccak256("BetPlaced(uint256,address)"));
-        (uint eBoutNum, address supporter) = abi.decode(entries[0].data, (uint256, address));
+        assertEq(entries.length, 3, "Invalid entry count");
+        assertEq(entries[2].topics.length, 1, "Invalid event count");
+        assertEq(entries[2].topics[0], keccak256("BetPlaced(uint256,address)"), "Invalid event signature");
+        (uint eBoutNum, address supporter) = abi.decode(entries[2].data, (uint256, address));
         assertEq(eBoutNum, boutNum, "boutNum incorrect");
         assertEq(supporter, player1.addr, "supporter incorrect");
     }
@@ -418,8 +412,7 @@ contract BettingTest is TestBaseContract {
         uint8[] memory rPacked = new uint8[](2);
         proxy.revealBets(boutNum, 5, rPacked);
 
-        // doing again will revert
-        vm.expectRevert(abi.encodeWithSelector(BoutAlreadyFullyRevealedError.selector, boutNum));
+        // doing again is ok
         proxy.revealBets(boutNum, 1, rPacked);
 
         assertEq(proxy.getBoutNonMappingInfo(boutNum).numRevealedBets, 5, "num revealed bets");

@@ -22,6 +22,12 @@ contract MemeTest is TestBaseContract {
         super.setUp();
     }
 
+    // ------------------------------------------------------ //
+    //
+    // Buy MEME
+    //
+    // ------------------------------------------------------ //
+
     function testBuyMemeWithInsufficientWMatic() public {
         proxy.setAddress(LibConstants.TREASURY_ADDRESS, address(proxy));
 
@@ -52,5 +58,40 @@ contract MemeTest is TestBaseContract {
         proxy.buyMeme(MemeBuySizeDollars.Twenty);
         proxy.buyMeme(MemeBuySizeDollars.Fifty);
         proxy.buyMeme(MemeBuySizeDollars.Hundred);
+    }
+
+    // ------------------------------------------------------ //
+    //
+    // Claim MEME
+    //
+    // ------------------------------------------------------ //
+
+    function testClaimMemeGivesUptoMinBetAmount() public {
+        assertEq(memeToken.balanceOf(player1.addr), 0);
+
+        vm.prank(player1.addr);
+        proxy.claimFreeMeme();
+
+        assertEq(memeToken.balanceOf(player1.addr), LibConstants.MIN_BET_AMOUNT);
+
+        uint amt = LibConstants.MIN_BET_AMOUNT / 3;
+        proxy._testMintMeme(player2.addr, amt);
+        assertEq(memeToken.balanceOf(player2.addr), amt);
+
+        vm.prank(player2.addr);
+        proxy.claimFreeMeme();
+
+        assertEq(memeToken.balanceOf(player2.addr), LibConstants.MIN_BET_AMOUNT);
+    }
+
+    function testClaimMemeDoesNothingIfBalanceAlreadyEnough() public {
+        uint amt = LibConstants.MIN_BET_AMOUNT;
+        proxy._testMintMeme(player1.addr, amt);
+        assertEq(memeToken.balanceOf(player1.addr), amt);
+
+        vm.prank(player1.addr);
+        proxy.claimFreeMeme();
+
+        assertEq(memeToken.balanceOf(player1.addr), amt);
     }
 }
