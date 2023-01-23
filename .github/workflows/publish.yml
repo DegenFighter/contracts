@@ -14,6 +14,8 @@ jobs:
     name: Publish npm package
     runs-on: ubuntu-latest
     environment: build
+    env:
+      ALCHEMY_POLYGON_RPC_URL: ${{vars.ALCHEMY_POLYGON_RPC_URL}}
     permissions:
       contents: read
       packages: write
@@ -29,6 +31,7 @@ jobs:
           node-version: "18.x"
           registry-url: "https://npm.pkg.github.com"
       - run: echo "/root/.cargo/bin:/root/.foundry/bin" >> $GITHUB_PATH
+      - run: echo ""
       - run: svm install 0.8.17 && svm use 0.8.17
       - run: forge install
       - run: npm i

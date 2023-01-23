@@ -7,6 +7,8 @@ jobs:
     name: Build code and run tests
     runs-on: ubuntu-latest
     environment: build
+    env:
+      ALCHEMY_POLYGON_RPC_URL: ${{vars.ALCHEMY_POLYGON_RPC_URL}}
     permissions:
       contents: read
       packages: write
