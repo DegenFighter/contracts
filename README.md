@@ -13,7 +13,11 @@ Install:
 - Run `forge install foundry-rs/forge-std`
 - Run `npm i`
 - Run `git submodule update --init --recursive`
-- Run `cp .env.example .env` and set `export LOCAL_RPC_URL=http://localhost:8545` inside `.env`
+- Run `cp .env.example .env` and set the following within:
+
+* `export LOCAL_RPC_URL=http://localhost:8545`
+* `export ALCHEMY_ETH_GOERLI_RPC_URL=...`
+* `export ETHERSCAN_API_KEY=...`
 
 ### Test Locally
 
@@ -43,7 +47,8 @@ The contact addresses will be output as follows:
 
 ### Deployment
 
-Deploy a new diamond on Goerli:
+1. Enter the deployment mnemonic into `mnemonic.txt`
+1. Deploy a new diamond on Goerli:
 
 ```zsh
 make deploy-goerli newDiamond=true initNewDiamond=true facetAction=0
