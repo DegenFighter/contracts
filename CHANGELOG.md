@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.2](https://github.com/DegenFighter/contracts/compare/v1.2.1...v1.2.2) (2023-01-27)
+
+
+### Bug Fixes
+
+* deployment wasnt setting meme token and server wallets ([24f23e7](https://github.com/DegenFighter/contracts/commit/24f23e7d3ee5a852bfef47b0c3fbaf0001d19257))
+
 ### [1.2.1](https://github.com/DegenFighter/contracts/compare/v1.2.0...v1.2.1) (2023-01-23)
 
 
