@@ -24,7 +24,6 @@ enum MemeBuySizeDollars {
 
 struct Bout {
     uint numSupporters;
-    uint numRevealedBets;
     uint totalPot;
     uint createTime;
     uint endTime;
@@ -49,7 +48,6 @@ struct Bout {
  */
 struct BoutNonMappingInfo {
     uint numSupporters;
-    uint numRevealedBets;
     uint totalPot;
     uint createTime;
     uint endTime;

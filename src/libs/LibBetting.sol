@@ -52,7 +52,12 @@ library LibBetting {
         if (bout.hiddenBets[wallet] != 0) {
             // refund old bet
             bout.totalPot = bout.totalPot.sub(bout.betAmounts[wallet]);
-            LibToken.transfer(LibTokenIds.TOKEN_MEME, address(this), wallet, bout.betAmounts[wallet]);
+            LibToken.transfer(
+                LibTokenIds.TOKEN_MEME,
+                address(this),
+                wallet,
+                bout.betAmounts[wallet]
+            );
         }
         // new bet?
         else {
@@ -74,7 +79,15 @@ library LibBetting {
         LibToken.transfer(LibTokenIds.TOKEN_MEME, wallet, address(this), amount);
     }
 
-    function endBout(uint boutId, uint fighterAId, uint fighterBId, uint fighterAPot, uint fighterBPot, BoutFighter winner, uint8[] calldata revealValues) internal {
+    function endBout(
+        uint boutId,
+        uint fighterAId,
+        uint fighterBId,
+        uint fighterAPot,
+        uint fighterBPot,
+        BoutFighter winner,
+        uint8[] calldata revealValues
+    ) internal {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
         Bout storage bout = getBoutOrCreate(boutId);
@@ -125,7 +138,11 @@ library LibBetting {
         uint count = 0;
         uint totalBoutsBetOn = s.userTotalBoutsBetOn[wallet];
 
-        for (uint i = s.userTotalBoutsWinningsClaimed[wallet] + 1; i <= totalBoutsBetOn && count < maxBoutsToClaim; i++) {
+        for (
+            uint i = s.userTotalBoutsWinningsClaimed[wallet] + 1;
+            i <= totalBoutsBetOn && count < maxBoutsToClaim;
+            i++
+        ) {
             uint boutId = s.userBoutsBetOnByIndex[wallet][i];
 
             // if bout not yet ended
@@ -142,7 +159,9 @@ library LibBetting {
             bout.winningsClaimed[wallet] = true;
 
             if (total > 0) {
-                bout.fighterPotBalances[bout.winner] = bout.fighterPotBalances[bout.winner].sub(selfAmount);
+                bout.fighterPotBalances[bout.winner] = bout.fighterPotBalances[bout.winner].sub(
+                    selfAmount
+                );
                 bout.fighterPotBalances[bout.loser] = bout.fighterPotBalances[bout.loser].sub(won);
                 totalWinnings = totalWinnings.add(total);
             }
@@ -172,7 +191,10 @@ library LibBetting {
         return winnings;
     }
 
-    function getBoutWinnings(uint boutId, address wallet) internal view returns (uint total, uint selfAmount, uint won) {
+    function getBoutWinnings(
+        uint boutId,
+        address wallet
+    ) internal view returns (uint total, uint selfAmount, uint won) {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
         Bout storage bout = s.bouts[boutId];
@@ -192,7 +214,10 @@ library LibBetting {
         }
     }
 
-    function getRevealedBet(Bout storage bout, address wallet) internal view returns (BoutFighter bet) {
+    function getRevealedBet(
+        Bout storage bout,
+        address wallet
+    ) internal view returns (BoutFighter bet) {
         uint index = bout.bettorIndexes[wallet] - 1;
         uint rPackedIndex = index >> 4;
         uint8 r = (bout.revealValues[rPackedIndex] >> ((3 - (index % 4)) * 2)) & 3;
@@ -207,10 +232,29 @@ library LibBetting {
         bet = BoutFighter(rawBet + 1);
     }
 
-    function calculateBetSignature(address server, address wallet, uint boutId, uint8 br, uint amount, uint deadline) internal returns (bytes32) {
+    function calculateBetSignature(
+        address server,
+        address wallet,
+        uint boutId,
+        uint8 br,
+        uint amount,
+        uint deadline
+    ) internal returns (bytes32) {
         return
             LibEip712.hashTypedDataV4(
-                keccak256(abi.encode(keccak256("calculateBetSignature(address,address,uint256,uint8,uint256,uint256)"), server, wallet, boutId, br, amount, deadline))
+                keccak256(
+                    abi.encode(
+                        keccak256(
+                            "calculateBetSignature(address,address,uint256,uint8,uint256,uint256)"
+                        ),
+                        server,
+                        wallet,
+                        boutId,
+                        br,
+                        amount,
+                        deadline
+                    )
+                )
             );
     }
 }
