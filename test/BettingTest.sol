@@ -556,7 +556,7 @@ contract BettingTest is TestBaseContract {
     //
     // ------------------------------------------------------ //
 
-    function testCompleteMultipleBouts() public returns (uint[] memory boutIds) {
+    function testProcessMultipleBoutsInSequence() public returns (uint[] memory boutIds) {
         BettingScenario memory scen = _getScenario1();
 
         uint numBouts = 5;
@@ -641,6 +641,76 @@ contract BettingTest is TestBaseContract {
         }
     }
 
+    function testProcessMultipleBoutsInParallel() public returns (uint[] memory boutIds) {
+        BettingScenario memory scen = _getScenario1();
+
+        uint numBouts = 5;
+
+        uint[] memory boutIds = new uint[](numBouts);
+
+        for (uint i = 0; i < numBouts; i += 1) {
+            boutIds[i] = 100 + i;
+
+            for (uint j = 0; j < scen.players.length; j += 1) {
+                _bet(scen.players[j].addr, boutIds[i], 1, scen.betAmounts[j]);
+            }
+        }
+
+        assertEq(proxy.getTotalBouts(), numBouts, "total bouts");
+        assertEq(proxy.getEndedBouts(), 0, "ended bouts before");
+
+        for (uint i = 0; i < numBouts; i += 1) {
+            vm.prank(server.addr);
+            proxy.endBout(
+                boutIds[i],
+                21,
+                22,
+                scen.fighterAPot,
+                scen.fighterBPot,
+                scen.winner,
+                scen.revealValues
+            );
+        }
+
+        assertEq(proxy.getEndedBouts(), numBouts, "ended bouts after");
+
+        for (uint i = 0; i < numBouts; i += 1) {
+            uint boutId = boutIds[i];
+            // check bout state
+            BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(boutId);
+            assertEq(bout.state, BoutState.Ended, "state");
+            assertGt(bout.endTime, 0, "end time");
+            assertEq(bout.totalPot, scen.fighterAPot + scen.fighterBPot, "total pot");
+            assertEq(bout.revealValues, scen.revealValues, "reveal values");
+            assertEq(bout.winner, scen.winner, "winner");
+            assertEq(bout.loser, scen.loser, "loser");
+
+            assertEq(proxy.getBoutFighterId(boutId, BoutFighter.FighterA), 21, "fighter A id");
+            assertEq(proxy.getBoutFighterId(boutId, BoutFighter.FighterB), 22, "fighter B id");
+            assertEq(
+                proxy.getBoutFighterPot(boutId, BoutFighter.FighterA),
+                scen.fighterAPot,
+                "fighter A pot"
+            );
+            assertEq(
+                proxy.getBoutFighterPot(boutId, BoutFighter.FighterB),
+                scen.fighterBPot,
+                "fighter B pot"
+            );
+
+            assertEq(
+                proxy.getBoutFighterPotBalance(boutId, BoutFighter.FighterA),
+                scen.fighterAPot,
+                "fighter A pot balance"
+            );
+            assertEq(
+                proxy.getBoutFighterPotBalance(boutId, BoutFighter.FighterB),
+                scen.fighterBPot,
+                "fighter B pot balance"
+            );
+        }
+    }
+
     // ------------------------------------------------------ //
     //
     // Claim winnings - successfully completed bouts
@@ -663,7 +733,7 @@ contract BettingTest is TestBaseContract {
     }
 
     function testGetClaimableWinningsForMultipleBouts() public {
-        uint[] memory boutIds = testCompleteMultipleBouts();
+        uint[] memory boutIds = testProcessMultipleBoutsInParallel();
 
         BettingScenario memory scen = _getScenario1();
 
@@ -746,7 +816,7 @@ contract BettingTest is TestBaseContract {
     }
 
     function testClaimWinningsForMultipleBouts() public {
-        uint[] memory boutIds = testCompleteMultipleBouts();
+        uint[] memory boutIds = testProcessMultipleBoutsInParallel();
 
         BettingScenario memory scen = _getScenario1();
 
@@ -810,7 +880,7 @@ contract BettingTest is TestBaseContract {
     }
 
     function testClaimWinningsForMultipleBoutsSubset() public {
-        uint[] memory boutIds = testCompleteMultipleBouts();
+        uint[] memory boutIds = testProcessMultipleBoutsInParallel();
 
         BettingScenario memory scen = _getScenario1();
 
