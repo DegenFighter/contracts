@@ -13,9 +13,9 @@ contract TestFacet1 {
         LibToken.mint(LibTokenIds.TOKEN_MEME, wallet, amount);
     }
 
-    function _testSetBoutState(uint boutNum, BoutState state) external {
+    function _testSetBoutState(uint boutId, BoutState state) external {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        s.bouts[boutNum].state = state;
+        s.bouts[boutId].state = state;
     }
 }
 

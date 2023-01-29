@@ -52,7 +52,7 @@ struct BoutNonMappingInfo {
     uint numRevealedBets;
     uint totalPot;
     uint revealTime;
-    uint endTime;
+    uint endTime;\
     BoutState state;
     BoutFighter winner;
     BoutFighter loser;
