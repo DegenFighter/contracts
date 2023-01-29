@@ -2,14 +2,14 @@
 pragma solidity >=0.8.17 <0.9;
 
 enum BoutState {
-    Unknown,
+    Uninitialized,
     Created,
-    BetsRevealed,
-    Ended
+    Ended,
+    Cancelled
 }
 
 enum BoutFighter {
-    Unknown,
+    Uninitialized,
     FighterA,
     FighterB
 }
@@ -23,7 +23,6 @@ enum MemeBuySizeDollars {
 }
 
 struct Bout {
-    uint id;
     uint numSupporters;
     uint numRevealedBets;
     uint totalPot;
@@ -32,9 +31,10 @@ struct Bout {
     BoutState state;
     BoutFighter winner;
     BoutFighter loser;
-    mapping(uint => address) supporters;
+    uint8[] revealValues; // the 'r' values packed into 2 bits each
+    mapping(uint => address) bettors;
+    mapping(address => uint) bettorIndexes;
     mapping(address => uint8) hiddenBets;
-    mapping(address => BoutFighter) revealedBets;
     mapping(address => uint) betAmounts;
     mapping(address => bool) winningsClaimed;
     mapping(BoutFighter => uint) fighterIds;
@@ -48,7 +48,6 @@ struct Bout {
  * This is used to return Bout data from external calls.
  */
 struct BoutNonMappingInfo {
-    uint id;
     uint numSupporters;
     uint numRevealedBets;
     uint totalPot;
@@ -57,6 +56,7 @@ struct BoutNonMappingInfo {
     BoutState state;
     BoutFighter winner;
     BoutFighter loser;
+    uint8[] revealValues; // the 'r' values packed into 2 bits each
 }
 
 // from https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/cryptography/EIP712.sol
@@ -99,18 +99,20 @@ struct AppStorage {
     uint totalBouts;
     // no. of bouts finished
     uint endedBouts;
-    // bout => details
+    // bout id => bout details
     mapping(uint => Bout) bouts;
+    // bout index => bout id
+    mapping(uint => uint) boutIdByIndex;
     ///
-    /// Fight supporters
+    /// Fight bettors
     ///
 
     // wallet => no. of bouts supported
-    mapping(address => uint) userBoutsSupported;
+    mapping(address => uint) userTotalBoutsBetOn;
     // wallet => no. of bouts where winnings claimed
-    mapping(address => uint) userBoutsWinningsClaimed;
+    mapping(address => uint) userTotalBoutsWinningsClaimed;
     // wallet => list of bouts supported
-    mapping(address => mapping(uint => uint)) userBoutsSupportedByIndex;
+    mapping(address => mapping(uint => uint)) userBoutsBetOnByIndex;
     // tokenId => is this an item being sold by DegenFighter?
     mapping(uint256 => bool) itemForSale;
     // tokenId => cost of item in MEMEs

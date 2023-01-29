@@ -43,3 +43,9 @@ library LibToken {
         emit Transfer(wallet, address(0), amount);
     }
 }
+
+library LibTokenIds {
+    uint256 internal constant TOKEN_MEME = 1;
+    uint256 internal constant BROADCAST_MSG = 2;
+    uint256 internal constant SUPPORTER_INFLUENCE = 3;
+}

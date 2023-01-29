@@ -6,6 +6,8 @@ import { BoutNonMappingInfo, BoutFighter } from "../Objects.sol";
 interface IInfoFacet {
     function getTotalBouts() external view returns (uint);
 
+    function getBoutIdByIndex(uint boutIndex) external view returns (uint);
+
     function getEndedBouts() external view returns (uint);
 
     function getUserBoutsWinningsClaimed(address wallet) external view returns (uint);
@@ -14,21 +16,21 @@ interface IInfoFacet {
 
     function getUserSupportedBoutAtIndex(address wallet, uint index) external view returns (uint);
 
-    function getBoutNonMappingInfo(uint boutNum) external view returns (BoutNonMappingInfo memory);
+    function getBoutNonMappingInfo(uint boutId) external view returns (BoutNonMappingInfo memory);
 
-    function getBoutSupporter(uint boutNum, uint supporterNum) external view returns (address);
+    function getBoutSupporter(uint boutId, uint bettorNum) external view returns (address);
 
-    function getBoutHiddenBet(uint boutNum, address supporter) external view returns (uint8);
+    function getBoutHiddenBet(uint boutId, address bettor) external view returns (uint8);
 
-    function getBoutRevealedBet(uint boutNum, address supporter) external view returns (BoutFighter);
+    function getBoutRevealedBet(uint boutId, address bettor) external view returns (BoutFighter);
 
-    function getBoutBetAmount(uint boutNum, address supporter) external view returns (uint);
+    function getBoutBetAmount(uint boutId, address bettor) external view returns (uint);
 
-    function getBoutWinningsClaimed(uint boutNum, address supporter) external view returns (bool);
+    function getBoutWinningsClaimed(uint boutId, address bettor) external view returns (bool);
 
-    function getBoutFighterId(uint boutNum, BoutFighter p) external view returns (uint);
+    function getBoutFighterId(uint boutId, BoutFighter p) external view returns (uint);
 
-    function getBoutFighterPot(uint boutNum, BoutFighter p) external view returns (uint);
+    function getBoutFighterPot(uint boutId, BoutFighter p) external view returns (uint);
 
-    function getBoutFighterPotBalance(uint boutNum, BoutFighter p) external view returns (uint);
+    function getBoutFighterPotBalance(uint boutId, BoutFighter p) external view returns (uint);
 }

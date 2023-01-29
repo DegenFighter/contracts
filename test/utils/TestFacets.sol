@@ -4,8 +4,8 @@ pragma solidity >=0.8.17 <0.9;
 import { IDiamondCut } from "lib/diamond-2-hardhat/contracts/interfaces/IDiamondCut.sol";
 
 import { AppStorage, LibAppStorage, BoutState } from "../../src/Objects.sol";
-import { LibConstants, LibTokenIds } from "../../src/libs/LibConstants.sol";
-import { LibToken } from "../../src/libs/LibToken.sol";
+import { LibConstants } from "../../src/libs/LibConstants.sol";
+import { LibToken, LibTokenIds } from "../../src/libs/LibToken.sol";
 import { InitDiamond } from "src/InitDiamond.sol";
 
 contract TestFacet1 {

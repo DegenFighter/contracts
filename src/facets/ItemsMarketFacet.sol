@@ -6,7 +6,8 @@ import { NotAllowedError } from "../Errors.sol";
 import { AppStorage, LibAppStorage, MemeBuySizeDollars } from "../Objects.sol";
 import { ITokenImplFacet } from "../interfaces/ITokenImplFacet.sol";
 import { IERC20 } from "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import { LibConstants, LibTokenIds } from "../libs/LibConstants.sol";
+import { LibConstants } from "../libs/LibConstants.sol";
+import { LibTokenIds } from "../libs/LibToken.sol";
 
 import { LibToken } from "src/libs/LibToken.sol";
 import { LibUniswapV3Twap } from "src/libs/LibUniswapV3Twap.sol";

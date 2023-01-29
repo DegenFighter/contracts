@@ -178,16 +178,16 @@ contract BettingTest is TestBaseContract {
         // check bout basic state
         BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(boutNum);
         assertEq(uint(bout.state), uint(BoutState.Created), "created");
-        assertEq(bout.numSupporters, 5, "no. of supporters");
+        assertEq(bout.numSupporters, 5, "no. of bettors");
         assertEq(bout.totalPot, LibConstants.MIN_BET_AMOUNT * 15, "total pot");
 
-        // check supporter data
+        // check bettor data
         for (uint i = 1; i <= players.length; i += 1) {
             Wallet memory player = players[i - 1];
 
-            assertEq(proxy.getBoutSupporter(boutNum, i), player.addr, "supporter address");
-            assertEq(proxy.getBoutHiddenBet(boutNum, player.addr), 1, "supporter hidden bet");
-            assertEq(proxy.getBoutBetAmount(boutNum, player.addr), betAmounts[i - 1], "supporter bet amount");
+            assertEq(proxy.getBoutSupporter(boutNum, i), player.addr, "bettor address");
+            assertEq(proxy.getBoutHiddenBet(boutNum, player.addr), 1, "bettor hidden bet");
+            assertEq(proxy.getBoutBetAmount(boutNum, player.addr), betAmounts[i - 1], "bettor bet amount");
 
             assertEq(proxy.getUserBoutsSupported(player.addr), 1, "user supported bouts");
         }
@@ -211,13 +211,13 @@ contract BettingTest is TestBaseContract {
         // check bout basic state
         BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(boutNum);
         assertEq(uint(bout.state), uint(BoutState.Created), "created");
-        assertEq(bout.numSupporters, 1, "no. of supporters");
+        assertEq(bout.numSupporters, 1, "no. of bettors");
         assertEq(bout.totalPot, LibConstants.MIN_BET_AMOUNT * 5, "total pot");
 
-        // check supporter data
-        assertEq(proxy.getBoutSupporter(boutNum, 1), player1.addr, "supporter address");
-        assertEq(proxy.getBoutHiddenBet(boutNum, player1.addr), 1, "supporter hidden bet");
-        assertEq(proxy.getBoutBetAmount(boutNum, player1.addr), bout.totalPot, "supporter bet amount");
+        // check bettor data
+        assertEq(proxy.getBoutSupporter(boutNum, 1), player1.addr, "bettor address");
+        assertEq(proxy.getBoutHiddenBet(boutNum, player1.addr), 1, "bettor hidden bet");
+        assertEq(proxy.getBoutBetAmount(boutNum, player1.addr), bout.totalPot, "bettor bet amount");
         assertEq(proxy.getUserBoutsSupported(player1.addr), boutNum, "user supported bouts");
 
         // check MEME balances
@@ -240,9 +240,9 @@ contract BettingTest is TestBaseContract {
         assertEq(entries.length, 3, "Invalid entry count");
         assertEq(entries[2].topics.length, 1, "Invalid event count");
         assertEq(entries[2].topics[0], keccak256("BetPlaced(uint256,address)"), "Invalid event signature");
-        (uint eBoutNum, address supporter) = abi.decode(entries[2].data, (uint256, address));
+        (uint eBoutNum, address bettor) = abi.decode(entries[2].data, (uint256, address));
         assertEq(eBoutNum, boutNum, "boutNum incorrect");
-        assertEq(supporter, player1.addr, "supporter incorrect");
+        assertEq(bettor, player1.addr, "bettor incorrect");
     }
 
     // ------------------------------------------------------ //
@@ -805,15 +805,15 @@ contract BettingTest is TestBaseContract {
     //
     // ------------------------------------------------------ //
 
-    function _bet(address supporter, uint boutNum, uint8 br, uint amount) internal {
+    function _bet(address bettor, uint boutNum, uint8 br, uint amount) internal {
         // mint tokens
-        proxy._testMintMeme(supporter, amount);
+        proxy._testMintMeme(bettor, amount);
 
         // do signature
-        bytes32 digest = proxy.calculateBetSignature(server.addr, supporter, boutNum, br, amount, block.timestamp + 1000);
+        bytes32 digest = proxy.calculateBetSignature(server.addr, bettor, boutNum, br, amount, block.timestamp + 1000);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(server.privateKey, digest);
 
-        vm.prank(supporter);
+        vm.prank(bettor);
         proxy.bet(boutNum, br, amount, block.timestamp + 1000, v, r, s);
     }
 
