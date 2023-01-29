@@ -9,6 +9,7 @@ import { LibConstants } from "../../src/libs/LibConstants.sol";
 import { LibGeneratedFacetHelpers } from "../../script/generated/LibGeneratedFacetHelpers.sol";
 import { MemeToken } from "../../src/MemeToken.sol";
 import { ITestFacet, LibTestFacetsHelper } from "./TestFacets.sol";
+import { BoutState, BoutFighter } from "../../src/Objects.sol";
 
 struct Wallet {
     address addr;
@@ -72,5 +73,26 @@ contract TestBaseContract is Test {
 
         // set ownership
         proxy.transferOwnership(account0);
+    }
+
+    // ------------------------------------------------------ //
+    //
+    // Custom assertions
+    //
+    // ------------------------------------------------------ //
+
+    function assertEq(uint8[] memory a, uint8[] memory b, string memory err) internal {
+        assertEq(a.length, b.length, err);
+        for (uint i = 0; i < a.length; i++) {
+            assertEq(a[i], b[i], err);
+        }
+    }
+
+    function assertEq(BoutState a, BoutState b, string memory err) internal {
+        assertEq(uint(a), uint(b), err);
+    }
+
+    function assertEq(BoutFighter a, BoutFighter b, string memory err) internal {
+        assertEq(uint(a), uint(b), err);
     }
 }

@@ -20,6 +20,7 @@ library LibBetting {
             s.totalBouts++;
             s.boutIdByIndex[s.totalBouts] = boutId;
             bout.state = BoutState.Created;
+            bout.createTime = block.timestamp;
         }
     }
 
