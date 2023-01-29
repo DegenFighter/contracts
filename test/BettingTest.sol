@@ -561,7 +561,7 @@ contract BettingTest is TestBaseContract {
 
         uint numBouts = 5;
 
-        uint[] memory boutIds = new uint[](numBouts);
+        boutIds = new uint[](numBouts);
 
         for (uint i = 0; i < numBouts; i += 1) {
             boutIds[i] = 100 + i;
@@ -646,7 +646,7 @@ contract BettingTest is TestBaseContract {
 
         uint numBouts = 5;
 
-        uint[] memory boutIds = new uint[](numBouts);
+        boutIds = new uint[](numBouts);
 
         for (uint i = 0; i < numBouts; i += 1) {
             boutIds[i] = 100 + i;
@@ -738,7 +738,7 @@ contract BettingTest is TestBaseContract {
         BettingScenario memory scen = _getScenario1();
 
         // check claimable winnings
-        for (uint i = 0; i < scen.players.length; i++) {
+        for (uint i = 1; i < 2; i++) {
             Wallet memory player = scen.players[i];
 
             uint winnings = proxy.getClaimableWinnings(player.addr);

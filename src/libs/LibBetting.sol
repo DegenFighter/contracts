@@ -176,10 +176,9 @@ library LibBetting {
         }
     }
 
-    function getClaimableWinnings(address wallet) internal view returns (uint) {
+    function getClaimableWinnings(address wallet) internal view returns (uint winnings) {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
-        uint winnings = 0;
         uint totalBoutsBetOn = s.userTotalBoutsBetOn[wallet];
 
         for (uint i = s.userTotalBoutsWinningsClaimed[wallet] + 1; i <= totalBoutsBetOn; i++) {
@@ -187,8 +186,6 @@ library LibBetting {
             (uint total, , ) = getBoutWinnings(boutId, wallet);
             winnings = winnings.add(total);
         }
-
-        return winnings;
     }
 
     function getBoutWinnings(
