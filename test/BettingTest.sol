@@ -822,7 +822,7 @@ contract BettingTest is TestBaseContract {
 
         ClaimWinningsLoopValues[] memory v = new ClaimWinningsLoopValues[](boutIds.length);
         Wallet memory player = scen.players[1]; // 2nd and 4th players are winners
-        // assertEq(scen.betTargets[1], scen.winner);
+        assertEq(uint(scen.betTargets[1]), uint(scen.winner));
 
         uint winningsClaimed = 0;
         uint totalWinnings = proxy.getClaimableWinnings(player.addr);
@@ -886,7 +886,7 @@ contract BettingTest is TestBaseContract {
 
         ClaimWinningsLoopValues[] memory v = new ClaimWinningsLoopValues[](boutIds.length);
         Wallet memory player = scen.players[1]; // 2nd and 4th players are winners
-        // assertEq(scen.betTargets[1], scen.winner);
+        assertEq(uint(scen.betTargets[1]), uint(scen.winner));
 
         uint winningsClaimed = 0;
         uint totalWinnings = proxy.getClaimableWinnings(player.addr);
