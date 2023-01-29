@@ -22,9 +22,26 @@ contract BettingFacet is FacetBase, IBettingFacet {
     }
 
     function bet(uint boutId, uint8 br, uint amount, uint deadline, uint8 sigV, bytes32 sigR, bytes32 sigS) external {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+
         address bettor = _msgSender();
 
-        LibBetting.bet(boutId, bettor, br, amount, deadline, sigV, sigR, sigS);
+        // recover signer
+        address server = s.addresses[LibConstants.SERVER_ADDRESS];
+        bytes32 digest = calculateBetSignature(server, bettor, boutId, br, amount, deadline);
+        address signer = LibEip712.recover(digest, sigV, sigR, sigS);
+
+        // check signature
+        if (signer != server) {
+            revert SignerMustBeServerError();
+        }
+
+        if (block.timestamp >= deadline) {
+            revert SignatureExpiredError();
+        }
+
+        // do it
+        LibBetting.bet(boutId, bettor, br, amount);
 
         emit BetPlaced(boutId, bettor);
     }

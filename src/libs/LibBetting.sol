@@ -12,11 +12,6 @@ import "../Errors.sol";
 library LibBetting {
     using SafeMath for uint;
 
-    function getBout(uint boutId) internal view returns (Bout storage bout) {
-        AppStorage storage s = LibAppStorage.diamondStorage();
-        bout = s.bouts[s.boutIdByIndex[boutId]];
-    }
-
     function getBoutOrCreate(uint boutId) internal returns (Bout storage bout) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         bout = s.bouts[boutId];
@@ -28,7 +23,7 @@ library LibBetting {
         }
     }
 
-    function bet(uint boutId, address wallet, uint8 br, uint amount, uint deadline, uint8 sigV, bytes32 sigR, bytes32 sigS) external {
+    function bet(uint boutId, address wallet, uint8 br, uint amount) internal {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
         Bout storage bout = getBoutOrCreate(boutId);
@@ -37,52 +32,45 @@ library LibBetting {
             revert BoutInWrongStateError(boutId, bout.state);
         }
 
-        address server = s.addresses[LibConstants.SERVER_ADDRESS];
-        address bettor = wallet;
-
-        // recover signer
-        bytes32 digest = calculateBetSignature(server, bettor, boutId, br, amount, deadline);
-        address signer = LibEip712.recover(digest, sigV, sigR, sigS);
-
-        // final checks
-        if (signer != server) {
-            revert SignerMustBeServerError();
-        }
-        if (block.timestamp >= deadline) {
-            revert SignatureExpiredError();
-        }
         if (amount < LibConstants.MIN_BET_AMOUNT) {
-            revert MinimumBetAmountError(boutId, bettor, amount);
+            revert MinimumBetAmountError(boutId, wallet, amount);
         }
         if (br < 1 || br > 3) {
-            revert InvalidBetTargetError(boutId, bettor, br);
+            revert InvalidBetTargetError(boutId, wallet, br);
         }
 
+        /*
+        Resolve any unclaimed MEME.
+
+        We do this before incrementing userTotalBoutsBetOn and userBoutsBetOnByIndex below, otherwise the 
+        claimWinnings function will not work correctly. 
+        */
+        claimWinnings(wallet, 1);
+
         // replace old bet?
-        if (bout.hiddenBets[bettor] != 0) {
+        if (bout.hiddenBets[wallet] != 0) {
             // refund old bet
-            bout.totalPot = bout.totalPot.sub(bout.betAmounts[bettor]);
-            LibToken.transfer(LibTokenIds.TOKEN_MEME, address(this), bettor, bout.betAmounts[bettor]);
+            bout.totalPot = bout.totalPot.sub(bout.betAmounts[wallet]);
+            LibToken.transfer(LibTokenIds.TOKEN_MEME, address(this), wallet, bout.betAmounts[wallet]);
         }
         // new bet?
         else {
             // add to bettor list
             bout.numSupporters += 1;
-            bout.bettors[bout.numSupporters] = bettor;
-            bout.bettorIndexes[bettor] = bout.numSupporters;
+            bout.bettors[bout.numSupporters] = wallet;
+            bout.bettorIndexes[wallet] = bout.numSupporters;
             // update user data
-            s.userTotalBoutsBetOn[bettor] += 1;
-            s.userBoutsBetOnByIndex[bettor][s.userTotalBoutsBetOn[bettor]] = boutId;
+            s.userTotalBoutsBetOn[wallet] += 1;
+            s.userBoutsBetOnByIndex[wallet][s.userTotalBoutsBetOn[wallet]] = boutId;
         }
 
         // add to pot
         bout.totalPot = bout.totalPot.add(amount);
-        bout.betAmounts[bettor] = amount;
-        bout.hiddenBets[bettor] = br;
+        bout.betAmounts[wallet] = amount;
+        bout.hiddenBets[wallet] = br;
 
-        // transfer bet
-        claimWinnings(bettor, 1);
-        LibToken.transfer(LibTokenIds.TOKEN_MEME, bettor, address(this), amount);
+        // transfer bet amount to contract
+        LibToken.transfer(LibTokenIds.TOKEN_MEME, wallet, address(this), amount);
     }
 
     function endBout(uint boutId, uint fighterAId, uint fighterBId, uint fighterAPot, uint fighterBPot, BoutFighter winner, uint8[] calldata revealValues) internal {
@@ -122,6 +110,13 @@ library LibBetting {
         s.endedBouts++;
     }
 
+    /*
+    We pass maxBoutsToClaim = 1 because under normal circumstances, the user will only have one
+    unclaimed bout winnings to claim. If the user places bets on lots of bouts before the 
+    server suddenl goes down for a while then they'll have lots of unclaimed winnings and/or 
+    bets that need to be refunded. In this case, the user may need to call this directly 
+    multiple times to get through the backlog. We will enable this in the UI.
+    */
     function claimWinnings(address wallet, uint maxBoutsToClaim) internal {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
@@ -131,6 +126,13 @@ library LibBetting {
 
         for (uint i = s.userTotalBoutsWinningsClaimed[wallet] + 1; i <= totalBoutsBetOn && count < maxBoutsToClaim; i++) {
             uint boutId = s.userBoutsBetOnByIndex[wallet][i];
+
+            // if bout not yet ended
+            if (s.bouts[boutId].state == BoutState.Created) {
+                // TODO: end it if it's expired
+                // break out of loop
+                break;
+            }
 
             (uint total, uint selfAmount, uint won) = getBoutWinnings(boutId, wallet);
 
