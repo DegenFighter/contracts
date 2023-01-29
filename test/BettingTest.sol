@@ -165,7 +165,7 @@ contract BettingTest is TestBaseContract {
         proxy.bet(boutId, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, v, r, s);
     }
 
-    function testBetUpdatesState() public returns (uint boutId) {
+    function testBetSingle() public returns (uint boutId) {
         boutId = 100;
 
         BettingScenario memory scen = _getScenario1();
@@ -217,7 +217,7 @@ contract BettingTest is TestBaseContract {
         assertEq(memeToken.balanceOf(address(proxy)), bout.totalPot, "MEME balance");
     }
 
-    function testBetMultipleUpdatesState() public returns (uint boutId) {
+    function testBetMultiple() public returns (uint boutId) {
         boutId = 100;
 
         BettingScenario memory scen = _getScenario1();
@@ -321,7 +321,7 @@ contract BettingTest is TestBaseContract {
     // ------------------------------------------------------ //
 
     function testEndBoutMustBeDoneByServer() public {
-        uint boutId = _setupBoutWithBets();
+        uint boutId = testBetMultiple();
 
         BettingScenario memory scen = _getScenario1();
 
@@ -354,7 +354,7 @@ contract BettingTest is TestBaseContract {
     }
 
     function testEndBoutWithInvalidState() public {
-        uint boutId = _setupBoutWithBets();
+        uint boutId = testBetMultiple();
 
         BettingScenario memory scen = _getScenario1();
 
@@ -379,7 +379,7 @@ contract BettingTest is TestBaseContract {
     }
 
     function testEndBoutWithInvalidWinner() public {
-        uint boutId = _setupBoutWithBets();
+        uint boutId = testBetMultiple();
 
         BettingScenario memory scen = _getScenario1();
 
@@ -399,7 +399,7 @@ contract BettingTest is TestBaseContract {
     }
 
     function testEndBoutWithPotMismatch() public {
-        uint boutId = _setupBoutWithBets();
+        uint boutId = testBetMultiple();
 
         BettingScenario memory scen = _getScenario1();
 
@@ -426,8 +426,8 @@ contract BettingTest is TestBaseContract {
         );
     }
 
-    function testEndBoutUpdatesState() public returns (uint boutId) {
-        boutId = _setupBoutWithBets();
+    function testEndBout() public returns (uint boutId) {
+        boutId = testBetMultiple();
 
         BettingScenario memory scen = _getScenario1();
 
@@ -525,7 +525,7 @@ contract BettingTest is TestBaseContract {
     }
 
     function testEndBoutEmitsEvent() public {
-        uint boutId = _setupBoutWithBets();
+        uint boutId = testBetMultiple();
 
         BettingScenario memory scen = _getScenario1();
 
@@ -552,13 +552,337 @@ contract BettingTest is TestBaseContract {
 
     // ------------------------------------------------------ //
     //
-    // Private/internal methods
+    // Test processing multiple bouts
     //
     // ------------------------------------------------------ //
 
-    function _setupBoutWithBets() internal returns (uint) {
-        return testBetMultipleUpdatesState();
+    function testCompleteMultipleBouts() public returns (uint[] memory boutIds) {
+        BettingScenario memory scen = _getScenario1();
+
+        uint numBouts = 5;
+
+        uint[] memory boutIds = new uint[](numBouts);
+
+        for (uint i = 0; i < numBouts; i += 1) {
+            boutIds[i] = 100 + i;
+
+            for (uint j = 0; j < scen.players.length; j += 1) {
+                _bet(scen.players[j].addr, boutIds[i], 1, scen.betAmounts[j]);
+            }
+
+            assertEq(proxy.getTotalBouts(), i + 1, "total bouts");
+            assertEq(proxy.getEndedBouts(), i, "ended bouts before");
+
+            vm.prank(server.addr);
+            proxy.endBout(
+                boutIds[i],
+                21,
+                22,
+                scen.fighterAPot,
+                scen.fighterBPot,
+                scen.winner,
+                scen.revealValues
+            );
+
+            assertEq(proxy.getEndedBouts(), i + 1, "ended bouts after");
+        }
+
+        for (uint i = 0; i < numBouts; i += 1) {
+            uint boutId = boutIds[i];
+            // check bout state
+            BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(boutId);
+            assertEq(bout.state, BoutState.Ended, "state");
+            assertGt(bout.endTime, 0, "end time");
+            assertEq(bout.totalPot, scen.fighterAPot + scen.fighterBPot, "total pot");
+            assertEq(bout.revealValues, scen.revealValues, "reveal values");
+            assertEq(bout.winner, scen.winner, "winner");
+            assertEq(bout.loser, scen.loser, "loser");
+
+            assertEq(proxy.getBoutFighterId(boutId, BoutFighter.FighterA), 21, "fighter A id");
+            assertEq(proxy.getBoutFighterId(boutId, BoutFighter.FighterB), 22, "fighter B id");
+            assertEq(
+                proxy.getBoutFighterPot(boutId, BoutFighter.FighterA),
+                scen.fighterAPot,
+                "fighter A pot"
+            );
+            assertEq(
+                proxy.getBoutFighterPot(boutId, BoutFighter.FighterB),
+                scen.fighterBPot,
+                "fighter B pot"
+            );
+
+            /*
+                For all bouts except the last one, the fighter pot balance should be 0 or close to 0
+                since we claim winnings when placing bets
+            */
+            if (i < numBouts - 1) {
+                assertLt(
+                    proxy.getBoutFighterPotBalance(boutId, BoutFighter.FighterA),
+                    1000,
+                    "fighter A pot balance"
+                );
+                assertLt(
+                    proxy.getBoutFighterPotBalance(boutId, BoutFighter.FighterB),
+                    1000,
+                    "fighter B pot balance"
+                );
+            } else {
+                assertEq(
+                    proxy.getBoutFighterPotBalance(boutId, BoutFighter.FighterA),
+                    scen.fighterAPot,
+                    "fighter A pot balance"
+                );
+                assertEq(
+                    proxy.getBoutFighterPotBalance(boutId, BoutFighter.FighterB),
+                    scen.fighterBPot,
+                    "fighter B pot balance"
+                );
+            }
+        }
     }
+
+    // ------------------------------------------------------ //
+    //
+    // Claim winnings - successfully completed bouts
+    //
+    // ------------------------------------------------------ //
+
+    function testGetClaimableWinningsForSingleBout() public {
+        testEndBout();
+
+        BettingScenario memory scen = _getScenario1();
+
+        // check claimable winnings
+        for (uint i = 0; i < scen.players.length; i++) {
+            Wallet memory player = scen.players[i];
+
+            uint winnings = proxy.getClaimableWinnings(player.addr);
+
+            assertEq(winnings, scen.expectedWinnings[i], "winnings");
+        }
+    }
+
+    function testGetClaimableWinningsForMultipleBouts() public {
+        uint[] memory boutIds = testCompleteMultipleBouts();
+
+        BettingScenario memory scen = _getScenario1();
+
+        // check claimable winnings
+        for (uint i = 0; i < scen.players.length; i++) {
+            Wallet memory player = scen.players[i];
+
+            uint winnings = proxy.getClaimableWinnings(player.addr);
+
+            assertEq(winnings, scen.expectedWinnings[i] * boutIds.length, "winnings");
+        }
+    }
+
+    // use this to avoid stack too deep errors
+    struct ClaimWinningsLoopValues {
+        uint winnerPotPrevBalance;
+        uint loserPotPrevBalance;
+        uint winnerPotPostBalance;
+        uint loserPotPostBalance;
+        uint proxyMemeTokenBalance;
+        uint total;
+        uint selfAmount;
+        uint won;
+    }
+
+    function testClaimWinningsForSingleBout() public {
+        uint boutId = testEndBout();
+
+        BettingScenario memory scen = _getScenario1();
+
+        ClaimWinningsLoopValues memory v;
+        Wallet memory player;
+
+        // check claimable winnings
+        for (uint i = 0; i < scen.players.length; i++) {
+            player = scen.players[i];
+
+            // get fighter pot balances
+            v.winnerPotPrevBalance = proxy.getBoutFighterPotBalance(boutId, scen.winner);
+            v.loserPotPrevBalance = proxy.getBoutFighterPotBalance(boutId, scen.loser);
+
+            // get meme token balance of proxy
+            v.proxyMemeTokenBalance = memeToken.balanceOf(proxyAddress);
+
+            // get bout winnings for this player
+            (v.total, v.selfAmount, v.won) = proxy.getBoutWinnings(boutId, player.addr);
+
+            // make claim
+            proxy.claimWinnings(player.addr, 1);
+
+            // check fighter pot balances
+            v.winnerPotPostBalance = proxy.getBoutFighterPotBalance(boutId, scen.winner);
+            v.loserPotPostBalance = proxy.getBoutFighterPotBalance(boutId, scen.loser);
+            if (scen.betTargets[i] == scen.winner) {
+                assertEq(v.winnerPotPostBalance, v.winnerPotPrevBalance - v.selfAmount);
+                assertEq(v.loserPotPostBalance, v.loserPotPrevBalance - v.won);
+            } else {
+                assertEq(v.winnerPotPostBalance, v.winnerPotPrevBalance);
+                assertEq(v.loserPotPostBalance, v.loserPotPrevBalance);
+            }
+
+            // check bout winnings claimed status
+            assertEq(
+                proxy.getBoutWinningsClaimed(boutId, player.addr),
+                true,
+                "bout winnings claimed"
+            );
+
+            // check that tokens were transferred
+            assertEq(memeToken.balanceOf(player.addr), v.total, "total winnings");
+            assertEq(
+                memeToken.balanceOf(proxyAddress),
+                v.proxyMemeTokenBalance - v.total,
+                "proxy meme token balance"
+            );
+
+            // check that there no more winnings to claim for this player
+            assertEq(proxy.getClaimableWinnings(player.addr), 0, "all winnings claimed");
+        }
+    }
+
+    function testClaimWinningsForMultipleBouts() public {
+        uint[] memory boutIds = testCompleteMultipleBouts();
+
+        BettingScenario memory scen = _getScenario1();
+
+        ClaimWinningsLoopValues[] memory v = new ClaimWinningsLoopValues[](boutIds.length);
+        Wallet memory player = scen.players[1]; // 2nd and 4th players are winners
+        // assertEq(scen.betTargets[1], scen.winner);
+
+        uint winningsClaimed = 0;
+        uint totalWinnings = proxy.getClaimableWinnings(player.addr);
+        uint proxyMemeTokenBalance = memeToken.balanceOf(proxyAddress);
+
+        // get pre-values
+        for (uint i = 0; i < boutIds.length; i++) {
+            uint boutId = boutIds[i];
+
+            // get fighter pot balances
+            v[i].winnerPotPrevBalance = proxy.getBoutFighterPotBalance(boutId, scen.winner);
+            v[i].loserPotPrevBalance = proxy.getBoutFighterPotBalance(boutId, scen.loser);
+
+            // get bout winnings for this player
+            (v[i].total, v[i].selfAmount, v[i].won) = proxy.getBoutWinnings(boutId, player.addr);
+
+            winningsClaimed += v[i].total;
+        }
+
+        // have winnings to claim
+        assertGt(winningsClaimed, 0, "have winnings to claim");
+        assertEq(winningsClaimed, totalWinnings, "have winnings to claim equal to total");
+
+        // make claim
+        proxy.claimWinnings(player.addr, boutIds.length);
+
+        // check post-values
+        for (uint i = 0; i < boutIds.length; i++) {
+            uint boutId = boutIds[i];
+
+            // check fighter pot balances
+            v[i].winnerPotPostBalance = proxy.getBoutFighterPotBalance(boutId, scen.winner);
+            v[i].loserPotPostBalance = proxy.getBoutFighterPotBalance(boutId, scen.loser);
+            assertEq(v[i].winnerPotPostBalance, v[i].winnerPotPrevBalance - v[i].selfAmount);
+            assertEq(v[i].loserPotPostBalance, v[i].loserPotPrevBalance - v[i].won);
+
+            // check bout winnings claimed status
+            assertEq(
+                proxy.getBoutWinningsClaimed(boutId, player.addr),
+                true,
+                "bout winnings claimed"
+            );
+        }
+
+        // check that tokens were transferred
+        assertEq(memeToken.balanceOf(player.addr), winningsClaimed, "total winnings");
+        assertEq(
+            memeToken.balanceOf(proxyAddress),
+            proxyMemeTokenBalance - winningsClaimed,
+            "proxy meme token balance"
+        );
+
+        // check that there no more winnings to claim for this player
+        assertEq(proxy.getClaimableWinnings(player.addr), 0, "all winnings claimed");
+    }
+
+    function testClaimWinningsForMultipleBoutsSubset() public {
+        uint[] memory boutIds = testCompleteMultipleBouts();
+
+        BettingScenario memory scen = _getScenario1();
+
+        ClaimWinningsLoopValues[] memory v = new ClaimWinningsLoopValues[](boutIds.length);
+        Wallet memory player = scen.players[1]; // 2nd and 4th players are winners
+        // assertEq(scen.betTargets[1], scen.winner);
+
+        uint winningsClaimed = 0;
+        uint totalWinnings = proxy.getClaimableWinnings(player.addr);
+        uint proxyMemeTokenBalance = memeToken.balanceOf(proxyAddress);
+
+        uint MAX_BOUTS = 2;
+
+        // get pre-values
+        for (uint i = 0; i < MAX_BOUTS; i++) {
+            uint boutId = boutIds[i];
+
+            // get fighter pot balances
+            v[i].winnerPotPrevBalance = proxy.getBoutFighterPotBalance(boutId, scen.winner);
+            v[i].loserPotPrevBalance = proxy.getBoutFighterPotBalance(boutId, scen.loser);
+
+            // get bout winnings for this player
+            (v[i].total, v[i].selfAmount, v[i].won) = proxy.getBoutWinnings(boutId, player.addr);
+
+            winningsClaimed += v[i].total;
+        }
+
+        assertGt(winningsClaimed, 0, "have winnings to claim");
+        assertLt(winningsClaimed, totalWinnings, "have winnings to claim less than total");
+
+        // make claim
+        proxy.claimWinnings(player.addr, MAX_BOUTS);
+
+        // check post-values
+        for (uint i = 0; i < MAX_BOUTS; i++) {
+            uint boutId = boutIds[i];
+
+            // check fighter pot balances
+            v[i].winnerPotPostBalance = proxy.getBoutFighterPotBalance(boutId, scen.winner);
+            v[i].loserPotPostBalance = proxy.getBoutFighterPotBalance(boutId, scen.loser);
+            assertEq(v[i].winnerPotPostBalance, v[i].winnerPotPrevBalance - v[i].selfAmount);
+            assertEq(v[i].loserPotPostBalance, v[i].loserPotPrevBalance - v[i].won);
+
+            // check bout winnings claimed status
+            assertEq(
+                proxy.getBoutWinningsClaimed(boutId, player.addr),
+                true,
+                "bout winnings claimed"
+            );
+        }
+
+        // check that tokens were transferred
+        assertEq(memeToken.balanceOf(player.addr), winningsClaimed, "total winnings");
+        assertEq(
+            memeToken.balanceOf(proxyAddress),
+            proxyMemeTokenBalance - winningsClaimed,
+            "proxy meme token balance"
+        );
+
+        // check that there are still winnings to claim for this player
+        assertEq(
+            proxy.getClaimableWinnings(player.addr),
+            totalWinnings - winningsClaimed,
+            "some winnings claimed"
+        );
+    }
+
+    // ------------------------------------------------------ //
+    //
+    // Private/internal methods
+    //
+    // ------------------------------------------------------ //
 
     function _bet(address bettor, uint boutId, uint8 br, uint amount) internal {
         // mint tokens
