@@ -67,6 +67,30 @@ struct EIP712 {
     bytes32 TYPE_HASH;
 }
 
+// Linked list node to keep track of bouts
+struct BoutListNode {
+    // id of bout
+    uint boutId;
+    // id of previous node in list
+    uint prev;
+    // id of next node in list
+    uint next;
+}
+
+// Linked list to keep track of bouts
+struct BoutList {
+    // node id => node item
+    mapping(uint => BoutListNode) nodes;
+    // id of first node in list
+    uint head;
+    // id of last node in list
+    uint tail;
+    // length of list
+    uint len;
+    // id of next node to be added
+    uint nextId;
+}
+
 struct AppStorage {
     bool diamondInitialized;
     ///
@@ -107,8 +131,8 @@ struct AppStorage {
 
     // wallet => no. of bouts supported
     mapping(address => uint) userTotalBoutsBetOn;
-    // wallet => no. of bouts where winnings claimed
-    mapping(address => uint) userTotalBoutsWinningsClaimed;
+    // wallet => linked list of bouts where winnings still need to be claimed
+    mapping(address => BoutList) userBoutsWinningsToClaimList;
     // wallet => list of bouts supported
     mapping(address => mapping(uint => uint)) userBoutsBetOnByIndex;
     // tokenId => is this an item being sold by DegenFighter?

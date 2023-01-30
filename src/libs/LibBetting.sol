@@ -3,10 +3,11 @@ pragma solidity >=0.8.17 <0.9;
 
 import { SafeMath } from "lib/openzeppelin-contracts/contracts/utils/math/SafeMath.sol";
 
-import { AppStorage, LibAppStorage, Bout, BoutState, BoutFighter } from "../Objects.sol";
+import { AppStorage, LibAppStorage, Bout, BoutState, BoutFighter, BoutList, BoutListNode } from "../Objects.sol";
 import { LibToken, LibTokenIds } from "src/libs/LibToken.sol";
 import { LibConstants } from "../libs/LibConstants.sol";
 import { LibEip712 } from "../libs/LibEip712.sol";
+import { LibLinkedList } from "../libs/LibLinkedList.sol";
 import "../Errors.sol";
 
 library LibBetting {
@@ -68,6 +69,7 @@ library LibBetting {
             // update user data
             s.userTotalBoutsBetOn[wallet] += 1;
             s.userBoutsBetOnByIndex[wallet][s.userTotalBoutsBetOn[wallet]] = boutId;
+            LibLinkedList.addToBoutList(s.userBoutsWinningsToClaimList[wallet], boutId);
         }
 
         // add to pot
@@ -125,7 +127,7 @@ library LibBetting {
     }
 
     /*
-    We pass maxBoutsToClaim = 1 because under normal circumstances, the user will only have one
+    We usually pass maxBoutsToClaim = 1 because under normal circumstances, the user will only have one
     unclaimed bout winnings to claim. If the user places bets on lots of bouts before the 
     server suddenl goes down for a while then they'll have lots of unclaimed winnings and/or 
     bets that need to be refunded. In this case, the user may need to call this directly 
@@ -136,25 +138,21 @@ library LibBetting {
 
         uint totalWinnings = 0;
         uint count = 0;
-        uint totalBoutsBetOn = s.userTotalBoutsBetOn[wallet];
 
-        for (
-            uint i = s.userTotalBoutsWinningsClaimed[wallet] + 1;
-            i <= totalBoutsBetOn && count < maxBoutsToClaim;
-            i++
-        ) {
-            uint boutId = s.userBoutsBetOnByIndex[wallet][i];
+        BoutList storage c = s.userBoutsWinningsToClaimList[wallet];
+        BoutListNode storage node = c.nodes[c.head];
 
+        while (node.boutId != 0 && count < maxBoutsToClaim) {
             // if bout not yet ended
-            if (s.bouts[boutId].state == BoutState.Created) {
+            if (s.bouts[node.boutId].state == BoutState.Created) {
                 // TODO: end it if it's expired
                 // break out of loop
                 break;
             }
 
-            (uint total, uint selfAmount, uint won) = getBoutWinnings(boutId, wallet);
+            (uint total, uint selfAmount, uint won) = getBoutWinnings(node.boutId, wallet);
 
-            Bout storage bout = s.bouts[boutId];
+            Bout storage bout = s.bouts[node.boutId];
 
             bout.winningsClaimed[wallet] = true;
 
@@ -166,7 +164,10 @@ library LibBetting {
                 totalWinnings = totalWinnings.add(total);
             }
 
-            s.userTotalBoutsWinningsClaimed[wallet]++;
+            // remove this and move to next item
+            node = c.nodes[node.next];
+            LibLinkedList.removeFromBoutList(s.userBoutsWinningsToClaimList[wallet], node);
+
             count++;
         }
 
@@ -179,12 +180,13 @@ library LibBetting {
     function getClaimableWinnings(address wallet) internal view returns (uint winnings) {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
-        uint totalBoutsBetOn = s.userTotalBoutsBetOn[wallet];
+        BoutList storage c = s.userBoutsWinningsToClaimList[wallet];
+        BoutListNode storage node = c.nodes[c.head];
 
-        for (uint i = s.userTotalBoutsWinningsClaimed[wallet] + 1; i <= totalBoutsBetOn; i++) {
-            uint boutId = s.userBoutsBetOnByIndex[wallet][i];
-            (uint total, , ) = getBoutWinnings(boutId, wallet);
+        while (node.boutId != 0) {
+            (uint total, , ) = getBoutWinnings(node.boutId, wallet);
             winnings = winnings.add(total);
+            node = c.nodes[node.next];
         }
     }
 

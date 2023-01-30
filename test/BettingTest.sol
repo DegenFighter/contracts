@@ -885,7 +885,7 @@ contract BettingTest is TestBaseContract {
         BettingScenario memory scen = _getScenario1();
 
         ClaimWinningsLoopValues[] memory v = new ClaimWinningsLoopValues[](boutIds.length);
-        Wallet memory player = scen.players[1]; // 2nd and 4th players are winners
+        Wallet memory player = scen.players[1]; // 2nd player is a winner
         assertEq(uint(scen.betTargets[1]), uint(scen.winner));
 
         uint winningsClaimed = 0;
@@ -939,6 +939,8 @@ contract BettingTest is TestBaseContract {
             proxyMemeTokenBalance - winningsClaimed,
             "proxy meme token balance"
         );
+
+        assertEq(proxy.getUserBoutsWinningsClaimed(player.addr), 2, "bouts claimed");
 
         // check that there are still winnings to claim for this player
         assertEq(

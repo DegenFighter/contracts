@@ -26,7 +26,7 @@ contract InfoFacet is FacetBase, IInfoFacet {
 
     function getUserBoutsWinningsClaimed(address wallet) external view returns (uint) {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        return s.userTotalBoutsWinningsClaimed[wallet];
+        return s.userTotalBoutsBetOn[wallet] - s.userBoutsWinningsToClaimList[wallet].len;
     }
 
     function getUserBoutsSupported(address wallet) external view returns (uint) {
