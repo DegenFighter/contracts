@@ -43,14 +43,10 @@ contract BettingTest is TestBaseContract {
         );
         proxy.bet(boutId, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, v, r, s);
 
-        // state: Cancelled - should fail
-        proxy._testSetBoutState(boutId, BoutState.Cancelled);
+        // state: Expired - should fail
+        proxy._testSetBoutState(boutId, BoutState.Expired);
         vm.expectRevert(
-            abi.encodePacked(
-                BoutInWrongStateError.selector,
-                uint(100),
-                uint256(BoutState.Cancelled)
-            )
+            abi.encodePacked(BoutInWrongStateError.selector, uint(100), uint256(BoutState.Expired))
         );
         proxy.bet(boutId, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, v, r, s);
     }
@@ -184,6 +180,12 @@ contract BettingTest is TestBaseContract {
         // check bout basic state
         BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(boutId);
         assertEq(bout.state, BoutState.Created, "created");
+        assertGt(bout.createTime, 0, "create time");
+        assertEq(
+            bout.expiryTime,
+            bout.createTime + LibConstants.DEFAULT_BOUT_EXPIRATION_TIME,
+            "expiry time"
+        );
         assertEq(bout.numSupporters, 1, "no. of bettors");
         assertEq(bout.totalPot, scen.betAmounts[0], "total pot");
         assertEq(bout.winner, BoutFighter.Uninitialized, "bout winner");
@@ -947,6 +949,35 @@ contract BettingTest is TestBaseContract {
             proxy.getClaimableWinnings(player.addr),
             totalWinnings - winningsClaimed,
             "some winnings claimed"
+        );
+    }
+
+    // ------------------------------------------------------ //
+    //
+    // Expired bouts
+    //
+    // ------------------------------------------------------ //
+
+    function testEndBoutWhenExpired() public returns (uint boutId) {
+        boutId = testBetMultiple();
+
+        uint expiryTime = proxy.getBoutNonMappingInfo(boutId).expiryTime;
+
+        // move to past expiry
+        vm.warp(expiryTime);
+
+        BettingScenario memory scen = _getScenario1();
+
+        vm.prank(server.addr);
+        vm.expectRevert(abi.encodeWithSelector(BoutExpiredError.selector, boutId, expiryTime));
+        proxy.endBout(
+            boutId,
+            21,
+            22,
+            scen.fighterAPot,
+            scen.fighterBPot,
+            scen.winner,
+            scen.revealValues
         );
     }
 

@@ -22,6 +22,7 @@ library LibBetting {
             s.boutIdByIndex[s.totalBouts] = boutId;
             bout.state = BoutState.Created;
             bout.createTime = block.timestamp;
+            bout.expiryTime = block.timestamp + LibConstants.DEFAULT_BOUT_EXPIRATION_TIME;
         }
     }
 
@@ -104,6 +105,10 @@ library LibBetting {
 
         if (fighterAPot.add(fighterBPot) != bout.totalPot) {
             revert PotMismatchError(boutId, fighterAPot, fighterBPot, bout.totalPot);
+        }
+
+        if (block.timestamp >= bout.expiryTime) {
+            revert BoutExpiredError(boutId, bout.expiryTime);
         }
 
         bout.state = BoutState.Ended;

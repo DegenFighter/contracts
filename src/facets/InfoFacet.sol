@@ -43,16 +43,17 @@ contract InfoFacet is FacetBase, IInfoFacet {
         AppStorage storage s = LibAppStorage.diamondStorage();
         Bout storage bout = s.bouts[boutId];
         return
-            BoutNonMappingInfo(
-                bout.numSupporters,
-                bout.totalPot,
-                bout.createTime,
-                bout.endTime,
-                bout.state,
-                bout.winner,
-                bout.loser,
-                bout.revealValues
-            );
+            BoutNonMappingInfo({
+                numSupporters: bout.numSupporters,
+                totalPot: bout.totalPot,
+                createTime: bout.createTime,
+                expiryTime: bout.expiryTime,
+                endTime: bout.endTime,
+                state: bout.state,
+                winner: bout.winner,
+                loser: bout.loser,
+                revealValues: bout.revealValues
+            });
     }
 
     function getBoutSupporter(uint boutId, uint bettorNum) external view returns (address) {

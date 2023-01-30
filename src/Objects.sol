@@ -5,7 +5,7 @@ enum BoutState {
     Uninitialized,
     Created,
     Ended,
-    Cancelled
+    Expired
 }
 
 enum BoutFighter {
@@ -27,6 +27,7 @@ struct Bout {
     uint totalPot;
     uint createTime;
     uint endTime;
+    uint expiryTime;
     BoutState state;
     BoutFighter winner;
     BoutFighter loser;
@@ -50,6 +51,7 @@ struct BoutNonMappingInfo {
     uint numSupporters;
     uint totalPot;
     uint createTime;
+    uint expiryTime;
     uint endTime;
     BoutState state;
     BoutFighter winner;
