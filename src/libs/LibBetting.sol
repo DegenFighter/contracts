@@ -155,18 +155,26 @@ library LibBetting {
                 break;
             }
 
-            (uint total, uint selfAmount, uint won) = getBoutWinnings(node.boutId, wallet);
+            (
+                uint totalToClaim,
+                uint selfBetAmount,
+                uint loserPotAmountToClaim
+            ) = getBoutClaimableAmounts(node.boutId, wallet);
 
             Bout storage bout = s.bouts[node.boutId];
 
             bout.winningsClaimed[wallet] = true;
 
-            if (total > 0) {
+            if (totalToClaim > 0) {
                 bout.fighterPotBalances[bout.winner] = bout.fighterPotBalances[bout.winner].sub(
-                    selfAmount
+                    selfBetAmount
                 );
-                bout.fighterPotBalances[bout.loser] = bout.fighterPotBalances[bout.loser].sub(won);
-                totalWinnings = totalWinnings.add(total);
+
+                bout.fighterPotBalances[bout.loser] = bout.fighterPotBalances[bout.loser].sub(
+                    loserPotAmountToClaim
+                );
+
+                totalWinnings = totalWinnings.add(totalToClaim);
             }
 
             // remove this and move to next item
@@ -189,19 +197,34 @@ library LibBetting {
         BoutListNode storage node = c.nodes[c.head];
 
         while (node.boutId != 0) {
-            (uint total, , ) = getBoutWinnings(node.boutId, wallet);
-            winnings = winnings.add(total);
+            (uint totalToClaim, , ) = getBoutClaimableAmounts(node.boutId, wallet);
+            winnings = winnings.add(totalToClaim);
             node = c.nodes[node.next];
         }
     }
 
-    function getBoutWinnings(
+    function getBoutClaimableAmounts(
         uint boutId,
         address wallet
-    ) internal view returns (uint total, uint selfAmount, uint won) {
+    ) internal view returns (uint totalToClaim, uint selfBetAmount, uint loserPotAmountToClaim) {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
         Bout storage bout = s.bouts[boutId];
+
+        // how much did we put in?
+        selfBetAmount = bout.betAmounts[wallet];
+
+        // if bout not yet ended
+        if (bout.state != BoutState.Ended) {
+            // if bout expired then we just get our bet back
+            if (block.timestamp >= bout.expiryTime) {
+                totalToClaim = selfBetAmount;
+                return (totalToClaim, selfBetAmount, 0);
+            } else {
+                // else we can't claim anything yet until bout ends
+                return (0, 0, 0);
+            }
+        }
 
         // calculate which way player bet
         BoutFighter bet = getRevealedBet(bout, wallet);
@@ -209,12 +232,10 @@ library LibBetting {
         // bet on winner?
         if (bet == bout.winner) {
             // how much of losing pot do we get?
-            uint ratio = (bout.betAmounts[wallet] * 1000 ether) / bout.fighterPots[bout.winner];
-            won = (ratio * bout.fighterPots[bout.loser]) / 1000 ether;
-            // how much did we put in?
-            selfAmount = bout.betAmounts[wallet];
+            uint ratio = (selfBetAmount * 1000 ether) / bout.fighterPots[bout.winner];
+            loserPotAmountToClaim = (ratio * bout.fighterPots[bout.loser]) / 1000 ether;
             // total winnings
-            total = selfAmount + won;
+            totalToClaim = selfBetAmount + loserPotAmountToClaim;
         }
     }
 
@@ -222,8 +243,19 @@ library LibBetting {
         Bout storage bout,
         address wallet
     ) internal view returns (BoutFighter bet) {
+        // if we didn't bet in this fight then no bet exists
+        if (bout.bettorIndexes[wallet] == 0) {
+            return BoutFighter.Invalid;
+        }
+
         uint index = bout.bettorIndexes[wallet] - 1;
         uint rPackedIndex = index >> 4;
+
+        // if index is invalid then no bet exists
+        if (rPackedIndex >= bout.revealValues.length) {
+            return BoutFighter.Invalid;
+        }
+
         uint8 r = (bout.revealValues[rPackedIndex] >> ((3 - (index % 4)) * 2)) & 3;
         uint8 rawBet;
         if (bout.hiddenBets[wallet] >= r) {

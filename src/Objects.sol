@@ -9,7 +9,7 @@ enum BoutState {
 }
 
 enum BoutFighter {
-    Uninitialized,
+    Invalid,
     FighterA,
     FighterB
 }

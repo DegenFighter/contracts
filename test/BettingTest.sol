@@ -188,8 +188,8 @@ contract BettingTest is TestBaseContract {
         );
         assertEq(bout.numSupporters, 1, "no. of bettors");
         assertEq(bout.totalPot, scen.betAmounts[0], "total pot");
-        assertEq(bout.winner, BoutFighter.Uninitialized, "bout winner");
-        assertEq(bout.loser, BoutFighter.Uninitialized, "bout loser");
+        assertEq(bout.winner, BoutFighter.Invalid, "bout winner");
+        assertEq(bout.loser, BoutFighter.Invalid, "bout loser");
 
         assertEq(proxy.getBoutFighterPot(boutId, BoutFighter.FighterA), 0, "fighter A pot");
         assertEq(proxy.getBoutFighterPot(boutId, BoutFighter.FighterB), 0, "fighter B pot");
@@ -387,7 +387,7 @@ contract BettingTest is TestBaseContract {
 
         vm.prank(server.addr);
         vm.expectRevert(
-            abi.encodeWithSelector(InvalidWinnerError.selector, boutId, BoutFighter.Uninitialized)
+            abi.encodeWithSelector(InvalidWinnerError.selector, boutId, BoutFighter.Invalid)
         );
         proxy.endBout(
             boutId,
@@ -395,7 +395,7 @@ contract BettingTest is TestBaseContract {
             22,
             scen.fighterAPot,
             scen.fighterBPot,
-            BoutFighter.Uninitialized,
+            BoutFighter.Invalid,
             scen.revealValues
         );
     }
@@ -478,6 +478,14 @@ contract BettingTest is TestBaseContract {
             "fighter B pot balance"
         );
 
+        // check revealed bets
+        for (uint i = 0; i < scen.players.length; i++) {
+            Wallet memory player = scen.players[i];
+
+            BoutFighter revealedBet = proxy.getBoutRevealedBet(boutId, player.addr);
+            assertEq(revealedBet, scen.betTargets[i], "revealed target");
+        }
+
         // check global state
         assertEq(proxy.getEndedBouts(), preEndedBouts + 1, "ended bouts");
     }
@@ -550,6 +558,47 @@ contract BettingTest is TestBaseContract {
         assertEq(entries[0].topics[0], keccak256("BoutEnded(uint256)"));
         uint eBoutId = abi.decode(entries[0].data, (uint));
         assertEq(eBoutId, boutId, "boutId incorrect");
+    }
+
+    function testEndBoutAndRevealedBetForNonBettor() public {
+        uint boutId = testBetMultiple();
+
+        BettingScenario memory scen = _getScenario1();
+
+        vm.prank(server.addr);
+        proxy.endBout(
+            boutId,
+            21,
+            22,
+            scen.fighterAPot,
+            scen.fighterBPot,
+            scen.winner,
+            scen.revealValues
+        );
+
+        BoutFighter revealedBet = proxy.getBoutRevealedBet(boutId, vm.addr(666));
+        assertEq(revealedBet, BoutFighter.Invalid, "no target");
+    }
+
+    function testEndBoutAndRevealedBetForInsufficientRevealValues() public {
+        uint boutId = testBetMultiple();
+
+        BettingScenario memory scen = _getScenario1();
+
+        vm.prank(server.addr);
+        uint8[] memory revealValuesIncomplete;
+        proxy.endBout(
+            boutId,
+            21,
+            22,
+            scen.fighterAPot,
+            scen.fighterBPot,
+            scen.winner,
+            revealValuesIncomplete
+        );
+
+        BoutFighter revealedBet = proxy.getBoutRevealedBet(boutId, scen.players[0].addr);
+        assertEq(revealedBet, BoutFighter.Invalid, "no target");
     }
 
     // ------------------------------------------------------ //
@@ -719,6 +768,43 @@ contract BettingTest is TestBaseContract {
     //
     // ------------------------------------------------------ //
 
+    function testGetClaimableWinningsBeforeBoutEnded() public {
+        uint boutId = testBetMultiple();
+
+        BettingScenario memory scen = _getScenario1();
+
+        // check claimable winnings
+        for (uint i = 0; i < scen.players.length; i++) {
+            Wallet memory player = scen.players[i];
+
+            uint winnings = proxy.getClaimableWinnings(player.addr);
+            assertEq(winnings, 0, "no winnings claimable yet");
+
+            (uint total, uint selfAmount, uint won) = proxy.getBoutClaimableAmounts(
+                boutId,
+                player.addr
+            );
+            assertEq(total, 0, "no total winnings");
+            assertEq(selfAmount, 0, "no bet amound refundable");
+            assertEq(won, 0, "no winnings");
+        }
+    }
+
+    function testGetClaimableWinningsForAnotherBoutWeDidNotBetIn() public {
+        uint boutId = testEndBout();
+
+        BettingScenario memory scen = _getScenario1();
+
+        address playerAddr = vm.addr(666);
+
+        assertEq(proxy.getClaimableWinnings(playerAddr), 0, "no winnings claimable");
+
+        (uint total, uint selfAmount, uint won) = proxy.getBoutClaimableAmounts(boutId, playerAddr);
+        assertEq(total, 0, "no total winnings");
+        assertEq(selfAmount, 0, "no bet amound refundable");
+        assertEq(won, 0, "no winnings");
+    }
+
     function testGetClaimableWinningsForSingleBout() public {
         testEndBout();
 
@@ -781,7 +867,7 @@ contract BettingTest is TestBaseContract {
             v.proxyMemeTokenBalance = memeToken.balanceOf(proxyAddress);
 
             // get bout winnings for this player
-            (v.total, v.selfAmount, v.won) = proxy.getBoutWinnings(boutId, player.addr);
+            (v.total, v.selfAmount, v.won) = proxy.getBoutClaimableAmounts(boutId, player.addr);
 
             // make claim
             proxy.claimWinnings(player.addr, 1);
@@ -839,7 +925,10 @@ contract BettingTest is TestBaseContract {
             v[i].loserPotPrevBalance = proxy.getBoutFighterPotBalance(boutId, scen.loser);
 
             // get bout winnings for this player
-            (v[i].total, v[i].selfAmount, v[i].won) = proxy.getBoutWinnings(boutId, player.addr);
+            (v[i].total, v[i].selfAmount, v[i].won) = proxy.getBoutClaimableAmounts(
+                boutId,
+                player.addr
+            );
 
             winningsClaimed += v[i].total;
         }
@@ -905,7 +994,10 @@ contract BettingTest is TestBaseContract {
             v[i].loserPotPrevBalance = proxy.getBoutFighterPotBalance(boutId, scen.loser);
 
             // get bout winnings for this player
-            (v[i].total, v[i].selfAmount, v[i].won) = proxy.getBoutWinnings(boutId, player.addr);
+            (v[i].total, v[i].selfAmount, v[i].won) = proxy.getBoutClaimableAmounts(
+                boutId,
+                player.addr
+            );
 
             winningsClaimed += v[i].total;
         }
@@ -978,6 +1070,51 @@ contract BettingTest is TestBaseContract {
             scen.fighterBPot,
             scen.winner,
             scen.revealValues
+        );
+    }
+
+    function testGetClaimableWinningsForExpiredBout() public returns (uint boutId) {
+        boutId = testBetMultiple();
+
+        uint expiryTime = proxy.getBoutNonMappingInfo(boutId).expiryTime;
+
+        // move to past expiry
+        vm.warp(expiryTime);
+
+        BettingScenario memory scen = _getScenario1();
+
+        // check claimable winnings
+        for (uint i = 0; i < scen.players.length; i++) {
+            Wallet memory player = scen.players[i];
+
+            uint winnings = proxy.getClaimableWinnings(player.addr);
+            assertEq(winnings, scen.betAmounts[i], "bet refunded");
+
+            (uint total, uint selfAmount, uint won) = proxy.getBoutClaimableAmounts(
+                boutId,
+                player.addr
+            );
+            assertEq(total, selfAmount, "bet refunded - 2");
+            assertEq(won, 0, "no winnings");
+        }
+
+        // check bout basic state
+        BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(boutId);
+        assertEq(bout.winner, BoutFighter.Invalid, "bout winner");
+        assertEq(bout.loser, BoutFighter.Invalid, "bout loser");
+        assertEq(proxy.getBoutFighterId(boutId, BoutFighter.FighterA), 0, "fighter A id");
+        assertEq(proxy.getBoutFighterId(boutId, BoutFighter.FighterB), 0, "fighter B id");
+        assertEq(proxy.getBoutFighterPot(boutId, BoutFighter.FighterA), 0, "fighter A pot");
+        assertEq(proxy.getBoutFighterPot(boutId, BoutFighter.FighterB), 0, "fighter B pot");
+        assertEq(
+            proxy.getBoutFighterPotBalance(boutId, BoutFighter.FighterA),
+            0,
+            "fighter A pot balance"
+        );
+        assertEq(
+            proxy.getBoutFighterPotBalance(boutId, BoutFighter.FighterB),
+            0,
+            "fighter B pot balance"
         );
     }
 

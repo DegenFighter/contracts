@@ -17,11 +17,26 @@ contract BettingFacet is FacetBase, IBettingFacet {
 
     constructor() FacetBase() {}
 
-    function calculateBetSignature(address server, address bettor, uint256 boutId, uint8 br, uint256 amount, uint256 deadline) public returns (bytes32) {
+    function calculateBetSignature(
+        address server,
+        address bettor,
+        uint256 boutId,
+        uint8 br,
+        uint256 amount,
+        uint256 deadline
+    ) public returns (bytes32) {
         return LibBetting.calculateBetSignature(server, bettor, boutId, br, amount, deadline);
     }
 
-    function bet(uint boutId, uint8 br, uint amount, uint deadline, uint8 sigV, bytes32 sigR, bytes32 sigS) external {
+    function bet(
+        uint boutId,
+        uint8 br,
+        uint amount,
+        uint deadline,
+        uint8 sigV,
+        bytes32 sigR,
+        bytes32 sigS
+    ) external {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
         address bettor = _msgSender();
@@ -46,14 +61,33 @@ contract BettingFacet is FacetBase, IBettingFacet {
         emit BetPlaced(boutId, bettor);
     }
 
-    function endBout(uint boutId, uint fighterAId, uint fighterBId, uint fighterAPot, uint fighterBPot, BoutFighter winner, uint8[] calldata revealValues) external isServer {
-        LibBetting.endBout(boutId, fighterAId, fighterBId, fighterAPot, fighterBPot, winner, revealValues);
+    function endBout(
+        uint boutId,
+        uint fighterAId,
+        uint fighterBId,
+        uint fighterAPot,
+        uint fighterBPot,
+        BoutFighter winner,
+        uint8[] calldata revealValues
+    ) external isServer {
+        LibBetting.endBout(
+            boutId,
+            fighterAId,
+            fighterBId,
+            fighterAPot,
+            fighterBPot,
+            winner,
+            revealValues
+        );
 
         emit BoutEnded(boutId);
     }
 
-    function getBoutWinnings(uint boutId, address wallet) external view returns (uint total, uint selfAmount, uint won) {
-        return LibBetting.getBoutWinnings(boutId, wallet);
+    function getBoutClaimableAmounts(
+        uint boutId,
+        address wallet
+    ) external view returns (uint totalToClaim, uint selfBetAmount, uint loserPotAmountToClaim) {
+        return LibBetting.getBoutClaimableAmounts(boutId, wallet);
     }
 
     function getClaimableWinnings(address wallet) external view returns (uint) {
