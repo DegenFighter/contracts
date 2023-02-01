@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.3.1](https://github.com/DegenFighter/contracts/compare/v1.3.0...v1.3.1) (2023-02-01)
+
+
+### Bug Fixes
+
+* deployed addresses json not getting exported ([6abedc3](https://github.com/DegenFighter/contracts/commit/6abedc35da85d2dc96565bb580c817f2e83b475b))
+
 ## [1.3.0](https://github.com/DegenFighter/contracts/compare/v1.2.3...v1.3.0) (2023-02-01)
 
 
