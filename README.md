@@ -1,4 +1,4 @@
-![build](https://github.com/DegenFighter/contracts/actions/workflows/ci.yml/badge.svg)
+[![build](https://github.com/DegenFighter/contracts/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/DegenFighter/contracts/actions/workflows/ci.yml)
 
 # DegenFighter contracts
 
