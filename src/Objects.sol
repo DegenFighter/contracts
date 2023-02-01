@@ -23,7 +23,7 @@ enum MemeBuySizeDollars {
 }
 
 struct Bout {
-    uint numSupporters;
+    uint numBettors;
     uint totalPot;
     uint createTime;
     uint endTime;
@@ -48,7 +48,7 @@ struct Bout {
  * This is used to return Bout data from external calls.
  */
 struct BoutNonMappingInfo {
-    uint numSupporters;
+    uint numBettors;
     uint totalPot;
     uint createTime;
     uint expiryTime;

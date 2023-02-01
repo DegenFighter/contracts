@@ -17,17 +17,6 @@ contract BettingFacet is FacetBase, IBettingFacet {
 
     constructor() FacetBase() {}
 
-    function calculateBetSignature(
-        address server,
-        address bettor,
-        uint256 boutId,
-        uint8 br,
-        uint256 amount,
-        uint256 deadline
-    ) public returns (bytes32) {
-        return LibBetting.calculateBetSignature(server, bettor, boutId, br, amount, deadline);
-    }
-
     function bet(
         uint boutId,
         uint8 br,
@@ -96,5 +85,16 @@ contract BettingFacet is FacetBase, IBettingFacet {
 
     function claimWinnings(address wallet, uint maxBoutsToClaim) external {
         LibBetting.claimWinnings(wallet, maxBoutsToClaim);
+    }
+
+    function calculateBetSignature(
+        address server,
+        address bettor,
+        uint256 boutId,
+        uint8 br,
+        uint256 amount,
+        uint256 deadline
+    ) public returns (bytes32) {
+        return LibBetting.calculateBetSignature(server, bettor, boutId, br, amount, deadline);
     }
 }

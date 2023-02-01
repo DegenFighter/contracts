@@ -44,7 +44,7 @@ contract InfoFacet is FacetBase, IInfoFacet {
         Bout storage bout = s.bouts[boutId];
         return
             BoutNonMappingInfo({
-                numSupporters: bout.numSupporters,
+                numBettors: bout.numBettors,
                 totalPot: bout.totalPot,
                 createTime: bout.createTime,
                 expiryTime: bout.expiryTime,

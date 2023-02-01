@@ -7,15 +7,6 @@ interface IBettingFacet {
     event BetPlaced(uint boutId, address bettor);
     event BoutEnded(uint boutId);
 
-    function calculateBetSignature(
-        address server,
-        address bettor,
-        uint boutId,
-        uint8 br,
-        uint amount,
-        uint deadline
-    ) external returns (bytes32);
-
     function bet(
         uint boutId,
         uint8 br,
@@ -44,4 +35,13 @@ interface IBettingFacet {
     function getClaimableWinnings(address wallet) external view returns (uint);
 
     function claimWinnings(address wallet, uint maxBoutsToClaim) external;
+
+    function calculateBetSignature(
+        address server,
+        address bettor,
+        uint boutId,
+        uint8 br,
+        uint amount,
+        uint deadline
+    ) external returns (bytes32);
 }

@@ -64,9 +64,9 @@ library LibBetting {
         // new bet?
         else {
             // add to bettor list
-            bout.numSupporters += 1;
-            bout.bettors[bout.numSupporters] = wallet;
-            bout.bettorIndexes[wallet] = bout.numSupporters;
+            bout.numBettors += 1;
+            bout.bettors[bout.numBettors] = wallet;
+            bout.bettorIndexes[wallet] = bout.numBettors;
             // update user data
             s.userTotalBoutsBetOn[wallet] += 1;
             s.userBoutsBetOnByIndex[wallet][s.userTotalBoutsBetOn[wallet]] = boutId;
@@ -101,6 +101,10 @@ library LibBetting {
 
         if (winner != BoutFighter.FighterA && winner != BoutFighter.FighterB) {
             revert InvalidWinnerError(boutId, winner);
+        }
+
+        if (revealValues.length < calculateNumRevealValues(bout.numBettors)) {
+            revert RevealValuesError(boutId);
         }
 
         if (fighterAPot.add(fighterBPot) != bout.totalPot) {
@@ -148,11 +152,19 @@ library LibBetting {
         BoutListNode storage node = c.nodes[c.head];
 
         while (node.boutId != 0 && count < maxBoutsToClaim) {
+            Bout storage bout = s.bouts[node.boutId];
+
             // if bout not yet ended
-            if (s.bouts[node.boutId].state == BoutState.Created) {
-                // TODO: end it if it's expired
-                // break out of loop
-                break;
+            if (bout.state != BoutState.Ended) {
+                // if bout expired then cancel bout
+                if (block.timestamp >= bout.expiryTime) {
+                    bout.state = BoutState.Expired;
+                } else {
+                    // skip to next node
+                    node = c.nodes[node.next];
+                    count++;
+                    continue;
+                }
             }
 
             (
@@ -160,10 +172,6 @@ library LibBetting {
                 uint selfBetAmount,
                 uint loserPotAmountToClaim
             ) = getBoutClaimableAmounts(node.boutId, wallet);
-
-            Bout storage bout = s.bouts[node.boutId];
-
-            bout.winningsClaimed[wallet] = true;
 
             if (totalToClaim > 0) {
                 bout.fighterPotBalances[bout.winner] = bout.fighterPotBalances[bout.winner].sub(
@@ -178,6 +186,7 @@ library LibBetting {
             }
 
             // remove this and move to next item
+            bout.winningsClaimed[wallet] = true;
             node = c.nodes[node.next];
             LibLinkedList.removeFromBoutList(s.userBoutsWinningsToClaimList[wallet], node);
 
@@ -211,7 +220,6 @@ library LibBetting {
 
         Bout storage bout = s.bouts[boutId];
 
-        // how much did we put in?
         selfBetAmount = bout.betAmounts[wallet];
 
         // if bout not yet ended
@@ -236,7 +244,12 @@ library LibBetting {
             loserPotAmountToClaim = (ratio * bout.fighterPots[bout.loser]) / 1000 ether;
             // total winnings
             totalToClaim = selfBetAmount + loserPotAmountToClaim;
+            // return
+            return (totalToClaim, selfBetAmount, loserPotAmountToClaim);
         }
+
+        // bet on loser?
+        return (0, 0, 0);
     }
 
     function getRevealedBet(
@@ -249,7 +262,7 @@ library LibBetting {
         }
 
         uint index = bout.bettorIndexes[wallet] - 1;
-        uint rPackedIndex = index >> 4;
+        uint rPackedIndex = index >> 2; // 4 bets per reveal value
 
         // if index is invalid then no bet exists
         if (rPackedIndex >= bout.revealValues.length) {
@@ -292,5 +305,9 @@ library LibBetting {
                     )
                 )
             );
+    }
+
+    function calculateNumRevealValues(uint numBettors) internal pure returns (uint) {
+        return (numBettors + 3) >> 2;
     }
 }
