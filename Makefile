@@ -102,8 +102,8 @@ deploy-local: ## deploy contracts to local node with sender 0xf39Fd6e51aad88F6F4
 
 # Deployment defaults to upgrading
 facetsToCutIn="[]"
-newDiamond=false
-initNewDiamond=false
+newDiamond=true
+initNewDiamond=true
 facetAction=1
 senderAddress=0x90C36636E885BEE8096E4d12a7372866ab782091
 deploy-goerli: ## deploy contracts to goerli with sender 0x90C36636E885BEE8096E4d12a7372866ab782091
