@@ -156,8 +156,8 @@ library LibBetting {
 
             // if bout not yet ended
             if (bout.state != BoutState.Ended) {
-                // if bout expired then cancel bout
-                if (block.timestamp >= bout.expiryTime) {
+                // if bout expired then set state to expired
+                if (_isBoutExpiredOrReadyToBeMarkedAsExpired(bout)) {
                     bout.state = BoutState.Expired;
                 } else {
                     // skip to next node
@@ -174,21 +174,24 @@ library LibBetting {
             ) = getBoutClaimableAmounts(node.boutId, wallet);
 
             if (totalToClaim > 0) {
-                bout.fighterPotBalances[bout.winner] = bout.fighterPotBalances[bout.winner].sub(
-                    selfBetAmount
-                );
-
-                bout.fighterPotBalances[bout.loser] = bout.fighterPotBalances[bout.loser].sub(
-                    loserPotAmountToClaim
-                );
+                if (bout.state != BoutState.Expired) {
+                    // remove bet from winner pot
+                    bout.fighterPotBalances[bout.winner] = bout.fighterPotBalances[bout.winner].sub(
+                        selfBetAmount
+                    );
+                    // remove won amount from loser pot
+                    bout.fighterPotBalances[bout.loser] = bout.fighterPotBalances[bout.loser].sub(
+                        loserPotAmountToClaim
+                    );
+                }
 
                 totalWinnings = totalWinnings.add(totalToClaim);
             }
 
             // remove this and move to next item
             bout.winningsClaimed[wallet] = true;
-            node = c.nodes[node.next];
             LibLinkedList.removeFromBoutList(s.userBoutsWinningsToClaimList[wallet], node);
+            node = c.nodes[node.next];
 
             count++;
         }
@@ -225,7 +228,7 @@ library LibBetting {
         // if bout not yet ended
         if (bout.state != BoutState.Ended) {
             // if bout expired then we just get our bet back
-            if (block.timestamp >= bout.expiryTime) {
+            if (_isBoutExpiredOrReadyToBeMarkedAsExpired(bout)) {
                 totalToClaim = selfBetAmount;
                 return (totalToClaim, selfBetAmount, 0);
             } else {
@@ -309,5 +312,13 @@ library LibBetting {
 
     function calculateNumRevealValues(uint numBettors) internal pure returns (uint) {
         return (numBettors + 3) >> 2;
+    }
+
+    /// Private methods
+
+    function _isBoutExpiredOrReadyToBeMarkedAsExpired(
+        Bout storage bout
+    ) internal view returns (bool) {
+        return bout.state == BoutState.Expired || block.timestamp >= bout.expiryTime;
     }
 }

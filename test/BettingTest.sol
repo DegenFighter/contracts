@@ -7,6 +7,7 @@ import { BoutNonMappingInfo, BoutFighter, BoutState } from "../src/Objects.sol";
 import { Wallet, TestBaseContract } from "./utils/TestBaseContract.sol";
 import { LibConstants } from "../src/libs/LibConstants.sol";
 import { LibTokenIds } from "../src/libs/LibToken.sol";
+import { LibBetting } from "../src/libs/LibBetting.sol";
 
 contract BettingTest is TestBaseContract {
     // ------------------------------------------------------ //
@@ -157,7 +158,7 @@ contract BettingTest is TestBaseContract {
     function testBetSingle() public returns (uint boutId) {
         boutId = 100;
 
-        BettingScenario memory scen = _getScenario1();
+        BettingScenario memory scen = _getScenario_Default();
 
         // initialy no bouts
         assertEq(proxy.getTotalBouts(), 0, "no bouts at start");
@@ -205,7 +206,7 @@ contract BettingTest is TestBaseContract {
             scen.betAmounts[0],
             "bettor bet amount"
         );
-        assertEq(proxy.getUserBoutsSupported(player.addr), 1, "user supported bouts");
+        assertEq(proxy.getUserBoutsBetOn(player.addr), 1, "user supported bouts");
 
         // check MEME balances
         assertEq(memeToken.balanceOf(player.addr), 0, "MEME balance");
@@ -215,7 +216,7 @@ contract BettingTest is TestBaseContract {
     function testBetMultiple() public returns (uint boutId) {
         boutId = 100;
 
-        BettingScenario memory scen = _getScenario1();
+        BettingScenario memory scen = _getScenario_Default();
 
         // place bets
         uint totalBetAmount = 0;
@@ -247,7 +248,7 @@ contract BettingTest is TestBaseContract {
                 scen.betAmounts[i],
                 "bettor bet amount"
             );
-            assertEq(proxy.getUserBoutsSupported(player.addr), 1, "user supported bouts");
+            assertEq(proxy.getUserBoutsBetOn(player.addr), 1, "user supported bouts");
         }
 
         // check MEME balances
@@ -279,7 +280,7 @@ contract BettingTest is TestBaseContract {
             bout.totalPot,
             "bettor bet amount"
         );
-        assertEq(proxy.getUserBoutsSupported(players[0].addr), 1, "user supported bouts");
+        assertEq(proxy.getUserBoutsBetOn(players[0].addr), 1, "user supported bouts");
 
         // check MEME balances
         assertEq(
@@ -322,7 +323,7 @@ contract BettingTest is TestBaseContract {
     function testEndBoutMustBeDoneByServer() public {
         uint boutId = testBetMultiple();
 
-        BettingScenario memory scen = _getScenario1();
+        BettingScenario memory scen = _getScenario_Default();
 
         address dummyServer = vm.addr(123);
 
@@ -355,7 +356,7 @@ contract BettingTest is TestBaseContract {
     function testEndBoutWithInvalidState() public {
         uint boutId = testBetMultiple();
 
-        BettingScenario memory scen = _getScenario1();
+        BettingScenario memory scen = _getScenario_Default();
 
         vm.startPrank(server.addr);
 
@@ -380,7 +381,7 @@ contract BettingTest is TestBaseContract {
     function testEndBoutWithInvalidWinner() public {
         uint boutId = testBetMultiple();
 
-        BettingScenario memory scen = _getScenario1();
+        BettingScenario memory scen = _getScenario_Default();
 
         vm.prank(server.addr);
         vm.expectRevert(
@@ -400,7 +401,7 @@ contract BettingTest is TestBaseContract {
     function testEndBoutWithPotMismatch() public {
         uint boutId = testBetMultiple();
 
-        BettingScenario memory scen = _getScenario1();
+        BettingScenario memory scen = _getScenario_Default();
 
         BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(boutId);
 
@@ -428,7 +429,7 @@ contract BettingTest is TestBaseContract {
     function testEndBoutWithInsufficientRevealValues() public {
         uint boutId = testBetMultiple();
 
-        BettingScenario memory scen = _getScenario1();
+        BettingScenario memory scen = _getScenario_Default();
 
         uint8[] memory badRevealValues = new uint8[](1);
 
@@ -448,7 +449,7 @@ contract BettingTest is TestBaseContract {
     function testEndBout() public returns (uint boutId) {
         boutId = testBetMultiple();
 
-        BettingScenario memory scen = _getScenario1();
+        BettingScenario memory scen = _getScenario_Default();
 
         uint preEndedBouts = proxy.getEndedBouts();
 
@@ -502,7 +503,7 @@ contract BettingTest is TestBaseContract {
     function testEndBoutCreatesBoutIfNeeded() public {
         uint boutId = 100; // doesn't exist
 
-        BettingScenario memory scen = _getScenario1();
+        BettingScenario memory scen = _getScenario_Default();
 
         uint preEndedBouts = proxy.getEndedBouts();
 
@@ -546,7 +547,7 @@ contract BettingTest is TestBaseContract {
     function testEndBoutEmitsEvent() public {
         uint boutId = testBetMultiple();
 
-        BettingScenario memory scen = _getScenario1();
+        BettingScenario memory scen = _getScenario_Default();
 
         vm.recordLogs();
 
@@ -572,7 +573,7 @@ contract BettingTest is TestBaseContract {
     function testEndBoutRevealsBetsCorrectly() public returns (uint boutId) {
         boutId = 100;
 
-        BettingScenario memory scen = _getScenario1();
+        BettingScenario memory scen = _getScenario_Default();
 
         // place bets
         uint totalBetAmount = 0;
@@ -611,7 +612,7 @@ contract BettingTest is TestBaseContract {
     function testEndBoutAndRevealedBetForNonBettor() public {
         uint boutId = testBetMultiple();
 
-        BettingScenario memory scen = _getScenario1();
+        BettingScenario memory scen = _getScenario_Default();
 
         vm.prank(server.addr);
         proxy.endBout(
@@ -635,7 +636,7 @@ contract BettingTest is TestBaseContract {
     // ------------------------------------------------------ //
 
     function testProcessMultipleBoutsInSequence() public returns (uint[] memory boutIds) {
-        BettingScenario memory scen = _getScenario1();
+        BettingScenario memory scen = _getScenario_Default();
 
         uint numBouts = 5;
 
@@ -720,7 +721,7 @@ contract BettingTest is TestBaseContract {
     }
 
     function testProcessMultipleBoutsInParallel() public returns (uint[] memory boutIds) {
-        BettingScenario memory scen = _getScenario1();
+        BettingScenario memory scen = _getScenario_Default();
 
         uint numBouts = 5;
 
@@ -791,14 +792,14 @@ contract BettingTest is TestBaseContract {
 
     // ------------------------------------------------------ //
     //
-    // Claim winnings - successfully completed bouts
+    // Get Claimable winnings - successfully completed bouts
     //
     // ------------------------------------------------------ //
 
     function testGetClaimableWinningsBeforeBoutEnded() public {
         uint boutId = testBetMultiple();
 
-        BettingScenario memory scen = _getScenario1();
+        BettingScenario memory scen = _getScenario_Default();
 
         // check claimable winnings
         for (uint i = 0; i < scen.players.length; i++) {
@@ -820,7 +821,7 @@ contract BettingTest is TestBaseContract {
     function testGetClaimableWinningsForBoutWeDidNotBetIn() public {
         uint boutId = testEndBout();
 
-        BettingScenario memory scen = _getScenario1();
+        BettingScenario memory scen = _getScenario_Default();
 
         address playerAddr = vm.addr(666);
 
@@ -835,10 +836,7 @@ contract BettingTest is TestBaseContract {
     function testGetClaimableWinningsForSingleBout() public {
         uint boutId = testEndBout();
 
-        BettingScenario memory scen = _getScenario1();
-
-        console.log(scen.revealValues[0]);
-        console.log(scen.revealValues[1]);
+        BettingScenario memory scen = _getScenario_Default();
 
         // check claimable winnings
         for (uint i = 0; i < scen.players.length; i++) {
@@ -853,7 +851,7 @@ contract BettingTest is TestBaseContract {
     function testGetClaimableWinningsForMultipleBouts() public {
         uint[] memory boutIds = testProcessMultipleBoutsInParallel();
 
-        BettingScenario memory scen = _getScenario1();
+        BettingScenario memory scen = _getScenario_Default();
 
         // check claimable winnings
         for (uint i = 1; i < 2; i++) {
@@ -864,6 +862,72 @@ contract BettingTest is TestBaseContract {
             assertEq(winnings, scen.expectedWinnings[i] * boutIds.length, "winnings");
         }
     }
+
+    function testGetClaimableWinningsWhenAllBetsAreOnLoser() public {
+        BettingScenario memory scen = _getScenario_AllOnLoser();
+
+        uint boutId = 100;
+
+        for (uint j = 0; j < scen.players.length; j += 1) {
+            _bet(scen.players[j].addr, boutId, scen.betValues[j], scen.betAmounts[j]);
+        }
+
+        vm.prank(server.addr);
+        proxy.endBout(
+            boutId,
+            21,
+            22,
+            scen.fighterAPot,
+            scen.fighterBPot,
+            scen.winner,
+            scen.revealValues
+        );
+
+        // check claimable winnings
+        for (uint i = 0; i < scen.players.length; i++) {
+            Wallet memory player = scen.players[i];
+
+            uint winnings = proxy.getClaimableWinnings(player.addr);
+
+            assertEq(winnings, scen.expectedWinnings[i], "winnings");
+        }
+    }
+
+    function testGetClaimableWinningsWhenAllBetsAreOnWinner() public {
+        BettingScenario memory scen = _getScenario_AllOnWinner();
+
+        uint boutId = 100;
+
+        for (uint j = 0; j < scen.players.length; j += 1) {
+            _bet(scen.players[j].addr, boutId, scen.betValues[j], scen.betAmounts[j]);
+        }
+
+        vm.prank(server.addr);
+        proxy.endBout(
+            boutId,
+            21,
+            22,
+            scen.fighterAPot,
+            scen.fighterBPot,
+            scen.winner,
+            scen.revealValues
+        );
+
+        // check claimable winnings
+        for (uint i = 0; i < scen.players.length; i++) {
+            Wallet memory player = scen.players[i];
+
+            uint winnings = proxy.getClaimableWinnings(player.addr);
+
+            assertEq(winnings, scen.expectedWinnings[i], "winnings");
+        }
+    }
+
+    // ------------------------------------------------------ //
+    //
+    //  Claim winnings - successfully completed bouts
+    //
+    // ------------------------------------------------------ //
 
     // use this to avoid stack too deep errors
     struct ClaimWinningsLoopValues {
@@ -880,7 +944,7 @@ contract BettingTest is TestBaseContract {
     function testClaimWinningsForSingleBout() public {
         uint boutId = testEndBout();
 
-        BettingScenario memory scen = _getScenario1();
+        BettingScenario memory scen = _getScenario_Default();
 
         ClaimWinningsLoopValues memory v;
         Wallet memory player;
@@ -936,7 +1000,7 @@ contract BettingTest is TestBaseContract {
     function testClaimWinningsForMultipleBouts() public {
         uint[] memory boutIds = testProcessMultipleBoutsInParallel();
 
-        BettingScenario memory scen = _getScenario1();
+        BettingScenario memory scen = _getScenario_Default();
 
         ClaimWinningsLoopValues[] memory v = new ClaimWinningsLoopValues[](boutIds.length);
         Wallet memory player = scen.players[2];
@@ -1003,7 +1067,7 @@ contract BettingTest is TestBaseContract {
     function testClaimWinningsForMultipleBoutsSubset() public {
         uint[] memory boutIds = testProcessMultipleBoutsInParallel();
 
-        BettingScenario memory scen = _getScenario1();
+        BettingScenario memory scen = _getScenario_Default();
 
         ClaimWinningsLoopValues[] memory v = new ClaimWinningsLoopValues[](boutIds.length);
         Wallet memory player = scen.players[2];
@@ -1080,15 +1144,15 @@ contract BettingTest is TestBaseContract {
     //
     // ------------------------------------------------------ //
 
-    function testEndBoutWhenExpired() public returns (uint boutId) {
-        boutId = testBetMultiple();
+    function testEndBoutWhenExpired() public {
+        uint boutId = testBetMultiple();
 
         uint expiryTime = proxy.getBoutNonMappingInfo(boutId).expiryTime;
 
         // move to past expiry
         vm.warp(expiryTime);
 
-        BettingScenario memory scen = _getScenario1();
+        BettingScenario memory scen = _getScenario_Default();
 
         vm.prank(server.addr);
         vm.expectRevert(abi.encodeWithSelector(BoutExpiredError.selector, boutId, expiryTime));
@@ -1103,15 +1167,15 @@ contract BettingTest is TestBaseContract {
         );
     }
 
-    function testGetClaimableWinningsForExpiredBout() public returns (uint boutId) {
-        boutId = testBetMultiple();
+    function testGetClaimableWinningsForExpiredBout() public {
+        uint boutId = testBetMultiple();
 
         uint expiryTime = proxy.getBoutNonMappingInfo(boutId).expiryTime;
 
         // move to past expiry
         vm.warp(expiryTime);
 
-        BettingScenario memory scen = _getScenario1();
+        BettingScenario memory scen = _getScenario_Default();
 
         // check claimable winnings
         for (uint i = 0; i < scen.players.length; i++) {
@@ -1148,19 +1212,18 @@ contract BettingTest is TestBaseContract {
         );
     }
 
-    function testClaimWinningsForExpiredBout() public returns (uint boutId) {
-        boutId = testBetMultiple();
+    function testClaimWinningsForExpiredBout() public {
+        uint boutId = testBetMultiple();
 
         uint expiryTime = proxy.getBoutNonMappingInfo(boutId).expiryTime;
 
         // move to past expiry
         vm.warp(expiryTime);
 
-        BettingScenario memory scen = _getScenario1();
-        BoutFighter f1 = BoutFighter.FighterA;
-        BoutFighter f2 = BoutFighter.FighterB;
+        BettingScenario memory scen = _getScenario_Default();
 
-        Wallet memory player = scen.players[1]; // 2nd and 4th players are winners
+        Wallet memory player = scen.players[2];
+        assertEq(scen.betTargets[2], scen.winner, "bet target");
 
         uint totalWinnings = proxy.getClaimableWinnings(player.addr);
         uint proxyMemeTokenBalance = memeToken.balanceOf(proxyAddress);
@@ -1206,6 +1269,88 @@ contract BettingTest is TestBaseContract {
         );
     }
 
+    function testClaimWinningsForExpiredAndEndedBouts() public {
+        BettingScenario memory scen = _getScenario_Default();
+
+        uint numBouts = 5;
+
+        uint[] memory boutIds = new uint[](numBouts);
+
+        for (uint i = 0; i < numBouts; i += 1) {
+            boutIds[i] = 100 + i;
+
+            for (uint j = 0; j < scen.players.length; j += 1) {
+                _bet(scen.players[j].addr, boutIds[i], scen.betValues[j], scen.betAmounts[j]);
+            }
+
+            proxy._testSetBoutExpiryTime(boutIds[i], block.timestamp + 100 * (i + 1));
+        }
+
+        // move past expiry of 1st bout
+        vm.warp(block.timestamp + 100);
+
+        // end the 3rd bout
+        vm.prank(server.addr);
+        proxy.endBout(
+            boutIds[2],
+            21,
+            23,
+            scen.fighterAPot,
+            scen.fighterBPot,
+            scen.winner,
+            scen.revealValues
+        );
+
+        // at this point, bouts 2, 4, and 5 have yet to be ended
+
+        Wallet memory player = scen.players[2];
+        assertEq(scen.betTargets[2], scen.winner, "bet target");
+
+        uint totalWinnings = proxy.getClaimableWinnings(player.addr);
+        uint proxyMemeTokenBalance = memeToken.balanceOf(proxyAddress);
+        ClaimWinningsLoopValues memory v;
+
+        // make claim
+        proxy.claimWinnings(player.addr, 10);
+
+        // check bout winnings claimed status
+        assertEq(proxy.getBoutWinningsClaimed(boutIds[0], player.addr), true, "bout 1 claimed");
+        assertEq(
+            proxy.getBoutWinningsClaimed(boutIds[1], player.addr),
+            false,
+            "bout 2 not claimed"
+        );
+        assertEq(proxy.getBoutWinningsClaimed(boutIds[2], player.addr), true, "bout 3 claimed");
+        assertEq(
+            proxy.getBoutWinningsClaimed(boutIds[3], player.addr),
+            false,
+            "bout 4 not claimed"
+        );
+        assertEq(
+            proxy.getBoutWinningsClaimed(boutIds[4], player.addr),
+            false,
+            "bout 5 not claimed"
+        );
+
+        // check that tokens were transferred
+        assertEq(memeToken.balanceOf(player.addr), totalWinnings, "total winnings");
+        assertEq(
+            memeToken.balanceOf(proxyAddress),
+            proxyMemeTokenBalance - totalWinnings,
+            "proxy meme token balance"
+        );
+
+        // check that there no more winnings to claim for this player
+        assertEq(proxy.getClaimableWinnings(player.addr), 0, "all winnings claimed");
+
+        // check that user bout winningsToClaim list is now of length 3
+        assertEq(
+            proxy._testGetUserWinningsToClaimListLength(player.addr),
+            3,
+            "winnings to claim length"
+        );
+    }
+
     // ------------------------------------------------------ //
     //
     // Private/internal methods
@@ -1244,8 +1389,60 @@ contract BettingTest is TestBaseContract {
         uint[] expectedWinnings;
     }
 
-    function _getScenario1() internal returns (BettingScenario memory scen) {
+    // 5 players, 3 bet on the loser, 2 on the winner
+    function _getScenario_Default() internal returns (BettingScenario memory scen) {
         uint LEN = 5;
+
+        scen.winner = BoutFighter.FighterB;
+        scen.loser = BoutFighter.FighterA;
+        scen.betTargets = new BoutFighter[](LEN);
+        for (uint i = 0; i < LEN; i++) {
+            scen.betTargets[i] = (i == 0 || i == 1 || i == 4) ? scen.loser : scen.winner;
+        }
+
+        scen = __buildScenario(scen);
+    }
+
+    // 5 players, all bet on the loser
+    function _getScenario_AllOnLoser() internal returns (BettingScenario memory scen) {
+        uint LEN = 5;
+
+        scen.winner = BoutFighter.FighterB;
+        scen.loser = BoutFighter.FighterA;
+        scen.betTargets = new BoutFighter[](LEN);
+        for (uint i = 0; i < LEN; i++) {
+            scen.betTargets[i] = scen.loser;
+        }
+
+        scen = __buildScenario(scen);
+
+        for (uint i = 0; i < LEN; i++) {
+            assertEq(scen.expectedWinnings[i], 0, "expected winnings is 0");
+        }
+    }
+
+    // 5 players, all bet on the winner
+    function _getScenario_AllOnWinner() internal returns (BettingScenario memory scen) {
+        uint LEN = 5;
+
+        scen.winner = BoutFighter.FighterB;
+        scen.loser = BoutFighter.FighterA;
+        scen.betTargets = new BoutFighter[](LEN);
+        for (uint i = 0; i < LEN; i++) {
+            scen.betTargets[i] = scen.winner;
+        }
+
+        scen = __buildScenario(scen);
+
+        for (uint i = 0; i < LEN; i++) {
+            assertEq(scen.expectedWinnings[i], scen.betAmounts[i], "expected winnings same as bet");
+        }
+    }
+
+    function __buildScenario(
+        BettingScenario memory scen
+    ) internal returns (BettingScenario memory) {
+        uint LEN = scen.betTargets.length;
 
         scen.players = new Wallet[](LEN);
 
@@ -1255,14 +1452,7 @@ contract BettingTest is TestBaseContract {
 
         scen.betAmounts = new uint[](LEN);
         scen.betValues = new uint8[](LEN);
-        scen.revealValues = new uint8[]((LEN + 3) >> 2); // 4 bets per uint8
-
-        scen.winner = BoutFighter.FighterB;
-        scen.loser = BoutFighter.FighterA;
-        scen.betTargets = new BoutFighter[](LEN);
-        for (uint i = 0; i < LEN; i++) {
-            scen.betTargets[i] = (i == 0 || i == 1 || i == 4) ? scen.loser : scen.winner;
-        }
+        scen.revealValues = new uint8[](LibBetting.calculateNumRevealValues(LEN));
 
         uint winningPot;
         uint losingPot;
@@ -1309,5 +1499,7 @@ contract BettingTest is TestBaseContract {
                     ((((scen.betAmounts[i] * 1000 ether) / winningPot) * losingPot) / 1000 ether);
             }
         }
+
+        return scen;
     }
 }
