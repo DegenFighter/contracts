@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.3.0](https://github.com/DegenFighter/contracts/compare/v1.2.3...v1.3.0) (2023-02-01)
+
+
+### Features
+
+* export deployed addresses in npm pkg ([6cc81a6](https://github.com/DegenFighter/contracts/commit/6cc81a6fb7addfa1f5fd71980c8cce27548e8970))
+
 ### [1.2.3](https://github.com/DegenFighter/contracts/compare/v1.2.2...v1.2.3) (2023-02-01)
 
 ### [1.2.2](https://github.com/DegenFighter/contracts/compare/v1.2.1...v1.2.2) (2023-01-27)
