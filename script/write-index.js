@@ -38,6 +38,9 @@ fs.writeFileSync(GENERATED_FILE, `
 
 import { ContractInterface } from "@ethersproject/contracts"
 
+const deployedAddresses = require("../deployedAddresses.json")
+export { deployedAddresses }
+
 ${importStatements.join("\n")}
 
 ${exportStatments.join("\n")}
