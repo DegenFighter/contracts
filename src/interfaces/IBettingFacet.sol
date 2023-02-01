@@ -4,24 +4,44 @@ pragma solidity >=0.8.17 <0.9;
 import { Bout, BoutFighter } from "../Objects.sol";
 
 interface IBettingFacet {
-    event BoutCreated(uint boutNum);
-    event BetPlaced(uint boutNum, address supporter);
-    event BetsRevealed(uint boutNum, uint numBetsRevealed);
-    event BoutEnded(uint boutNum);
+    event BetPlaced(uint boutId, address bettor);
+    event BoutEnded(uint boutId);
 
-    function createBout(uint fighterA, uint fighterB) external;
+    function bet(
+        uint boutId,
+        uint8 br,
+        uint amount,
+        uint deadline,
+        uint8 sigV,
+        bytes32 sigR,
+        bytes32 sigS
+    ) external;
 
-    function calculateBetSignature(address server, address supporter, uint boutNum, uint8 br, uint amount, uint deadline) external returns (bytes32);
+    function endBout(
+        uint boutId,
+        uint fighterAId,
+        uint fighterBId,
+        uint fighterAPot,
+        uint fighterBPot,
+        BoutFighter winner,
+        uint8[] calldata revealValues
+    ) external;
 
-    function bet(uint boutNum, uint8 br, uint amount, uint deadline, uint8 sigV, bytes32 sigR, bytes32 sigS) external;
-
-    function revealBets(uint boutNum, uint numValues, uint8[] calldata rPacked) external;
-
-    function endBout(uint boutNum, BoutFighter winner) external;
-
-    function getBoutWinnings(uint boutNum, address wallet) external view returns (uint total, uint selfAmount, uint won);
+    function getBoutClaimableAmounts(
+        uint boutId,
+        address wallet
+    ) external view returns (uint totalToClaim, uint selfBetAmount, uint loserPotAmountToClaim);
 
     function getClaimableWinnings(address wallet) external view returns (uint);
 
     function claimWinnings(address wallet, uint maxBoutsToClaim) external;
+
+    function calculateBetSignature(
+        address server,
+        address bettor,
+        uint boutId,
+        uint8 br,
+        uint amount,
+        uint deadline
+    ) external returns (bytes32);
 }

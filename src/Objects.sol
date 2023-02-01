@@ -2,14 +2,14 @@
 pragma solidity >=0.8.17 <0.9;
 
 enum BoutState {
-    Unknown,
+    Uninitialized,
     Created,
-    BetsRevealed,
-    Ended
+    Ended,
+    Expired
 }
 
 enum BoutFighter {
-    Unknown,
+    Invalid,
     FighterA,
     FighterB
 }
@@ -23,18 +23,18 @@ enum MemeBuySizeDollars {
 }
 
 struct Bout {
-    uint id;
-    uint numSupporters;
-    uint numRevealedBets;
+    uint numBettors;
     uint totalPot;
-    uint revealTime;
+    uint createTime;
     uint endTime;
+    uint expiryTime;
     BoutState state;
     BoutFighter winner;
     BoutFighter loser;
-    mapping(uint => address) supporters;
+    uint8[] revealValues; // the 'r' values packed into 2 bits each
+    mapping(uint => address) bettors;
+    mapping(address => uint) bettorIndexes;
     mapping(address => uint8) hiddenBets;
-    mapping(address => BoutFighter) revealedBets;
     mapping(address => uint) betAmounts;
     mapping(address => bool) winningsClaimed;
     mapping(BoutFighter => uint) fighterIds;
@@ -48,15 +48,15 @@ struct Bout {
  * This is used to return Bout data from external calls.
  */
 struct BoutNonMappingInfo {
-    uint id;
-    uint numSupporters;
-    uint numRevealedBets;
+    uint numBettors;
     uint totalPot;
-    uint revealTime;
+    uint createTime;
+    uint expiryTime;
     uint endTime;
     BoutState state;
     BoutFighter winner;
     BoutFighter loser;
+    uint8[] revealValues; // the 'r' values packed into 2 bits each
 }
 
 // from https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/cryptography/EIP712.sol
@@ -67,6 +67,30 @@ struct EIP712 {
     bytes32 HASHED_NAME;
     bytes32 HASHED_VERSION;
     bytes32 TYPE_HASH;
+}
+
+// Linked list node to keep track of bouts
+struct BoutListNode {
+    // id of bout
+    uint boutId;
+    // id of previous node in list
+    uint prev;
+    // id of next node in list
+    uint next;
+}
+
+// Linked list to keep track of bouts
+struct BoutList {
+    // node id => node item
+    mapping(uint => BoutListNode) nodes;
+    // id of first node in list
+    uint head;
+    // id of last node in list
+    uint tail;
+    // length of list
+    uint len;
+    // id of next node to be added
+    uint nextId;
 }
 
 struct AppStorage {
@@ -99,18 +123,20 @@ struct AppStorage {
     uint totalBouts;
     // no. of bouts finished
     uint endedBouts;
-    // bout => details
+    // bout id => bout details
     mapping(uint => Bout) bouts;
+    // bout index => bout id
+    mapping(uint => uint) boutIdByIndex;
     ///
-    /// Fight supporters
+    /// Fight bettors
     ///
 
     // wallet => no. of bouts supported
-    mapping(address => uint) userBoutsSupported;
-    // wallet => no. of bouts where winnings claimed
-    mapping(address => uint) userBoutsWinningsClaimed;
+    mapping(address => uint) userTotalBoutsBetOn;
+    // wallet => linked list of bouts where winnings still need to be claimed
+    mapping(address => BoutList) userBoutsWinningsToClaimList;
     // wallet => list of bouts supported
-    mapping(address => mapping(uint => uint)) userBoutsSupportedByIndex;
+    mapping(address => mapping(uint => uint)) userBoutsBetOnByIndex;
     // tokenId => is this an item being sold by DegenFighter?
     mapping(uint256 => bool) itemForSale;
     // tokenId => cost of item in MEMEs

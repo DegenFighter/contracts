@@ -39,7 +39,12 @@ contract MemeTest is TestBaseContract {
 
     function testPurchaseMeme() public {
         proxy.setAddress(LibConstants.TREASURY_ADDRESS, address(proxy));
-        writeTokenBalance(address(this), address(proxy), LibConstants.WMATIC_POLYGON_ADDRESS, 10000e18);
+        writeTokenBalance(
+            address(this),
+            address(proxy),
+            LibConstants.WMATIC_POLYGON_ADDRESS,
+            10000e18
+        );
 
         IERC20 wmatic = IERC20(LibConstants.WMATIC_POLYGON_ADDRESS);
 
@@ -67,31 +72,31 @@ contract MemeTest is TestBaseContract {
     // ------------------------------------------------------ //
 
     function testClaimMemeGivesUptoMinBetAmount() public {
-        assertEq(memeToken.balanceOf(player1.addr), 0);
+        assertEq(memeToken.balanceOf(players[0].addr), 0);
 
-        vm.prank(player1.addr);
+        vm.prank(players[0].addr);
         proxy.claimFreeMeme();
 
-        assertEq(memeToken.balanceOf(player1.addr), LibConstants.MIN_BET_AMOUNT);
+        assertEq(memeToken.balanceOf(players[0].addr), LibConstants.MIN_BET_AMOUNT);
 
         uint amt = LibConstants.MIN_BET_AMOUNT / 3;
-        proxy._testMintMeme(player2.addr, amt);
-        assertEq(memeToken.balanceOf(player2.addr), amt);
+        proxy._testMintMeme(players[1].addr, amt);
+        assertEq(memeToken.balanceOf(players[1].addr), amt);
 
-        vm.prank(player2.addr);
+        vm.prank(players[1].addr);
         proxy.claimFreeMeme();
 
-        assertEq(memeToken.balanceOf(player2.addr), LibConstants.MIN_BET_AMOUNT);
+        assertEq(memeToken.balanceOf(players[1].addr), LibConstants.MIN_BET_AMOUNT);
     }
 
     function testClaimMemeDoesNothingIfBalanceAlreadyEnough() public {
         uint amt = LibConstants.MIN_BET_AMOUNT;
-        proxy._testMintMeme(player1.addr, amt);
-        assertEq(memeToken.balanceOf(player1.addr), amt);
+        proxy._testMintMeme(players[0].addr, amt);
+        assertEq(memeToken.balanceOf(players[0].addr), amt);
 
-        vm.prank(player1.addr);
+        vm.prank(players[0].addr);
         proxy.claimFreeMeme();
 
-        assertEq(memeToken.balanceOf(player1.addr), amt);
+        assertEq(memeToken.balanceOf(players[0].addr), amt);
     }
 }

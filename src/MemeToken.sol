@@ -3,7 +3,7 @@ pragma solidity >=0.8.17 <0.9;
 
 import { IERC20 } from "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import { ITokenImplFacet } from "./interfaces/ITokenImplFacet.sol";
-import { LibTokenIds } from "./libs/LibConstants.sol";
+import { LibTokenIds } from "./libs/LibToken.sol";
 
 contract MemeToken is IERC20 {
     ITokenImplFacet public impl;

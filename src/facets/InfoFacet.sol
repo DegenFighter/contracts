@@ -4,6 +4,7 @@ pragma solidity >=0.8.17 <0.9;
 import { FacetBase } from "../FacetBase.sol";
 import { AppStorage, LibAppStorage, Bout, BoutFighter, BoutNonMappingInfo } from "../Objects.sol";
 import { IInfoFacet } from "../interfaces/IInfoFacet.sol";
+import { LibBetting } from "../libs/LibBetting.sol";
 
 contract InfoFacet is FacetBase, IInfoFacet {
     constructor() FacetBase() {}
@@ -13,6 +14,11 @@ contract InfoFacet is FacetBase, IInfoFacet {
         return s.totalBouts;
     }
 
+    function getBoutIdByIndex(uint boutIndex) external view returns (uint) {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        return s.boutIdByIndex[boutIndex];
+    }
+
     function getEndedBouts() external view returns (uint) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         return s.endedBouts;
@@ -20,71 +26,81 @@ contract InfoFacet is FacetBase, IInfoFacet {
 
     function getUserBoutsWinningsClaimed(address wallet) external view returns (uint) {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        return s.userBoutsWinningsClaimed[wallet];
+        return s.userTotalBoutsBetOn[wallet] - s.userBoutsWinningsToClaimList[wallet].len;
     }
 
-    function getUserBoutsSupported(address wallet) external view returns (uint) {
+    function getUserBoutsBetOn(address wallet) external view returns (uint) {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        return s.userBoutsSupported[wallet];
+        return s.userTotalBoutsBetOn[wallet];
     }
 
-    function getUserSupportedBoutAtIndex(address wallet, uint index) external view returns (uint) {
+    function getUserBoutBetOnAtIndex(address wallet, uint index) external view returns (uint) {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        return s.userBoutsSupportedByIndex[wallet][index];
+        return s.userBoutsBetOnByIndex[wallet][index];
     }
 
-    function getBoutNonMappingInfo(uint boutNum) external view returns (BoutNonMappingInfo memory) {
+    function getBoutNonMappingInfo(uint boutId) external view returns (BoutNonMappingInfo memory) {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        Bout storage bout = s.bouts[boutNum];
-
-        return BoutNonMappingInfo(boutNum, bout.numSupporters, bout.numRevealedBets, bout.totalPot, bout.revealTime, bout.endTime, bout.state, bout.winner, bout.loser);
+        Bout storage bout = s.bouts[boutId];
+        return
+            BoutNonMappingInfo({
+                numBettors: bout.numBettors,
+                totalPot: bout.totalPot,
+                createTime: bout.createTime,
+                expiryTime: bout.expiryTime,
+                endTime: bout.endTime,
+                state: bout.state,
+                winner: bout.winner,
+                loser: bout.loser,
+                revealValues: bout.revealValues
+            });
     }
 
-    function getBoutSupporter(uint boutNum, uint supporterNum) external view returns (address) {
+    function getBoutSupporter(uint boutId, uint bettorNum) external view returns (address) {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        Bout storage bout = s.bouts[boutNum];
-        return bout.supporters[supporterNum];
+        Bout storage bout = s.bouts[boutId];
+        return bout.bettors[bettorNum];
     }
 
-    function getBoutHiddenBet(uint boutNum, address supporter) external view returns (uint8) {
+    function getBoutHiddenBet(uint boutId, address bettor) external view returns (uint8) {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        Bout storage bout = s.bouts[boutNum];
-        return bout.hiddenBets[supporter];
+        Bout storage bout = s.bouts[boutId];
+        return bout.hiddenBets[bettor];
     }
 
-    function getBoutRevealedBet(uint boutNum, address supporter) external view returns (BoutFighter) {
+    function getBoutRevealedBet(uint boutId, address bettor) external view returns (BoutFighter) {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        Bout storage bout = s.bouts[boutNum];
-        return bout.revealedBets[supporter];
+        Bout storage bout = s.bouts[boutId];
+        return LibBetting.getRevealedBet(bout, bettor);
     }
 
-    function getBoutBetAmount(uint boutNum, address supporter) external view returns (uint) {
+    function getBoutBetAmount(uint boutId, address bettor) external view returns (uint) {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        Bout storage bout = s.bouts[boutNum];
-        return bout.betAmounts[supporter];
+        Bout storage bout = s.bouts[boutId];
+        return bout.betAmounts[bettor];
     }
 
-    function getBoutWinningsClaimed(uint boutNum, address supporter) external view returns (bool) {
+    function getBoutWinningsClaimed(uint boutId, address bettor) external view returns (bool) {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        Bout storage bout = s.bouts[boutNum];
-        return bout.winningsClaimed[supporter];
+        Bout storage bout = s.bouts[boutId];
+        return bout.winningsClaimed[bettor];
     }
 
-    function getBoutFighterId(uint boutNum, BoutFighter p) external view returns (uint) {
+    function getBoutFighterId(uint boutId, BoutFighter p) external view returns (uint) {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        Bout storage bout = s.bouts[boutNum];
+        Bout storage bout = s.bouts[boutId];
         return bout.fighterIds[p];
     }
 
-    function getBoutFighterPot(uint boutNum, BoutFighter p) external view returns (uint) {
+    function getBoutFighterPot(uint boutId, BoutFighter p) external view returns (uint) {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        Bout storage bout = s.bouts[boutNum];
+        Bout storage bout = s.bouts[boutId];
         return bout.fighterPots[p];
     }
 
-    function getBoutFighterPotBalance(uint boutNum, BoutFighter p) external view returns (uint) {
+    function getBoutFighterPotBalance(uint boutId, BoutFighter p) external view returns (uint) {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        Bout storage bout = s.bouts[boutNum];
+        Bout storage bout = s.bouts[boutId];
         return bout.fighterPotBalances[p];
     }
 }
