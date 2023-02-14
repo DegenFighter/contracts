@@ -132,6 +132,17 @@ deploy-sim: ## simulate smart deploy to goerli
 		-vvvv \
 		--ffi
 
+deploy-polygon-zk: ## deploy contracts to polygon zkEVM testnet with sender 0x90C36636E885BEE8096E4d12a7372866ab782091
+	forge script DeployProxy \
+		-f https://rpc.public.zkevm-test.net \
+		--chain-id 1422 \
+		--sender ${senderAddress} \
+		--mnemonic-paths ./mnemonic.txt \
+		--mnemonic-indexes 0 \
+		-vvvv \
+		--ffi \
+		--legacy
+
 update-twap: ## Update params related to TWAP oracle
 	forge script UpdateParams \
 		-f ${ALCHEMY_ETH_GOERLI_RPC_URL} \
