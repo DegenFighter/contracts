@@ -4,7 +4,7 @@ pragma solidity >=0.8.17 <0.9;
 import { AppStorage, LibAppStorage } from "../Objects.sol";
 import { ISettingsFacet } from "../interfaces/ISettingsFacet.sol";
 import { FacetBase } from "../FacetBase.sol";
-import { LibConstants } from "src/libs/LibConstants.sol";
+import { LibConstants } from "../libs/LibConstants.sol";
 
 contract SettingsFacet is FacetBase, ISettingsFacet {
     constructor() FacetBase() {}
@@ -19,7 +19,11 @@ contract SettingsFacet is FacetBase, ISettingsFacet {
         s.addresses[key] = value;
     }
 
-    function setTwapParams(address priceOracle, uint32 twapInterval, address currencyAddress) external isAdmin {
+    function setTwapParams(
+        address priceOracle,
+        uint32 twapInterval,
+        address currencyAddress
+    ) external isAdmin {
         require(priceOracle != address(0), "price oracle cannot be address(0)");
         require(currencyAddress != address(0), "currency address cannot be address(0)");
         AppStorage storage s = LibAppStorage.diamondStorage();

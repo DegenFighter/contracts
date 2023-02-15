@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.17 <0.9;
 
-import { FixedPoint96 } from "@uniswap/v3-core/contracts/libraries/FixedPoint96.sol";
+import { FixedPoint96 } from "lib/v3-core-08/contracts/libraries/FixedPoint96.sol";
 
 import { FacetBase } from "../FacetBase.sol";
 import { NotAllowedError } from "../Errors.sol";
@@ -9,8 +9,8 @@ import { AppStorage, LibAppStorage, MemeBuySizeDollars } from "../Objects.sol";
 import { ITokenImplFacet } from "../interfaces/ITokenImplFacet.sol";
 import { IERC20 } from "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import { LibConstants } from "../libs/LibConstants.sol";
-import { LibToken, LibTokenIds } from "src/libs/LibToken.sol";
-import { LibUniswapV3Twap } from "src/libs/LibUniswapV3Twap.sol";
+import { LibToken, LibTokenIds } from "../libs/LibToken.sol";
+import { LibUniswapV3Twap } from "../libs/LibUniswapV3Twap.sol";
 
 contract MemeMarketFacet is FacetBase {
     constructor() FacetBase() {}
@@ -27,7 +27,9 @@ contract MemeMarketFacet is FacetBase {
         }
     }
 
-    function buyMeme(MemeBuySizeDollars size) external returns (uint160 sqrtPriceX96, uint256 priceX96, uint256 amount, uint256 buyAmount) {
+    function buyMeme(
+        MemeBuySizeDollars size
+    ) external returns (uint160 sqrtPriceX96, uint256 priceX96, uint256 amount, uint256 buyAmount) {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
         // get price of matic

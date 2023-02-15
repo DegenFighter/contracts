@@ -4,7 +4,7 @@ pragma solidity >=0.8.17 <0.9;
 import { IERC1155 } from "lib/openzeppelin-contracts/contracts/token/ERC1155/IERC1155.sol";
 import { ITokenImplFacet } from "./interfaces/ITokenImplFacet.sol";
 import { LibConstants } from "./libs/LibConstants.sol";
-import { NotAllowedError } from "src/Errors.sol";
+import { NotAllowedError } from "./Errors.sol";
 
 contract Items is IERC1155 {
     ITokenImplFacet public impl;
@@ -18,7 +18,10 @@ contract Items is IERC1155 {
         return impl.tokenBalanceOf(id, wallet);
     }
 
-    function balanceOfBatch(address[] calldata accounts, uint256[] calldata ids) public view override returns (uint256[] memory) {
+    function balanceOfBatch(
+        address[] calldata accounts,
+        uint256[] calldata ids
+    ) public view override returns (uint256[] memory) {
         uint256[] memory batchBalances = new uint256[](accounts.length);
 
         for (uint256 i = 0; i < accounts.length; ++i) {
@@ -32,15 +35,30 @@ contract Items is IERC1155 {
         revert NotAllowedError();
     }
 
-    function isApprovedForAll(address account, address operator) external view override returns (bool) {
+    function isApprovedForAll(
+        address account,
+        address operator
+    ) external view override returns (bool) {
         revert NotAllowedError();
     }
 
-    function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes calldata data) external {
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 id,
+        uint256 amount,
+        bytes calldata data
+    ) external {
         revert NotAllowedError();
     }
 
-    function safeBatchTransferFrom(address from, address to, uint256[] calldata ids, uint256[] calldata amounts, bytes calldata data) external {
+    function safeBatchTransferFrom(
+        address from,
+        address to,
+        uint256[] calldata ids,
+        uint256[] calldata amounts,
+        bytes calldata data
+    ) external {
         revert NotAllowedError();
     }
 

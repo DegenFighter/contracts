@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.17 <0.9;
 
-import { ERC2771Context } from "src/shared/ERC2771Context.sol";
+import { ERC2771Context } from "./shared/ERC2771Context.sol";
 import { LibDiamond } from "lib/diamond-2-hardhat/contracts/libraries/LibDiamond.sol";
 
 import { CallerMustBeAdminError, CallerMustBeServerError } from "./Errors.sol";

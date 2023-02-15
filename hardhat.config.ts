@@ -1,12 +1,19 @@
 import "@matterlabs/hardhat-zksync-deploy";
 import "@matterlabs/hardhat-zksync-solc";
 import "hardhat-gas-reporter";
+import "@nomicfoundation/hardhat-foundry";
 
 import * as dotenv from "dotenv";
 import { resolve } from "path";
 dotenv.config({ path: resolve(__dirname, `./.env`) });
 
 module.exports = {
+  paths: {
+    artifacts: `./artifacts`,
+    cache: `./cache`,
+    sources: `src`,
+    tests: `test`,
+  },
   zksolc: {
     version: "1.3.1",
     compilerSource: "binary",
@@ -40,8 +47,8 @@ module.exports = {
   gasReporter: {
     currency: `USD`,
     enabled: true,
-    excludeContracts: [`./contracts/test`],
-    src: `./contracts`,
+    excludeContracts: [`./test`],
+    src: `./src`,
   },
   solidity: {
     version: "0.8.17",

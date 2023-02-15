@@ -4,10 +4,10 @@ pragma solidity >=0.8.17 <0.9;
 import { SafeMath } from "lib/openzeppelin-contracts/contracts/utils/math/SafeMath.sol";
 
 import { AppStorage, LibAppStorage, Bout, BoutState, BoutFighter, BoutList, BoutListNode } from "../Objects.sol";
-import { LibToken, LibTokenIds } from "src/libs/LibToken.sol";
-import { LibConstants } from "../libs/LibConstants.sol";
-import { LibEip712 } from "../libs/LibEip712.sol";
-import { LibLinkedList } from "../libs/LibLinkedList.sol";
+import { LibToken, LibTokenIds } from "./LibToken.sol";
+import { LibConstants } from "./LibConstants.sol";
+import { LibEip712 } from "./LibEip712.sol";
+import { LibLinkedList } from "./LibLinkedList.sol";
 import "../Errors.sol";
 
 library LibBetting {

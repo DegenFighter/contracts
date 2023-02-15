@@ -34,38 +34,45 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   // Create deployer object and load the artifact of the contract we want to deploy.
 
   const deployer = new Deployer(hre, zkSyncWallet);
-  const artifact = await deployer.loadArtifact("Greeter");
+  const artifact = await deployer.loadArtifact("Proxy");
 
+  const ownerAddress = zkSyncWallet._signerL1().address;
   // Deploy this contract. The returned object will be of a `Contract` type, similarly to ones in `ethers`.
-  // `greeting` is an argument for contract constructor.
-  const greeting = "";
-  const greeterContract = await deployer.deploy(artifact, [greeting]);
+  const diamondContract = await deployer.deploy(artifact, [ownerAddress]);
 
   // Show the contract info.
-  const contractAddress = greeterContract.address;
-  console.log(`${artifact.contractName} was deployed to ${contractAddress}`);
+  const diamondContractAddress = diamondContract.address;
+  console.log(
+    `${artifact.contractName} was deployed to ${diamondContractAddress}`
+  );
 
   // Call the deployed contract.
-  const greetingFromContract = await greeterContract.greet();
-  if (greetingFromContract == greeting) {
-    console.log(`Contract greets us with ${greeting}!`);
+  const getOwnerAddress = await diamondContract.owner();
+  if (getOwnerAddress == ownerAddress) {
+    console.log(`Contract owner is ${ownerAddress}!`);
   } else {
-    console.error(
-      `Contract said something unexpected: ${greetingFromContract}`
-    );
+    console.error(`Contract owner is ${getOwnerAddress}`);
   }
+  // const greetingFromContract = await greeterContract.greet();
+  // if (greetingFromContract == greeting) {
+  //   console.log(`Contract greets us with ${greeting}!`);
+  // } else {
+  //   console.error(
+  //     `Contract said something unexpected: ${greetingFromContract}`
+  //   );
+  // }
 
   // Edit the greeting of the contract
-  const newGreeting = "Hey guys";
-  const setNewGreetingHandle = await greeterContract.setGreeting(newGreeting);
-  await setNewGreetingHandle.wait();
+  // const newGreeting = "Hey guys";
+  // const setNewGreetingHandle = await greeterContract.setGreeting(newGreeting);
+  // await setNewGreetingHandle.wait();
 
-  const newGreetingFromContract = await greeterContract.greet();
-  if (newGreetingFromContract == newGreeting) {
-    console.log(`Contract greets us with ${newGreeting}!`);
-  } else {
-    console.error(
-      `Contract said something unexpected: ${newGreetingFromContract}`
-    );
-  }
+  // const newGreetingFromContract = await greeterContract.greet();
+  // if (newGreetingFromContract == newGreeting) {
+  //   console.log(`Contract greets us with ${newGreeting}!`);
+  // } else {
+  //   console.error(
+  //     `Contract said something unexpected: ${newGreetingFromContract}`
+  //   );
+  // }
 }
