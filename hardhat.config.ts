@@ -2,12 +2,26 @@ import "@matterlabs/hardhat-zksync-deploy";
 import "@matterlabs/hardhat-zksync-solc";
 import "hardhat-gas-reporter";
 import "@nomicfoundation/hardhat-foundry";
+import "hardhat-diamond-abi";
 
 import * as dotenv from "dotenv";
 import { resolve } from "path";
 dotenv.config({ path: resolve(__dirname, `./.env`) });
 
 module.exports = {
+  diamondAbi: {
+    // (required) The name of your Diamond ABI
+    name: "DiamondABIFull",
+    include: ["Facet"],
+    exclude: ["Errors", "FacetBase"],
+    // (optional) A function that is called with the ABI element, index, entire ABI,
+    // and fully qualified contract name for each item in the combined ABIs.
+    // If the function returns `false`, the function is not included in your Diamond ABI.
+    filter: function (abiElement, index, fullAbi, fullyQualifiedName) {
+      return abiElement.name !== "CallerMustBeAdminError";
+    },
+    strict: false,
+  },
   paths: {
     artifacts: `./artifacts`,
     cache: `./cache`,
