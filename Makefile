@@ -167,3 +167,9 @@ update-twap: ## Update params related to TWAP oracle
 
 release: build
 	yarn standard-version && git push --follow-tags
+	
+build-zksync: ## build zksync contracts
+	rm -dr artifacts-zk ; rm -dr cache_hardhat-zk ; yarn hardhat compile
+
+deploy-zksync: ## deploy zksync contracts to zksync testnet with sender 0x90C36636E885BEE8096E4d12a7372866ab782091
+	yarn hardhat deploy-zksync --script deploy.ts
