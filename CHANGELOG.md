@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [3.0.0](https://github.com/DegenFighter/contracts/compare/v2.0.1...v3.0.0) (2023-02-17)
+
+
+### ⚠ BREAKING CHANGES
+
+* v2 did not work, so back to v1
+
+* Revert back to v1. ([bbcdc0f](https://github.com/DegenFighter/contracts/commit/bbcdc0fb8aca06b9bdf5c68d5ec840d5e4df25ad))
+
 ## [2.0.0](https://github.com/DegenFighter/contracts/compare/v2.0.1...v2.0.0) (2023-02-17)
 
 
