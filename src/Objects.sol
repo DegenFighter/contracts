@@ -3,12 +3,15 @@ pragma solidity >=0.8.17 <0.9;
 
 enum BoutState {
     Uninitialized,
-    Finalized
+    Created,
+    Ended,
+    Expired
 }
 
 enum BoutFighter {
-    FighterA, // 0
-    FighterB // 1
+    Invalid,
+    FighterA,
+    FighterB
 }
 
 enum MemeBuySizeDollars {
@@ -20,14 +23,40 @@ enum MemeBuySizeDollars {
 }
 
 struct Bout {
+    uint numBettors;
     uint totalPot;
-    uint finalizeTime;
+    uint createTime;
+    uint endTime;
+    uint expiryTime;
     BoutState state;
     BoutFighter winner;
     BoutFighter loser;
-    uint[] fighterNumBettors;
-    uint[] fighterIds;
-    uint[] fighterPots;
+    uint8[] revealValues; // the 'r' values packed into 2 bits each
+    mapping(uint => address) bettors;
+    mapping(address => uint) bettorIndexes;
+    mapping(address => uint8) hiddenBets;
+    mapping(address => uint) betAmounts;
+    mapping(address => bool) winningsClaimed;
+    mapping(BoutFighter => uint) fighterIds;
+    mapping(BoutFighter => uint) fighterPots;
+    mapping(BoutFighter => uint) fighterPotBalances;
+}
+
+/**
+ * @dev Same as Bout, except with mapping fields removed.
+ *
+ * This is used to return Bout data from external calls.
+ */
+struct BoutNonMappingInfo {
+    uint numBettors;
+    uint totalPot;
+    uint createTime;
+    uint expiryTime;
+    uint endTime;
+    BoutState state;
+    BoutFighter winner;
+    BoutFighter loser;
+    uint8[] revealValues; // the 'r' values packed into 2 bits each
 }
 
 // from https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/cryptography/EIP712.sol
@@ -87,29 +116,31 @@ struct AppStorage {
     // token id => supply
     mapping(uint => uint) tokenSupply;
     ///
-    /// Users
-    ///
-
-    // total bets made by user
-    mapping(address => uint) userTotalBetsMade;
-    // total amount bet by user
-    mapping(address => uint) userTotalAmountBet;
-    // total bets won by user
-    mapping(address => uint) userTotalBetsWon;
-    // total amount won by user
-    mapping(address => uint) userTotalAmountWon;
-    ///
     /// Fights
     ///
 
     // no. of bouts created
     uint totalBouts;
-    // no. of bouts finalized
-    uint finalizedBouts;
+    // no. of bouts finished
+    uint endedBouts;
     // bout id => bout details
     mapping(uint => Bout) bouts;
     // bout index => bout id
     mapping(uint => uint) boutIdByIndex;
+    ///
+    /// Fight bettors
+    ///
+
+    // wallet => no. of bouts supported
+    mapping(address => uint) userTotalBoutsBetOn;
+    // wallet => linked list of bouts where winnings still need to be claimed
+    mapping(address => BoutList) userBoutsWinningsToClaimList;
+    // wallet => list of bouts supported
+    mapping(address => mapping(uint => uint)) userBoutsBetOnByIndex;
+    // tokenId => is this an item being sold by DegenFighter?
+    mapping(uint256 => bool) itemForSale;
+    // tokenId => cost of item in MEMEs
+    mapping(uint256 => uint256) costOfItem;
     ///
     /// ERC2771 meta transactions
     ///

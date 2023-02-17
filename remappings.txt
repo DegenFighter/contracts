@@ -3,7 +3,6 @@
 @uniswap/lib/=lib/solidity-lib/
 base64-sol/=lib/base64/
 @openzeppelin/=lib/ozv4/
-solidity-bytes-utils/=node_modules/solidity-bytes-utils/contracts/
 src/=./src/
 test/=./test/
 script/=./script/

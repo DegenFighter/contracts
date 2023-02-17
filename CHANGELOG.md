@@ -2,35 +2,6 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-### [2.0.1](https://github.com/DegenFighter/contracts/compare/v2.0.0...v2.0.1) (2023-02-17)
-
-
-### Bug Fixes
-
-* had not deployed the new contracts - duh ([a5e719f](https://github.com/DegenFighter/contracts/commit/a5e719f445a2cb39c3f70b2ab76f645df5fe16a2))
-
-## [2.0.0](https://github.com/DegenFighter/contracts/compare/v1.3.1...v2.0.0) (2023-02-17)
-
-
-### ⚠ BREAKING CHANGES
-
-* v2 - New low-gas model for betting and finalizing bouts
-
-* chore: basic refactoring for batch finalization
-
-* test: got tests working again
-
-* test: final tests
-
-* docs: update readme
-
-### Documentation
-
-* build badge for main branch only ([bc19e10](https://github.com/DegenFighter/contracts/commit/bc19e107d8adc7dab09e12b257f646e00fd60f99))
-
-
-* Batch finalization of events (#8) ([8553b1b](https://github.com/DegenFighter/contracts/commit/8553b1b30d3e6ddf3f3cb3441f891db66eca69ff)), closes [#8](https://github.com/DegenFighter/contracts/issues/8)
-
 ### [1.3.1](https://github.com/DegenFighter/contracts/compare/v1.3.0...v1.3.1) (2023-02-01)
 
 

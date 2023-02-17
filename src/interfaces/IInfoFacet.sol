@@ -1,22 +1,36 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.17 <0.9;
 
-import { Bout } from "../Objects.sol";
+import { BoutNonMappingInfo, BoutFighter } from "../Objects.sol";
 
 interface IInfoFacet {
     function getTotalBouts() external view returns (uint);
 
     function getBoutIdByIndex(uint boutIndex) external view returns (uint);
 
-    function getTotalFinalizedBouts() external view returns (uint);
+    function getEndedBouts() external view returns (uint);
 
-    function getBout(uint boutId) external view returns (Bout memory);
+    function getUserBoutsWinningsClaimed(address wallet) external view returns (uint);
 
-    function getUserTotalBetsMade(address user) external view returns (uint);
+    function getUserBoutsBetOn(address wallet) external view returns (uint);
 
-    function getUserTotalBetsWon(address user) external view returns (uint);
+    function getUserBoutBetOnAtIndex(address wallet, uint index) external view returns (uint);
 
-    function getUserTotalAmountBet(address user) external view returns (uint);
+    function getBoutNonMappingInfo(uint boutId) external view returns (BoutNonMappingInfo memory);
 
-    function getUserTotalAmountWon(address user) external view returns (uint);
+    function getBoutSupporter(uint boutId, uint bettorNum) external view returns (address);
+
+    function getBoutHiddenBet(uint boutId, address bettor) external view returns (uint8);
+
+    function getBoutRevealedBet(uint boutId, address bettor) external view returns (BoutFighter);
+
+    function getBoutBetAmount(uint boutId, address bettor) external view returns (uint);
+
+    function getBoutWinningsClaimed(uint boutId, address bettor) external view returns (bool);
+
+    function getBoutFighterId(uint boutId, BoutFighter p) external view returns (uint);
+
+    function getBoutFighterPot(uint boutId, BoutFighter p) external view returns (uint);
+
+    function getBoutFighterPotBalance(uint boutId, BoutFighter p) external view returns (uint);
 }
