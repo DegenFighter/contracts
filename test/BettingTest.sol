@@ -115,8 +115,8 @@ contract BettingTest is TestBaseContract {
         proxy.finalizeBouts(1, data);
     }
 
-    function testFinalizeBoutsUpdatesState() public returns (uint boutId) {
-        boutId = 123;
+    function testFinalizeBoutsUpdatesState() public {
+        uint boutId = 123;
 
         BettingScenario memory scen = _getScenario_Default();
         bytes memory data = _buildFinalizedBoutData(boutId, scen);
@@ -134,11 +134,49 @@ contract BettingTest is TestBaseContract {
         assertEq(bout.winner, scen.winner, "winner");
         assertEq(bout.loser, scen.loser, "loser");
         assertEq(bout.fighterIds, scen.fighterIds, "fighter ids");
+        assertEq(bout.fighterPots, scen.fighterPots, "fighter pots");
+        assertEq(bout.fighterNumBettors, scen.fighterNumBettors, "fighter num bettors");
 
         // check global state
         assertEq(proxy.getTotalBouts(), preTotalBouts + 1, "total bouts");
         assertEq(proxy.getTotalFinalizedBouts(), preFinalizedBouts + 1, "finalized bouts");
         assertEq(proxy.getBoutIdByIndex(preTotalBouts + 1), boutId, "bout at index");
+    }
+
+    function testFinalizeMultiplesBoutsUpdatesState() public {
+        BettingScenario[] memory scen = new BettingScenario[](3);
+        bytes[] memory data = new bytes[](3);
+
+        scen[0] = _getScenario_Default();
+        data[0] = _buildFinalizedBoutData(123, scen[0]);
+
+        scen[1] = _getScenario_AllOnLoser();
+        data[1] = _buildFinalizedBoutData(456, scen[1]);
+
+        scen[2] = _getScenario_AllOnWinner();
+        data[2] = _buildFinalizedBoutData(789, scen[2]);
+
+        vm.prank(server.addr);
+        proxy.finalizeBouts(3, abi.encodePacked(data[0], data[1], data[2]));
+
+        // check global state
+        assertEq(proxy.getTotalBouts(), 3, "total bouts");
+        assertEq(proxy.getTotalFinalizedBouts(), 3, "finalized bouts");
+
+        for (uint i = 0; i < 3; i++) {
+            uint boutId = 123 + (i * 333);
+            assertEq(proxy.getBoutIdByIndex(i + 1), boutId, "bout at index");
+
+            // check the state
+            Bout memory bout = proxy.getBout(boutId);
+            assertEq(bout.state, BoutState.Finalized, "state");
+            assertGt(bout.finalizeTime, 0, "end time");
+            assertEq(bout.winner, scen[i].winner, "winner");
+            assertEq(bout.loser, scen[i].loser, "loser");
+            assertEq(bout.fighterIds, scen[i].fighterIds, "fighter ids");
+            assertEq(bout.fighterPots, scen[i].fighterPots, "fighter pots");
+            assertEq(bout.fighterNumBettors, scen[i].fighterNumBettors, "fighter num bettors");
+        }
     }
 
     function testFinalizeBoutsEmitsEvents() public {
