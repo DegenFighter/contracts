@@ -22,14 +22,6 @@ contract InitDiamond {
             revert DiamondAlreadyInitialized();
         }
 
-        // items for sale
-        s.itemForSale[LibTokenIds.BROADCAST_MSG] = true;
-        s.itemForSale[LibTokenIds.SUPPORTER_INFLUENCE] = true;
-
-        // set prices of items
-        s.costOfItem[LibTokenIds.BROADCAST_MSG] = 100e18;
-        s.costOfItem[LibTokenIds.SUPPORTER_INFLUENCE] = 300e18;
-
         s.priceOracle = 0xA374094527e1673A86dE625aa59517c5dE346d32; // polygon wmatic-usdc fee=500
         s.currencyAddress = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
 

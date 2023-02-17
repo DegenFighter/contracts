@@ -10,12 +10,9 @@ error CallerMustBeServerError();
 error SignerMustBeServerError();
 error SignatureExpiredError();
 
+error InvalidFinalizedBoutDataLengthError(uint len);
 error BoutInWrongStateError(uint boutId, BoutState state);
-error BoutExpiredError(uint boutId, uint expiryTime);
-error PotMismatchError(uint boutId, uint fighterAPot, uint fighterBPot, uint totalPot);
-error RevealValuesError(uint boutId);
-error MinimumBetAmountError(uint boutId, address bettor, uint amount);
-error InvalidBetTargetError(uint boutId, address bettor, uint8 br);
+error InvalidFighterBettorData(uint boutId, BoutFighter fighter);
 error InvalidWinnerError(uint boutId, BoutFighter winner);
 
 error TokenBalanceInsufficient(uint256 userBalance, uint256 amount);

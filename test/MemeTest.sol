@@ -3,7 +3,7 @@ pragma solidity >=0.8.17 <0.9;
 
 import "forge-std/Test.sol";
 import "../src/Errors.sol";
-import { BoutNonMappingInfo, BoutFighter, BoutState, MemeBuySizeDollars } from "../src/Objects.sol";
+import { BoutFighter, BoutState, MemeBuySizeDollars } from "../src/Objects.sol";
 import { Wallet, TestBaseContract } from "./utils/TestBaseContract.sol";
 import { LibConstants } from "../src/libs/LibConstants.sol";
 import { IERC20 } from "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
@@ -11,9 +11,6 @@ import { IERC20 } from "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.
 /// @notice These tests first fork polygon mainnet.
 
 contract MemeTest is TestBaseContract {
-    uint fighterAId = 1;
-    uint fighterBId = 2;
-
     function setUp() public override {
         string memory mainnetUrl = vm.rpcUrl("polygon");
         // uint256 mainnetFork = vm.createSelectFork(mainnetUrl);
@@ -63,40 +60,5 @@ contract MemeTest is TestBaseContract {
         proxy.buyMeme(MemeBuySizeDollars.Twenty);
         proxy.buyMeme(MemeBuySizeDollars.Fifty);
         proxy.buyMeme(MemeBuySizeDollars.Hundred);
-    }
-
-    // ------------------------------------------------------ //
-    //
-    // Claim MEME
-    //
-    // ------------------------------------------------------ //
-
-    function testClaimMemeGivesUptoMinBetAmount() public {
-        assertEq(memeToken.balanceOf(players[0].addr), 0);
-
-        vm.prank(players[0].addr);
-        proxy.claimFreeMeme();
-
-        assertEq(memeToken.balanceOf(players[0].addr), LibConstants.MIN_BET_AMOUNT);
-
-        uint amt = LibConstants.MIN_BET_AMOUNT / 3;
-        proxy._testMintMeme(players[1].addr, amt);
-        assertEq(memeToken.balanceOf(players[1].addr), amt);
-
-        vm.prank(players[1].addr);
-        proxy.claimFreeMeme();
-
-        assertEq(memeToken.balanceOf(players[1].addr), LibConstants.MIN_BET_AMOUNT);
-    }
-
-    function testClaimMemeDoesNothingIfBalanceAlreadyEnough() public {
-        uint amt = LibConstants.MIN_BET_AMOUNT;
-        proxy._testMintMeme(players[0].addr, amt);
-        assertEq(memeToken.balanceOf(players[0].addr), amt);
-
-        vm.prank(players[0].addr);
-        proxy.claimFreeMeme();
-
-        assertEq(memeToken.balanceOf(players[0].addr), amt);
     }
 }

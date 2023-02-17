@@ -15,19 +15,9 @@ import { LibUniswapV3Twap } from "src/libs/LibUniswapV3Twap.sol";
 contract MemeMarketFacet is FacetBase {
     constructor() FacetBase() {}
 
-    function claimFreeMeme() external {
-        AppStorage storage s = LibAppStorage.diamondStorage();
-
-        address wallet = _msgSender();
-
-        uint256 bal = s.tokenBalances[LibTokenIds.TOKEN_MEME][wallet];
-
-        if (bal < LibConstants.MIN_BET_AMOUNT) {
-            LibToken.mint(LibTokenIds.TOKEN_MEME, wallet, LibConstants.MIN_BET_AMOUNT - bal);
-        }
-    }
-
-    function buyMeme(MemeBuySizeDollars size) external returns (uint160 sqrtPriceX96, uint256 priceX96, uint256 amount, uint256 buyAmount) {
+    function buyMeme(
+        MemeBuySizeDollars size
+    ) external returns (uint160 sqrtPriceX96, uint256 priceX96, uint256 amount, uint256 buyAmount) {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
         // get price of matic
