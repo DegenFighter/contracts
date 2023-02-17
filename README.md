@@ -4,6 +4,12 @@
 
 The EVM smart contracts for DegenFighter.
 
+This is the v2 architecture, which aims to be much more gas efficient than [v1](https://github.com/DegenFighter/contracts/tree/v1.3.1):
+
+- Bets are placed and resolved off-chain, including post-fight payouts.
+- Fights are finalized on-chain in batch mode.
+- User stats and MEME balance must be synced with server prior to any user action involving MEME.
+
 ## Development
 
 Install:
@@ -37,7 +43,7 @@ make deploy-local
 
 The RPC endpoint defaults to: `http://127.0.0.1:8545`, chainid: `31337`, sender address: `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266`
 
-The contact addresses will be output as follows:
+The contact addresses will output something like the following:
 
 ```zsh
   Address[proxy]:  0x5FbDB2315678afecb367f032d93F642f64180aa3
