@@ -2,6 +2,7 @@
 pragma solidity >=0.8.17 <0.9;
 
 import { SafeMath } from "lib/openzeppelin-contracts/contracts/utils/math/SafeMath.sol";
+import { BytesLib } from "solidity-bytes-utils/BytesLib.sol";
 
 import { AppStorage, LibAppStorage, Bout, BoutState, BoutFighter, BoutList, BoutListNode } from "../Objects.sol";
 import { LibToken, LibTokenIds } from "src/libs/LibToken.sol";
@@ -14,8 +15,9 @@ library LibBetting {
     using SafeMath for uint;
 
     /**
-     * @dev The number of bytes in a bout's data.
+     * @dev The number of bytes in a bout's data when encodePacked()
      *
+     * sanityCheck: uint8            // 1 byte
      * boutId: uint32                // 4 bytes
      * fighterAId: uint16            // 2 bytes
      * fighterBId: uint16            // 2 bytes
@@ -25,7 +27,7 @@ library LibBetting {
      * fighterBPot: uint256          // 32 bytes
      * winner: uint8                 // 1 byte
      */
-    uint internal constant FINALIZE_CHUNK_BYTES_LEN = 77;
+    uint internal constant FINALIZE_CHUNK_BYTES_LEN = 78;
 
     function buildFinalizedBoutData(
         uint boutId,
@@ -38,7 +40,8 @@ library LibBetting {
         BoutFighter winner
     ) internal pure returns (bytes memory) {
         return
-            abi.encode(
+            abi.encodePacked(
+                uint8(101),
                 uint32(boutId),
                 uint16(fighterAId),
                 uint16(fighterBId),
@@ -50,23 +53,27 @@ library LibBetting {
             );
     }
 
-    function finalizeBout(bytes calldata data) internal returns (uint) {
+    function finalizeBout(bytes memory data) internal returns (uint) {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
-        if (data.length != FINALIZE_CHUNK_BYTES_LEN) {
-            revert InvalidFinalizedBoutDataLengthError(data.length);
+        uint sanityCheck = BytesLib.toUint8(data, 0);
+
+        if (sanityCheck != 101) {
+            revert InvalidFinalizedBoutDataError(sanityCheck);
         }
 
-        (
-            uint boutId,
-            uint fighterAId,
-            uint fighterBId,
-            uint fighterANumBettors,
-            uint fighterBNumBettors,
-            uint fighterAPot,
-            uint fighterBPot,
-            uint winnerInt
-        ) = abi.decode(data, (uint32, uint16, uint16, uint16, uint16, uint, uint, uint8));
+        uint boutId = BytesLib.toUint32(data, 1);
+        uint fighterAId = BytesLib.toUint16(data, 5);
+        uint fighterBId = BytesLib.toUint16(data, 7);
+        uint fighterANumBettors = BytesLib.toUint16(data, 9);
+        uint fighterBNumBettors = BytesLib.toUint16(data, 11);
+        uint fighterAPot = BytesLib.toUint256(data, 13);
+        uint fighterBPot = BytesLib.toUint256(data, 45);
+        uint8 winnerInt = BytesLib.toUint8(data, 77);
+
+        if (winnerInt != uint8(BoutFighter.FighterA) && winnerInt != uint8(BoutFighter.FighterB)) {
+            revert InvalidWinnerError(boutId, winnerInt);
+        }
 
         BoutFighter winner = BoutFighter(winnerInt);
         Bout storage bout = s.bouts[boutId];
@@ -76,15 +83,11 @@ library LibBetting {
         }
 
         if (fighterANumBettors > 0 && fighterAPot == 0) {
-            revert InvalidFighterBettorData(boutId, BoutFighter.FighterA);
+            revert InvalidBettorDataError(boutId, BoutFighter.FighterA);
         }
 
         if (fighterBNumBettors > 0 && fighterBPot == 0) {
-            revert InvalidFighterBettorData(boutId, BoutFighter.FighterB);
-        }
-
-        if (winner != BoutFighter.FighterA && winner != BoutFighter.FighterB) {
-            revert InvalidWinnerError(boutId, winner);
+            revert InvalidBettorDataError(boutId, BoutFighter.FighterB);
         }
 
         s.totalBouts++;
@@ -92,8 +95,8 @@ library LibBetting {
         s.boutIdByIndex[s.totalBouts] = boutId;
         bout.state = BoutState.Finalized;
 
-        bout.fighterNumBettors = [fighterANumBettors, fighterBNumBettors];
         bout.fighterIds = [fighterAId, fighterBId];
+        bout.fighterNumBettors = [fighterANumBettors, fighterBNumBettors];
         bout.fighterPots = [fighterAPot, fighterBPot];
 
         bout.totalPot = fighterAPot.add(fighterBPot);

@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.17 <0.9;
 
+import { BytesLib } from "solidity-bytes-utils/BytesLib.sol";
+
 import "forge-std/Test.sol";
 import "../src/Errors.sol";
-import { BoutFighter, BoutState } from "../src/Objects.sol";
+import { Bout, BoutFighter, BoutState } from "../src/Objects.sol";
 import { Wallet, TestBaseContract } from "./utils/TestBaseContract.sol";
 import { LibConstants } from "../src/libs/LibConstants.sol";
 import { LibTokenIds } from "../src/libs/LibToken.sol";
@@ -16,10 +18,18 @@ contract BettingTest is TestBaseContract {
     //
     // ------------------------------------------------------ //
 
-    function testFinalizeBoutsMustBeDoneByServer() public {
-        uint boutId = 1;
+    function testFinalizeBoutsDataLength() public {
         BettingScenario memory scen = _getScenario_Default();
-        bytes memory data = _buildFinalizedBoutData(boutId, scen);
+
+        assertEq(
+            _buildFinalizedBoutData(1, scen).length,
+            LibBetting.FINALIZE_CHUNK_BYTES_LEN,
+            "invalid length"
+        );
+    }
+
+    function testFinalizeBoutsMustBeDoneByServer() public {
+        bytes memory data = _buildFinalizedBoutData(1, _getScenario_Default());
 
         address dummyServer = vm.addr(123);
 
@@ -33,281 +43,127 @@ contract BettingTest is TestBaseContract {
         proxy.finalizeBouts(1, data);
     }
 
-    // function testFinalizeBoutsWithInvalidState() public {
-    //     uint boutId = testBetMultiple();
+    function testFinalizeBoutsWithInvalidData() public {
+        bytes memory data = _buildFinalizedBoutData(1, _getScenario_Default());
 
-    //     BettingScenario memory scen = _getScenario_Default();
+        bytes memory finalData = abi.encodePacked(
+            data,
+            uint8(99),
+            BytesLib.slice(data, 1, data.length - 1)
+        );
 
-    //     vm.startPrank(server.addr);
+        vm.startPrank(server.addr);
 
-    //     // state: Ended - fails
-    //     proxy._testSetBoutState(boutId, BoutState.Ended);
-    //     vm.expectRevert(
-    //         abi.encodeWithSelector(BoutInWrongStateError.selector, boutId, BoutState.Ended)
-    //     );
-    //     proxy.finalizeBouts(
-    //         boutId,
-    //         21,
-    //         22,
-    //         scen.fighterAPot,
-    //         scen.fighterBPot,
-    //         scen.winner,
-    //         scen.revealValues
-    //     );
+        vm.expectRevert(abi.encodeWithSelector(InvalidFinalizedBoutDataError.selector, 99));
+        proxy.finalizeBouts(2, finalData);
 
-    //     vm.stopPrank();
-    // }
+        vm.stopPrank();
+    }
 
-    // function testFinalizeBoutsWithInvalidWinner() public {
-    //     uint boutId = testBetMultiple();
+    function testFinalizeBoutsWithInvalidState() public {
+        uint boutId = 123;
 
-    //     BettingScenario memory scen = _getScenario_Default();
+        bytes memory data = _buildFinalizedBoutData(boutId, _getScenario_Default());
 
-    //     vm.prank(server.addr);
-    //     vm.expectRevert(
-    //         abi.encodeWithSelector(InvalidWinnerError.selector, boutId, BoutFighter.Invalid)
-    //     );
-    //     proxy.finalizeBouts(
-    //         boutId,
-    //         21,
-    //         22,
-    //         scen.fighterAPot,
-    //         scen.fighterBPot,
-    //         BoutFighter.Invalid,
-    //         scen.revealValues
-    //     );
-    // }
+        vm.startPrank(server.addr);
 
-    // function testFinalizeBoutsWithPotMismatch() public {
-    //     uint boutId = testBetMultiple();
+        // state: Finalized - fails
+        proxy._testSetBoutState(boutId, BoutState.Finalized);
+        vm.expectRevert(
+            abi.encodeWithSelector(BoutInWrongStateError.selector, boutId, BoutState.Finalized)
+        );
+        proxy.finalizeBouts(1, data);
 
-    //     BettingScenario memory scen = _getScenario_Default();
+        vm.stopPrank();
+    }
 
-    //     BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(boutId);
+    function testFinalizeBoutsWithInvalidBettorData() public {
+        uint boutId = 123;
 
-    //     vm.prank(server.addr);
-    //     vm.expectRevert(
-    //         abi.encodeWithSelector(
-    //             PotMismatchError.selector,
-    //             boutId,
-    //             scen.fighterAPot - 1,
-    //             scen.fighterBPot,
-    //             bout.totalPot
-    //         )
-    //     );
-    //     proxy.finalizeBouts(
-    //         boutId,
-    //         21,
-    //         22,
-    //         scen.fighterAPot - 1,
-    //         scen.fighterBPot,
-    //         scen.winner,
-    //         scen.revealValues
-    //     );
-    // }
+        vm.startPrank(server.addr);
 
-    // function testFinalizeBoutsWithInsufficientRevealValues() public {
-    //     uint boutId = testBetMultiple();
+        BettingScenario memory scen_A = _getScenario_Default();
+        scen_A.fighterAPot = 0;
+        scen_A.fighterANumBettors = 1;
+        bytes memory data_A = _buildFinalizedBoutData(boutId, scen_A);
+        vm.expectRevert(
+            abi.encodeWithSelector(InvalidBettorDataError.selector, boutId, BoutFighter.FighterA)
+        );
+        proxy.finalizeBouts(1, data_A);
 
-    //     BettingScenario memory scen = _getScenario_Default();
+        BettingScenario memory scen_B = _getScenario_Default();
+        scen_B.fighterBPot = 0;
+        scen_B.fighterBNumBettors = 1;
+        bytes memory data_B = _buildFinalizedBoutData(boutId, scen_B);
+        vm.expectRevert(
+            abi.encodeWithSelector(InvalidBettorDataError.selector, boutId, BoutFighter.FighterB)
+        );
+        proxy.finalizeBouts(1, data_B);
 
-    //     uint8[] memory badRevealValues = new uint8[](1);
+        vm.stopPrank();
+    }
 
-    //     vm.prank(server.addr);
-    //     vm.expectRevert(abi.encodeWithSelector(RevealValuesError.selector, boutId));
-    //     proxy.finalizeBouts(
-    //         boutId,
-    //         21,
-    //         22,
-    //         scen.fighterAPot,
-    //         scen.fighterBPot,
-    //         scen.winner,
-    //         badRevealValues
-    //     );
-    // }
+    function testFinalizeBoutsWithInvalidWinner() public {
+        uint boutId = 123;
 
-    // function testFinalizeBouts() public returns (uint boutId) {
-    //     boutId = testBetMultiple();
+        BettingScenario memory scen = _getScenario_Default();
+        bytes memory data = _buildFinalizedBoutData(boutId, scen);
+        data = abi.encodePacked(BytesLib.slice(data, 0, 77), uint8(5));
 
-    //     BettingScenario memory scen = _getScenario_Default();
+        vm.prank(server.addr);
+        vm.expectRevert(abi.encodeWithSelector(InvalidWinnerError.selector, boutId, 5));
+        proxy.finalizeBouts(1, data);
+    }
 
-    //     uint preEndedBouts = proxy.getEndedBouts();
+    function testFinalizeBoutsUpdatesState() public returns (uint boutId) {
+        boutId = 123;
 
-    //     vm.prank(server.addr);
-    //     proxy.finalizeBouts(
-    //         boutId,
-    //         21,
-    //         22,
-    //         scen.fighterAPot,
-    //         scen.fighterBPot,
-    //         scen.winner,
-    //         scen.revealValues
-    //     );
+        BettingScenario memory scen = _getScenario_Default();
+        bytes memory data = _buildFinalizedBoutData(boutId, scen);
 
-    //     // check the state
-    //     BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(boutId);
-    //     assertEq(bout.state, BoutState.Ended, "state");
-    //     assertGt(bout.endTime, 0, "end time");
-    //     assertEq(bout.winner, scen.winner, "winner");
-    //     assertEq(bout.loser, scen.loser, "loser");
+        uint preTotalBouts = proxy.getTotalBouts();
+        uint preFinalizedBouts = proxy.getTotalFinalizedBouts();
 
-    //     assertEq(bout.revealValues, scen.revealValues, "reveal values");
+        vm.prank(server.addr);
+        proxy.finalizeBouts(1, data);
 
-    //     assertEq(proxy.getBoutFighterId(boutId, BoutFighter.FighterA), 21, "fighter A id");
-    //     assertEq(proxy.getBoutFighterId(boutId, BoutFighter.FighterB), 22, "fighter B id");
-    //     assertEq(
-    //         proxy.getBoutFighterPot(boutId, BoutFighter.FighterA),
-    //         scen.fighterAPot,
-    //         "fighter A pot"
-    //     );
-    //     assertEq(
-    //         proxy.getBoutFighterPot(boutId, BoutFighter.FighterB),
-    //         scen.fighterBPot,
-    //         "fighter B pot"
-    //     );
-    //     assertEq(
-    //         proxy.getBoutFighterPotBalance(boutId, BoutFighter.FighterA),
-    //         scen.fighterAPot,
-    //         "fighter A pot balance"
-    //     );
-    //     assertEq(
-    //         proxy.getBoutFighterPotBalance(boutId, BoutFighter.FighterB),
-    //         scen.fighterBPot,
-    //         "fighter B pot balance"
-    //     );
+        // check the state
+        Bout memory bout = proxy.getBout(boutId);
+        assertEq(bout.state, BoutState.Finalized, "state");
+        assertGt(bout.finalizeTime, 0, "end time");
+        assertEq(bout.winner, scen.winner, "winner");
+        assertEq(bout.loser, scen.loser, "loser");
+        assertEq(bout.fighterIds, scen.fighterIds, "fighter ids");
 
-    //     // check global state
-    //     assertEq(proxy.getEndedBouts(), preEndedBouts + 1, "ended bouts");
-    // }
+        // check global state
+        assertEq(proxy.getTotalBouts(), preTotalBouts + 1, "total bouts");
+        assertEq(proxy.getTotalFinalizedBouts(), preFinalizedBouts + 1, "finalized bouts");
+        assertEq(proxy.getBoutIdByIndex(preTotalBouts + 1), boutId, "bout at index");
+    }
 
-    // function testFinalizeBoutsCreatesBoutIfNeeded() public {
-    //     uint boutId = 100; // doesn't exist
+    function testFinalizeBoutsEmitsEvents() public {
+        BettingScenario memory scen = _getScenario_Default();
+        bytes memory data_1 = _buildFinalizedBoutData(123, scen);
+        bytes memory data_2 = _buildFinalizedBoutData(124, scen);
 
-    //     BettingScenario memory scen = _getScenario_Default();
+        vm.recordLogs();
 
-    //     uint preEndedBouts = proxy.getEndedBouts();
+        vm.prank(server.addr);
+        proxy.finalizeBouts(2, abi.encodePacked(data_1, data_2));
 
-    //     uint8[] memory emptyRevealValues;
+        // check logs
+        Vm.Log[] memory entries = vm.getRecordedLogs();
 
-    //     vm.prank(server.addr);
-    //     proxy.finalizeBouts(boutId, 21, 22, 0, 0, scen.winner, emptyRevealValues);
+        assertEq(entries[0].topics.length, 1, "Invalid event count");
+        assertEq(entries[0].topics[0], keccak256("BoutFinalized(uint256)"));
+        uint eBoutId1 = abi.decode(entries[0].data, (uint));
+        assertEq(eBoutId1, 123, "bout id incorrect");
 
-    //     // check total bouts
-    //     assertEq(proxy.getTotalBouts(), 1, "total bouts");
-    //     assertEq(proxy.getBoutIdByIndex(1), boutId, "bout id by index");
-
-    //     // check bout state
-    //     BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(boutId);
-    //     assertEq(bout.state, BoutState.Ended, "state");
-    //     assertGt(bout.endTime, 0, "end time");
-    //     assertEq(bout.totalPot, 0, "total pot");
-    //     assertEq(bout.revealValues, emptyRevealValues, "reveal values");
-    //     assertEq(bout.winner, scen.winner, "winner");
-    //     assertEq(bout.loser, scen.loser, "loser");
-
-    //     assertEq(proxy.getBoutFighterId(boutId, BoutFighter.FighterA), 21, "fighter A id");
-    //     assertEq(proxy.getBoutFighterId(boutId, BoutFighter.FighterB), 22, "fighter B id");
-    //     assertEq(proxy.getBoutFighterPot(boutId, BoutFighter.FighterA), 0, "fighter A pot");
-    //     assertEq(proxy.getBoutFighterPot(boutId, BoutFighter.FighterB), 0, "fighter B pot");
-    //     assertEq(
-    //         proxy.getBoutFighterPotBalance(boutId, BoutFighter.FighterA),
-    //         0,
-    //         "fighter A pot balance"
-    //     );
-    //     assertEq(
-    //         proxy.getBoutFighterPotBalance(boutId, BoutFighter.FighterB),
-    //         0,
-    //         "fighter B pot balance"
-    //     );
-
-    //     // check global state
-    //     assertEq(proxy.getEndedBouts(), preEndedBouts + 1, "ended bouts");
-    // }
-
-    // function testFinalizeBoutsEmitsEvent() public {
-    //     uint boutId = testBetMultiple();
-
-    //     BettingScenario memory scen = _getScenario_Default();
-
-    //     vm.recordLogs();
-
-    //     vm.prank(server.addr);
-    //     proxy.finalizeBouts(
-    //         boutId,
-    //         21,
-    //         22,
-    //         scen.fighterAPot,
-    //         scen.fighterBPot,
-    //         scen.winner,
-    //         scen.revealValues
-    //     );
-
-    //     // check logs
-    //     Vm.Log[] memory entries = vm.getRecordedLogs();
-    //     assertEq(entries[0].topics.length, 1, "Invalid event count");
-    //     assertEq(entries[0].topics[0], keccak256("BoutEnded(uint256)"));
-    //     uint eBoutId = abi.decode(entries[0].data, (uint));
-    //     assertEq(eBoutId, boutId, "boutId incorrect");
-    // }
-
-    // function testFinalizeBoutsRevealsBetsCorrectly() public returns (uint boutId) {
-    //     boutId = 100;
-
-    //     BettingScenario memory scen = _getScenario_Default();
-
-    //     // place bets
-    //     uint totalBetAmount = 0;
-    //     for (uint i = 0; i < scen.players.length; i += 1) {
-    //         Wallet memory player = scen.players[i];
-    //         totalBetAmount += scen.betAmounts[i];
-    //         _bet(player.addr, boutId, scen.betValues[i], scen.betAmounts[i]);
-    //     }
-
-    //     vm.prank(server.addr);
-    //     proxy.finalizeBouts(
-    //         boutId,
-    //         21,
-    //         22,
-    //         scen.fighterAPot,
-    //         scen.fighterBPot,
-    //         scen.winner,
-    //         scen.revealValues
-    //     );
-
-    //     uint8[] memory revealValues = proxy.getBoutNonMappingInfo(boutId).revealValues;
-
-    //     // check the state
-    //     assertEq(revealValues, scen.revealValues, "reveal values");
-
-    //     // check revealed bets
-    //     for (uint i = 0; i < scen.players.length; i++) {
-    //         Wallet memory player = scen.players[i];
-
-    //         BoutFighter revealedBet = proxy.getBoutRevealedBet(boutId, player.addr);
-
-    //         assertEq(revealedBet, scen.betTargets[i], "revealed target");
-    //     }
-    // }
-
-    // function testFinalizeBoutsAndRevealedBetForNonBettor() public {
-    //     uint boutId = testBetMultiple();
-
-    //     BettingScenario memory scen = _getScenario_Default();
-
-    //     vm.prank(server.addr);
-    //     proxy.finalizeBouts(
-    //         boutId,
-    //         21,
-    //         22,
-    //         scen.fighterAPot,
-    //         scen.fighterBPot,
-    //         scen.winner,
-    //         scen.revealValues
-    //     );
-
-    //     BoutFighter revealedBet = proxy.getBoutRevealedBet(boutId, vm.addr(666));
-    //     assertEq(revealedBet, BoutFighter.Invalid, "no target");
-    // }
+        assertEq(entries[1].topics.length, 1, "Invalid event count");
+        assertEq(entries[1].topics[0], keccak256("BoutFinalized(uint256)"));
+        uint eBoutId2 = abi.decode(entries[1].data, (uint));
+        assertEq(eBoutId2, 124, "bout id incorrect");
+    }
 
     // ------------------------------------------------------ //
     //
@@ -316,10 +172,13 @@ contract BettingTest is TestBaseContract {
     // ------------------------------------------------------ //
 
     struct BettingScenario {
+        uint[] fighterIds;
         uint fighterAId;
         uint fighterBId;
+        uint[] fighterNumBettors;
         uint fighterANumBettors;
         uint fighterBNumBettors;
+        uint[] fighterPots;
         uint fighterAPot;
         uint fighterBPot;
         BoutFighter winner;
@@ -331,55 +190,69 @@ contract BettingTest is TestBaseContract {
         BettingScenario memory scen
     ) internal pure returns (bytes memory) {
         return
-            abi.encode(
-                uint32(boutId),
-                uint16(scen.fighterAId),
-                uint16(scen.fighterBId),
-                uint16(scen.fighterANumBettors),
-                uint16(scen.fighterBNumBettors),
+            LibBetting.buildFinalizedBoutData(
+                boutId,
+                scen.fighterAId,
+                scen.fighterBId,
+                scen.fighterANumBettors,
+                scen.fighterBNumBettors,
                 scen.fighterAPot,
                 scen.fighterBPot,
-                uint8(scen.winner)
+                scen.winner
             );
     }
 
     // 5 playres, 2 bet on winner, 3 on loser
     function _getScenario_Default() internal returns (BettingScenario memory scen) {
-        scen = _buildScenarioDefaults(scen);
         scen.winner = BoutFighter.FighterB;
         scen.loser = BoutFighter.FighterA;
         scen.fighterANumBettors = 3;
         scen.fighterBNumBettors = 2;
         scen.fighterAPot = 100;
         scen.fighterBPot = 200;
+        scen = _finalizeScenario(scen);
     }
 
     // 5 players, all bet on the loser
     function _getScenario_AllOnLoser() internal returns (BettingScenario memory scen) {
-        scen = _buildScenarioDefaults(scen);
         scen.winner = BoutFighter.FighterB;
         scen.loser = BoutFighter.FighterA;
         scen.fighterANumBettors = 5;
         scen.fighterBNumBettors = 0;
         scen.fighterAPot = 100;
         scen.fighterBPot = 0;
+        scen = _finalizeScenario(scen);
     }
 
     // 5 players, all bet on the winner
     function _getScenario_AllOnWinner() internal returns (BettingScenario memory scen) {
-        scen = _buildScenarioDefaults(scen);
         scen.winner = BoutFighter.FighterB;
         scen.loser = BoutFighter.FighterA;
         scen.fighterANumBettors = 0;
         scen.fighterBNumBettors = 5;
         scen.fighterAPot = 0;
         scen.fighterBPot = 200;
+        scen = _finalizeScenario(scen);
     }
 
-    function _buildScenarioDefaults(
+    function _finalizeScenario(
         BettingScenario memory scen
     ) internal returns (BettingScenario memory) {
         scen.fighterAId = 21;
         scen.fighterBId = 22;
+
+        scen.fighterIds = new uint[](2);
+        scen.fighterIds[0] = scen.fighterAId;
+        scen.fighterIds[1] = scen.fighterBId;
+
+        scen.fighterPots = new uint[](2);
+        scen.fighterPots[0] = scen.fighterAPot;
+        scen.fighterPots[1] = scen.fighterBPot;
+
+        scen.fighterNumBettors = new uint[](2);
+        scen.fighterNumBettors[0] = scen.fighterANumBettors;
+        scen.fighterNumBettors[1] = scen.fighterBNumBettors;
+
+        return scen;
     }
 }
