@@ -7,6 +7,7 @@ import { BoutNonMappingInfo, BoutFighter, BoutState, MemeBuySizeDollars } from "
 import { Wallet, TestBaseContract } from "./utils/TestBaseContract.sol";
 import { LibConstants } from "../src/libs/LibConstants.sol";
 import { IERC20 } from "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import { MockTwap } from "./utils/MockTwap.sol";
 
 /// @notice These tests first fork polygon mainnet.
 
@@ -38,6 +39,12 @@ contract MemeTest is TestBaseContract {
     }
 
     function testZkSyncMockPurchaseMeme() public {
+        // deploy mock twap
+        MockTwap twap = new MockTwap();
+
+        twap.setSqrtPriceX96(1625 * 10 ** 18);
+        proxy.setPriceOracle(address(twap));
+
         proxy.setAddress(LibConstants.TREASURY_ADDRESS, address(proxy));
 
         console2.log(address(this).balance);
@@ -52,6 +59,8 @@ contract MemeTest is TestBaseContract {
 
         uint256 receiverBalance = address(proxy.getAddress(LibConstants.SERVER_ADDRESS)).balance;
 
+        console2.log("receiver balance", receiverBalance);
+        console2.log("user1 ending balance", user1_endingBalance);
         assertEq(
             user1_startingBalance,
             user1_endingBalance + receiverBalance,

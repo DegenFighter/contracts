@@ -41,34 +41,31 @@ contract MemeMarketFacet is FacetBase, ReentrancyGuard {
     {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
-        // get price of matic
-        // sqrtPriceX96 = LibUniswapV3Twap.getSqrtTwapX96(s.priceOracle, s.twapInterval);
+        // get price
+        sqrtPriceX96 = LibUniswapV3Twap.getSqrtTwapX96(s.priceOracle, s.twapInterval);
 
-        // priceX96 = LibUniswapV3Twap.getPriceX96FromSqrtPriceX96(sqrtPriceX96);
-
-        // note hardcode price for now for zkSync testnet
-        // Hardcode price of 1 ETH = $1500
+        priceX96 = LibUniswapV3Twap.getPriceX96FromSqrtPriceX96(sqrtPriceX96);
 
         if (size == MemeBuySizeDollars.Five) {
             buyAmount = 1_000 ether;
-            // cost = (priceX96 * 5e30) / FixedPoint96.Q96;
-            cost = uint256(5).divWadUp(1500);
+            cost = (priceX96 * 5e30) / FixedPoint96.Q96;
+            // cost = uint256(5).divWadUp(1500);
         } else if (size == MemeBuySizeDollars.Ten) {
             buyAmount = 2_500 ether;
-            // cost = (priceX96 * 10e30) / FixedPoint96.Q96;
-            cost = uint256(10).divWadUp(1500);
+            cost = (priceX96 * 10e30) / FixedPoint96.Q96;
+            // cost = uint256(10).divWadUp(1500);
         } else if (size == MemeBuySizeDollars.Twenty) {
             buyAmount = 6_000 ether;
-            // cost = (priceX96 * 20e30) / FixedPoint96.Q96;
-            cost = uint256(20).divWadUp(1500);
+            cost = (priceX96 * 20e30) / FixedPoint96.Q96;
+            // cost = uint256(20).divWadUp(1500);
         } else if (size == MemeBuySizeDollars.Fifty) {
             buyAmount = 20_000 ether;
-            // cost = (priceX96 * 50e30) / FixedPoint96.Q96;
-            cost = uint256(50).divWadUp(1500);
+            cost = (priceX96 * 50e30) / FixedPoint96.Q96;
+            // cost = uint256(50).divWadUp(1500);
         } else if (size == MemeBuySizeDollars.Hundred) {
             buyAmount = 50_000 ether;
-            // cost = (priceX96 * 100e30) / FixedPoint96.Q96;
-            cost = uint256(100).divWadUp(1500);
+            cost = (priceX96 * 100e30) / FixedPoint96.Q96;
+            // cost = uint256(100).divWadUp(1500);
         }
 
         require(msg.value >= cost, "Not enough coin sent");
