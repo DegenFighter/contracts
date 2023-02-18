@@ -37,11 +37,26 @@ contract MemeTest is TestBaseContract {
         proxy.buyMeme(MemeBuySizeDollars.Five);
     }
 
-    function testNewPurchaseMeme() public {
+    function testZkSyncMockPurchaseMeme() public {
         proxy.setAddress(LibConstants.TREASURY_ADDRESS, address(proxy));
 
         console2.log(address(this).balance);
+
+        address user1 = address(0x1);
+
+        uint256 user1_startingBalance = user1.balance;
+
+        vm.prank(user1);
         proxy.buyMeme{ value: 1 ether }(MemeBuySizeDollars.Five);
+        uint256 user1_endingBalance = user1.balance;
+
+        uint256 receiverBalance = address(proxy.getAddress(LibConstants.SERVER_ADDRESS)).balance;
+
+        assertEq(
+            user1_startingBalance,
+            user1_endingBalance + receiverBalance,
+            "user1 balance is not correct"
+        );
     }
 
     function testPurchaseMeme() public {

@@ -31,7 +31,6 @@ contract MemeMarketFacet is FacetBase, ReentrancyGuard {
         }
     }
 
-    // todo this will need reentrancy guard
     function buyMeme(
         MemeBuySizeDollars size
     )
@@ -42,15 +41,12 @@ contract MemeMarketFacet is FacetBase, ReentrancyGuard {
     {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
-        if (msg.value == 0) {
-            revert("msg.value should be > 0");
-        }
         // get price of matic
         // sqrtPriceX96 = LibUniswapV3Twap.getSqrtTwapX96(s.priceOracle, s.twapInterval);
 
         // priceX96 = LibUniswapV3Twap.getPriceX96FromSqrtPriceX96(sqrtPriceX96);
 
-        // note todo hardcode price for now for zkSync testnet
+        // note hardcode price for now for zkSync testnet
         // Hardcode price of 1 ETH = $1500
 
         if (size == MemeBuySizeDollars.Five) {
@@ -75,19 +71,22 @@ contract MemeMarketFacet is FacetBase, ReentrancyGuard {
             cost = uint256(100).divWadUp(1500);
         }
 
+        require(msg.value >= cost, "Not enough coin sent");
+
         // first, transfer wmatic to treasury
         // IERC20 wmatic = IERC20(s.currencyAddress);
         // wmatic.transferFrom(_msgSender(), s.addresses[LibConstants.TREASURY_ADDRESS], amount);
 
-        // todo send coin to treasury, which is the server address
-
-        require(msg.value >= cost, "Not enough coin sent");
-
+        // send coin to treasury, which is the server address
+        (bool sent, bytes memory data) = address(s.addresses[LibConstants.SERVER_ADDRESS]).call{
+            value: cost
+        }("");
+        require(sent, "Failed to send Ether to treasury");
         uint256 amountToSendBack = msg.value - cost;
 
-        // todo return the extra eth
-        // (bool sent, bytes memory data) = address(_msgSender()).call{ value: amountToSendBack }("");
-        // require(sent, "Failed to send Ether");
+        // return the extra eth
+        (sent, data) = address(_msgSender()).call{ value: amountToSendBack }("");
+        require(sent, "Failed to return extra ETH");
 
         LibToken.mint(LibTokenIds.TOKEN_MEME, _msgSender(), buyAmount);
     }
