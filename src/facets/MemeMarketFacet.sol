@@ -11,8 +11,12 @@ import { IERC20 } from "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.
 import { LibConstants } from "../libs/LibConstants.sol";
 import { LibToken, LibTokenIds } from "../libs/LibToken.sol";
 import { LibUniswapV3Twap } from "../libs/LibUniswapV3Twap.sol";
+import { ReentrancyGuard } from "../shared/ReentrancyGuard.sol";
+import { FixedPointMathLib } from "lib/solmate/src/utils/FixedPointMathLib.sol";
 
-contract MemeMarketFacet is FacetBase {
+contract MemeMarketFacet is FacetBase, ReentrancyGuard {
+    using FixedPointMathLib for uint256;
+
     constructor() FacetBase() {}
 
     function claimFreeMeme() external {
@@ -27,36 +31,63 @@ contract MemeMarketFacet is FacetBase {
         }
     }
 
+    // todo this will need reentrancy guard
     function buyMeme(
         MemeBuySizeDollars size
-    ) external returns (uint160 sqrtPriceX96, uint256 priceX96, uint256 amount, uint256 buyAmount) {
+    )
+        external
+        payable
+        nonReentrant
+        returns (uint160 sqrtPriceX96, uint256 priceX96, uint256 cost, uint256 buyAmount)
+    {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
+        if (msg.value == 0) {
+            revert("msg.value should be > 0");
+        }
         // get price of matic
-        sqrtPriceX96 = LibUniswapV3Twap.getSqrtTwapX96(s.priceOracle, s.twapInterval);
+        // sqrtPriceX96 = LibUniswapV3Twap.getSqrtTwapX96(s.priceOracle, s.twapInterval);
 
-        priceX96 = LibUniswapV3Twap.getPriceX96FromSqrtPriceX96(sqrtPriceX96);
+        // priceX96 = LibUniswapV3Twap.getPriceX96FromSqrtPriceX96(sqrtPriceX96);
+
+        // note todo hardcode price for now for zkSync testnet
+        // Hardcode price of 1 ETH = $1500
 
         if (size == MemeBuySizeDollars.Five) {
             buyAmount = 1_000 ether;
-            amount = (priceX96 * 5e30) / FixedPoint96.Q96;
+            // cost = (priceX96 * 5e30) / FixedPoint96.Q96;
+            cost = uint256(5).divWadUp(1500);
         } else if (size == MemeBuySizeDollars.Ten) {
             buyAmount = 2_500 ether;
-            amount = (priceX96 * 10e30) / FixedPoint96.Q96;
+            // cost = (priceX96 * 10e30) / FixedPoint96.Q96;
+            cost = uint256(10).divWadUp(1500);
         } else if (size == MemeBuySizeDollars.Twenty) {
             buyAmount = 6_000 ether;
-            amount = (priceX96 * 20e30) / FixedPoint96.Q96;
+            // cost = (priceX96 * 20e30) / FixedPoint96.Q96;
+            cost = uint256(20).divWadUp(1500);
         } else if (size == MemeBuySizeDollars.Fifty) {
             buyAmount = 20_000 ether;
-            amount = (priceX96 * 50e30) / FixedPoint96.Q96;
+            // cost = (priceX96 * 50e30) / FixedPoint96.Q96;
+            cost = uint256(50).divWadUp(1500);
         } else if (size == MemeBuySizeDollars.Hundred) {
             buyAmount = 50_000 ether;
-            amount = (priceX96 * 100e30) / FixedPoint96.Q96;
+            // cost = (priceX96 * 100e30) / FixedPoint96.Q96;
+            cost = uint256(100).divWadUp(1500);
         }
 
         // first, transfer wmatic to treasury
-        IERC20 wmatic = IERC20(s.currencyAddress);
-        wmatic.transferFrom(_msgSender(), s.addresses[LibConstants.TREASURY_ADDRESS], amount);
+        // IERC20 wmatic = IERC20(s.currencyAddress);
+        // wmatic.transferFrom(_msgSender(), s.addresses[LibConstants.TREASURY_ADDRESS], amount);
+
+        // todo send coin to treasury, which is the server address
+
+        require(msg.value >= cost, "Not enough coin sent");
+
+        uint256 amountToSendBack = msg.value - cost;
+
+        // todo return the extra eth
+        // (bool sent, bytes memory data) = address(_msgSender()).call{ value: amountToSendBack }("");
+        // require(sent, "Failed to send Ether");
 
         LibToken.mint(LibTokenIds.TOKEN_MEME, _msgSender(), buyAmount);
     }

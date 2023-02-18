@@ -29,7 +29,7 @@ module.exports = {
     tests: `test`,
   },
   zksolc: {
-    version: "1.3.1",
+    version: "1.3.4",
     compilerSource: "binary",
     settings: {},
   },

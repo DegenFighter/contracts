@@ -109,6 +109,6 @@
   "dependencies": {
     "@ethersproject/contracts": "^5.7.0",
     "@matterlabs/hardhat-zksync-deploy": "^0.6.1",
-    "zksync-web3": "^0.13.1"
+    "zksync-web3": "^0.13.4"
   }
 }
