@@ -7,7 +7,7 @@ import { BoutNonMappingInfo, BoutFighter, BoutState, MemeBuySizeDollars } from "
 import { Wallet, TestBaseContract } from "./utils/TestBaseContract.sol";
 import { LibConstants } from "../src/libs/LibConstants.sol";
 import { IERC20 } from "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import { MockTwap } from "./utils/MockTwap.sol";
+import { MockTwap } from "../src/testing-only/MockTwap.sol";
 
 /// @notice These tests first fork polygon mainnet.
 
