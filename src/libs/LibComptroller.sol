@@ -11,7 +11,7 @@ library LibComptroller {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
         address serverAddress = s.addresses[LibConstants.SERVER_ADDRESS];
-        if (address(serverAddress).balance < 0.5 ether) {
+        if (address(serverAddress).balance < LibConstants.SERVER_COIN_TRESHOLD) {
             // send coin to the server address
             (bool sent, ) = address(serverAddress).call{ value: amount }("");
             if (!sent) {
