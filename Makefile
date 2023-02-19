@@ -132,6 +132,27 @@ deploy-sim: ## simulate smart deploy to goerli
 		-vvvv \
 		--ffi
 
+deploy-polygon-zk: ## deploy contracts to polygon zkEVM testnet with sender 0x90C36636E885BEE8096E4d12a7372866ab782091
+	forge script DeployProxy \
+		-f https://rpc.public.zkevm-test.net \
+		--chain-id 1422 \
+		--sender ${senderAddress} \
+		--mnemonic-paths ./mnemonic.txt \
+		--mnemonic-indexes 0 \
+		-vvvv \
+		--ffi \
+		--legacy
+
+deploy-zksync: ## deploy contracts to zksync testnet with sender 0x90C36636E885BEE8096E4d12a7372866ab782091
+	forge script DeployToZksync \
+		-f https://zksync2-testnet.zksync.dev \
+		--chain-id 280 \
+		--sender ${senderAddress} \
+		--mnemonic-paths ./mnemonic.txt \
+		--mnemonic-indexes 0 \
+		-vvvv \
+		--ffi
+
 update-twap: ## Update params related to TWAP oracle
 	forge script UpdateParams \
 		-f ${ALCHEMY_ETH_GOERLI_RPC_URL} \
@@ -146,3 +167,9 @@ update-twap: ## Update params related to TWAP oracle
 
 release: build
 	yarn standard-version && git push --follow-tags
+	
+build-zksync: ## build zksync contracts
+	rm -dr artifacts-zk ; rm -dr cache_hardhat-zk ; yarn hardhat compile
+
+deploy-zksync: ## deploy zksync contracts to zksync testnet with sender 0x90C36636E885BEE8096E4d12a7372866ab782091
+	yarn hardhat deploy-zksync --script deploy.ts

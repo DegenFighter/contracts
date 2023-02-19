@@ -6,5 +6,5 @@ import { MemeBuySizeDollars } from "../Objects.sol";
 interface IMemeMarketFacet {
     function claimFreeMeme() external;
 
-    function buyMeme(MemeBuySizeDollars size) external;
+    function buyMeme(MemeBuySizeDollars size) external payable;
 }

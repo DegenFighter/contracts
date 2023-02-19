@@ -50,8 +50,24 @@ The contact addresses will be output as follows:
 1. Enter the deployment mnemonic into `mnemonic.txt`
 1. Deploy a new diamond on Goerli:
 
+#### To Goerli Testnet
+
 ```zsh
 make deploy-goerli newDiamond=true initNewDiamond=true facetAction=0
+```
+
+#### To zkSync era testnet
+
+First, compile contracts with zksolc
+
+```zsh
+make build-zksync
+```
+
+Then, run the deploy script
+
+```zsh
+deploy-zksync
 ```
 
 ## Publish NPM package

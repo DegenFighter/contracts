@@ -95,6 +95,7 @@ struct BoutList {
 
 struct AppStorage {
     bool diamondInitialized;
+    uint256 reentrancyStatus;
     ///
     /// EIP712
     ///

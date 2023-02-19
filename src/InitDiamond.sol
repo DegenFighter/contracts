@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import { AppStorage, LibAppStorage } from "src/Objects.sol";
+import { AppStorage, LibAppStorage } from "./Objects.sol";
 import { LibConstants } from "./libs/LibConstants.sol";
 import { LibTokenIds } from "./libs/LibToken.sol";
 import { LibDiamond } from "lib/diamond-2-hardhat/contracts/libraries/LibDiamond.sol";
-import { LibEip712 } from "src/libs/LibEip712.sol";
+import { LibEip712 } from "./libs/LibEip712.sol";
 import { IDiamondCut } from "lib/diamond-2-hardhat/contracts/interfaces/IDiamondCut.sol";
 import { IDiamondLoupe } from "lib/diamond-2-hardhat/contracts/interfaces/IDiamondLoupe.sol";
 import { IERC165 } from "lib/diamond-2-hardhat/contracts/interfaces/IERC165.sol";

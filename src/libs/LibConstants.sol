@@ -14,6 +14,8 @@ library LibConstants {
     uint internal constant MIN_BET_AMOUNT = 10 ether;
     // time before a bout expires unless it is finalized
     uint internal constant DEFAULT_BOUT_EXPIRATION_TIME = 1 days;
+    // amount above SERVER_COIN_TRESHOLD gets sent to the treasury
+    uint256 internal constant SERVER_COIN_TRESHOLD = 0.5 ether;
     // address of the WMATIC token contract on Polygon mainnet
     address internal constant WMATIC_POLYGON_ADDRESS = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
 }

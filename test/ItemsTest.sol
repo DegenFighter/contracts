@@ -23,9 +23,14 @@ contract ItemsTest is TestBaseContract {
         super.setUp();
 
         proxy.setAddress(LibConstants.TREASURY_ADDRESS, address(proxy));
-        writeTokenBalance(address(this), address(proxy), LibConstants.WMATIC_POLYGON_ADDRESS, 10000e18);
+        writeTokenBalance(
+            address(this),
+            address(proxy),
+            LibConstants.WMATIC_POLYGON_ADDRESS,
+            10000e18
+        );
 
-        proxy.buyMeme(MemeBuySizeDollars.Hundred);
+        proxy.buyMeme{ value: 300 ether }(MemeBuySizeDollars.Hundred);
     }
 
     function testBuyItem() public {
@@ -36,6 +41,11 @@ contract ItemsTest is TestBaseContract {
         proxy.buyItem(LibTokenIds.BROADCAST_MSG, amount);
 
         assertEq(proxy.tokenBalanceOf(LibTokenIds.BROADCAST_MSG, address(this)), amount);
-        assertEq(proxy.tokenBalanceOf(LibTokenIds.TOKEN_MEME, address(this)), memeBal - amount * 100e18);
+        assertEq(
+            proxy.tokenBalanceOf(LibTokenIds.TOKEN_MEME, address(this)),
+            memeBal - amount * 100e18
+        );
     }
+
+    receive() external payable {}
 }

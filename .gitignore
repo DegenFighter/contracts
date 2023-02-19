@@ -13,8 +13,13 @@ mnemonic.txt
 node_modules
 
 # Hardhat files
+build
 cache
+cache_hardhat
+cache-zk
+cache_hardhat-zk
 artifacts
+artifacts-zk
 
 # Foundry files
 forge-artifacts

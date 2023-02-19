@@ -8,6 +8,7 @@ fs_permissions = [
     { access = "read", path = "./mnemonic.txt" },
     { access = "read-write", path = "./facetsdeployed.txt" },
     { access = "read-write", path = "./deployedAddresses.json" },
+    { access = "read", path = "./zksolc.json" },
 ]
 
 [rpc_endpoints]

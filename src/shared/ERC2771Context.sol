@@ -4,7 +4,7 @@
 pragma solidity ^0.8.9;
 
 import "lib/openzeppelin-contracts/contracts/utils/Context.sol";
-import { AppStorage, LibAppStorage } from "src/Objects.sol";
+import { AppStorage, LibAppStorage } from "../Objects.sol";
 
 /**
  * @dev Context variant with ERC2771 support.
