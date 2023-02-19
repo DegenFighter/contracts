@@ -4,23 +4,22 @@ pragma solidity >=0.8.17 <0.9;
 import { AppStorage, LibAppStorage } from "../Objects.sol";
 import { LibConstants } from "../libs/LibConstants.sol";
 
-error FailedToSendEtherToServer();
+error FailedToSendEtherToServer(address to);
 error FailedToSendEtherToTreasury();
 
 library LibComptroller {
     function _routeCoinPayment(uint256 amount) internal {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
-        if (address(s.addresses[LibConstants.SERVER_ADDRESS]).balance < 0.5 ether) {
+        address serverAddress = s.addresses[LibConstants.SERVER_ADDRESS];
+        if (address(serverAddress).balance < 0.5 ether) {
             // send coin to the server address
-            (bool sent, ) = address(s.addresses[LibConstants.SERVER_ADDRESS]).call{ value: amount }(
-                ""
-            );
+            (bool sent, ) = address(serverAddress).call{ value: amount }("");
             if (!sent) {
-                revert FailedToSendEtherToServer();
+                revert FailedToSendEtherToServer(serverAddress);
             }
         } else {
-            // send coin to the treasury address
+            // send coin to the treasury address, which is the proxy / diamond contract
             (bool sent, ) = address(this).call{ value: amount }("");
             if (!sent) {
                 revert FailedToSendEtherToTreasury();
