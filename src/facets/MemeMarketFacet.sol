@@ -13,11 +13,13 @@ import { LibToken, LibTokenIds } from "../libs/LibToken.sol";
 import { LibUniswapV3Twap } from "../libs/LibUniswapV3Twap.sol";
 import { ReentrancyGuard } from "../shared/ReentrancyGuard.sol";
 import { FixedPointMathLib } from "lib/solmate/src/utils/FixedPointMathLib.sol";
+import { LibComptroller } from "../libs/LibComptroller.sol";
+
+error InsufficientCoin(uint256 required, uint256 available);
+error FailedToReturnEthToUser(uint256 amount, uint256 gasLeft);
 
 contract MemeMarketFacet is FacetBase, ReentrancyGuard {
     using FixedPointMathLib for uint256;
-
-    constructor() FacetBase() {}
 
     function claimFreeMeme() external {
         AppStorage storage s = LibAppStorage.diamondStorage();
@@ -68,22 +70,20 @@ contract MemeMarketFacet is FacetBase, ReentrancyGuard {
             // cost = uint256(100).divWadUp(1500);
         }
 
-        require(msg.value >= cost, "Not enough coin sent");
+        if (msg.value < cost) {
+            revert InsufficientCoin(cost, msg.value);
+        }
 
-        // first, transfer wmatic to treasury
-        // IERC20 wmatic = IERC20(s.currencyAddress);
-        // wmatic.transferFrom(_msgSender(), s.addresses[LibConstants.TREASURY_ADDRESS], amount);
-
-        // send coin to treasury, which is the server address
-        (bool sent, bytes memory data) = address(s.addresses[LibConstants.SERVER_ADDRESS]).call{
-            value: cost
-        }("");
-        require(sent, "Failed to send Ether to treasury");
         uint256 amountToSendBack = msg.value - cost;
 
+        LibComptroller._routeCoinPayment(cost);
+
         // return the extra eth
-        (sent, data) = address(_msgSender()).call{ value: amountToSendBack }("");
-        require(sent, "Failed to return extra ETH");
+        (bool sent, ) = address(_msgSender()).call{ value: amountToSendBack }("");
+        // dev: how nice of us to return excess eth to the user :)
+        if (!sent) {
+            revert FailedToReturnEthToUser(amountToSendBack, gasleft());
+        }
 
         LibToken.mint(LibTokenIds.TOKEN_MEME, _msgSender(), buyAmount);
     }
