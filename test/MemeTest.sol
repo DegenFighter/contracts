@@ -43,7 +43,7 @@ contract MemeTest is TestBaseContract {
         proxy.buyMeme(MemeBuySizeDollars.Five);
     }
 
-    function testZkSyncMockPurchaseMeme() public {
+    function testPurchaseMemeWithMockTwap() public {
         // deploy mock twap
         MockTwap twap = new MockTwap();
 
