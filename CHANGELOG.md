@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.0.1](https://github.com/DegenFighter/contracts/compare/v3.0.0...v3.0.1) (2023-02-21)
+
+
+### Bug Fixes
+
+* temporary fix for ci build using npm override ([ab738c6](https://github.com/DegenFighter/contracts/commit/ab738c6d76b8f1b73e1e6e3326d8e8234759e1f9))
+
 ## [3.0.0](https://github.com/DegenFighter/contracts/compare/v2.0.1...v3.0.0) (2023-02-17)
 
 
