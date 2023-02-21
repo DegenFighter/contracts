@@ -9,6 +9,7 @@ import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
 
 import deployedAddresses from "../deployedAddresses.json";
 
+import * as fs from "fs";
 import * as path from "path";
 import * as glob from "glob";
 const PROJECT_DIR = path.join(__dirname, "..");
@@ -94,6 +95,11 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   console.log(`${artifact.contractName} was deployed to ${diamondAddress}`);
 
   deployedAddresses[280] = diamondAddress;
+  fs.writeFileSync(
+    "../deployedAddresses.json",
+    JSON.stringify(deployedAddresses, null, 2),
+    "utf-8"
+  );
 
   // deploy InitDiamond
   // InitDiamond provides a function that is called when the diamond is upgraded to initialize state variables

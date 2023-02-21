@@ -1,6 +1,6 @@
-![build](https://github.com/DegenFighter/contracts/actions/workflows/ci.yml/badge.svg)
-
 # DegenFighter contracts
+
+![build](https://github.com/DegenFighter/contracts/actions/workflows/ci.yml/badge.svg)
 
 The EVM smart contracts for DegenFighter.
 
@@ -15,9 +15,9 @@ Install:
 - Run `git submodule update --init --recursive`
 - Run `cp .env.example .env` and set the following within:
 
-* `export LOCAL_RPC_URL=http://localhost:8545`
-* `export ALCHEMY_ETH_GOERLI_RPC_URL=...`
-* `export ETHERSCAN_API_KEY=...`
+- `export LOCAL_RPC_URL=http://localhost:8545`
+- `export ALCHEMY_ETH_GOERLI_RPC_URL=...`
+- `export ETHERSCAN_API_KEY=...`
 
 ### Test Locally
 
@@ -67,7 +67,19 @@ make build-zksync
 Then, run the deploy script
 
 ```zsh
-deploy-zksync
+make deploy-zksync
+```
+
+Deploy MockTwap
+
+```zsh
+yarn hardhat deploy-zksync --script deployMockTwap.ts
+```
+
+Set MockTwap sqrtPriceX96
+
+```zsh
+yarn hardhat deploy-zksync --script setSqrtPrice.ts
 ```
 
 ## Publish NPM package
