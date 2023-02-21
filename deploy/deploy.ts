@@ -7,6 +7,8 @@ import {
 } from "hardhat/types";
 import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
 
+import deployedAddresses from "../deployedAddresses.json";
+
 import * as path from "path";
 import * as glob from "glob";
 const PROJECT_DIR = path.join(__dirname, "..");
@@ -91,6 +93,8 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   const diamondAddress = diamondContract.address;
   console.log(`${artifact.contractName} was deployed to ${diamondAddress}`);
 
+  deployedAddresses[280] = diamondAddress;
+
   // deploy InitDiamond
   // InitDiamond provides a function that is called when the diamond is upgraded to initialize state variables
   //   Read about how the diamondCut function works here: https://eips.ethereum.org/EIPS/eip-2535#addingreplacingremoving-functions
@@ -144,5 +148,6 @@ export default async function (hre: HardhatRuntimeEnvironment) {
     throw Error(`Diamond upgrade failed: ${tx.hash}`);
   }
   console.log("Completed diamond cut");
+
   return diamondAddress;
 }
