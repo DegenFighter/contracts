@@ -111,15 +111,9 @@ contract MemeTest is TestBaseContract {
         );
 
         assertEq(memeToken.balanceOf(user1), 1000 ether);
-
-        // todo add more checks
-        // proxy.buyMeme{ value: 20 ether }(MemeBuySizeDollars.Ten);
-        // proxy.buyMeme{ value: 30 ether }(MemeBuySizeDollars.Twenty);
-        // proxy.buyMeme{ value: 70 ether }(MemeBuySizeDollars.Fifty);
-        // proxy.buyMeme{ value: 200 ether }(MemeBuySizeDollars.Hundred);
     }
 
-    function testFuzz_buyMeme(uint256 amount) public {
+    function testFuzz_buyMemeWithMockTwap(uint256 amount) public {
         amount = bound(amount, 1 ether, 1000 ether);
 
         MockTwap twap = new MockTwap();
