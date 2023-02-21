@@ -65,6 +65,31 @@ contract MemeTest is TestBaseContract {
         assertEq(memeToken.balanceOf(user1), 1000 ether);
     }
 
+    function testPurchaseMemeRoutingEthToTreasury() public {
+        // deploy mock twap
+        MockTwap twap = new MockTwap();
+
+        twap.setSqrtPriceX96(1625 * 10 ** 18);
+        proxy.setPriceOracle(address(twap));
+
+        console2.log(address(this).balance);
+
+        // give more than LibConstants.SERVER_COIN_TRESHOLD to server
+        vm.deal(server.addr, 1 ether);
+
+        uint256 startingUserBalance = address(user1).balance;
+        vm.prank(user1);
+        proxy.buyMeme{ value: 1 ether }(MemeBuySizeDollars.Five);
+
+        uint256 treasuryBalance = address(proxy).balance;
+
+        assertEq(
+            user1.balance + treasuryBalance,
+            startingUserBalance,
+            "treasury balance is not correct"
+        );
+    }
+
     /// @notice tests MEME balance
     function testFuzz_buyMemeRoutingCoinToServerAndTreasury(uint256 amount) public {
         amount = bound(amount, 1 ether, 1000 ether);
