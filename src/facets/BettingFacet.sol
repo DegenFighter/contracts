@@ -15,8 +15,6 @@ import { LibBetting } from "../libs/LibBetting.sol";
 contract BettingFacet is FacetBase, IBettingFacet {
     using SafeMath for uint;
 
-    constructor() FacetBase() {}
-
     function bet(
         uint boutId,
         uint8 br,

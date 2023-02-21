@@ -37,8 +37,6 @@ contract ItemsMarketFacet is FacetBase {
         uint256[] values
     );
 
-    constructor() FacetBase() {}
-
     function createItem(uint256 itemId, uint256 cost) external isAdmin {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
@@ -51,8 +49,6 @@ contract ItemsMarketFacet is FacetBase {
 
         // todo emit event
     }
-
-    event DebugBuy(uint256 userBal);
 
     function buyItem(uint256 itemId, uint256 amount) external {
         AppStorage storage s = LibAppStorage.diamondStorage();
