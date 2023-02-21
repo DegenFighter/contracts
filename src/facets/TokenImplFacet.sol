@@ -8,8 +8,6 @@ import { ITokenImplFacet } from "../interfaces/ITokenImplFacet.sol";
 import { LibConstants } from "../libs/LibConstants.sol";
 
 contract TokenImplFacet is FacetBase, ITokenImplFacet {
-    constructor() FacetBase() {}
-
     function tokenName(uint tokenId) external view returns (string memory) {
         return "Meme";
     }
@@ -36,7 +34,11 @@ contract TokenImplFacet is FacetBase, ITokenImplFacet {
         revert NotAllowedError();
     }
 
-    function tokenAllowance(uint tokenId, address owner, address spender) external view returns (uint256) {
+    function tokenAllowance(
+        uint tokenId,
+        address owner,
+        address spender
+    ) external view returns (uint256) {
         return 0;
     }
 
@@ -44,7 +46,12 @@ contract TokenImplFacet is FacetBase, ITokenImplFacet {
         revert NotAllowedError();
     }
 
-    function tokenTransferFrom(uint tokenId, address from, address to, uint256 amount) external returns (bool) {
+    function tokenTransferFrom(
+        uint tokenId,
+        address from,
+        address to,
+        uint256 amount
+    ) external returns (bool) {
         revert NotAllowedError();
     }
 }

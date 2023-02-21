@@ -7,8 +7,6 @@ import { FacetBase } from "../FacetBase.sol";
 import { LibConstants } from "../libs/LibConstants.sol";
 
 contract SettingsFacet is FacetBase, ISettingsFacet {
-    constructor() FacetBase() {}
-
     function getAddress(bytes32 key) external view returns (address) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         return s.addresses[key];

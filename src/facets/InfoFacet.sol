@@ -7,8 +7,6 @@ import { IInfoFacet } from "../interfaces/IInfoFacet.sol";
 import { LibBetting } from "../libs/LibBetting.sol";
 
 contract InfoFacet is FacetBase, IInfoFacet {
-    constructor() FacetBase() {}
-
     function getTotalBouts() external view returns (uint) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         return s.totalBouts;

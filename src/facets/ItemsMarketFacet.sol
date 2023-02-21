@@ -37,8 +37,6 @@ contract ItemsMarketFacet is FacetBase {
         uint256[] values
     );
 
-    constructor() FacetBase() {}
-
     function createItem(uint256 itemId, uint256 cost) external isAdmin {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
