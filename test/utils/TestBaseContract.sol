@@ -21,19 +21,14 @@ abstract contract ITestProxy is ITestFacet, IProxy {}
 contract TestBaseContract is Test {
     using stdStorage for StdStorage;
 
-    function writeTokenBalance(address to, address from, address token, uint256 amount) public {
-        IERC20 tkn = IERC20(token);
-        tkn.approve(address(from), amount);
-
-        stdstore.target(token).sig(IERC20(token).balanceOf.selector).with_key(to).checked_write(
-            amount
-        );
-
-        assertEq(tkn.balanceOf(to), amount, "balance should INCREASE (after mint)");
-    }
-
+    // ------------------------------------------------------ //
+    // Default protocol level test constant variables
+    // ------------------------------------------------------ //
     address internal immutable account0 = address(this);
 
+    // ------------------------------------------------------ //
+    // Default protocol level test wallets and addresses
+    // ------------------------------------------------------ //
     Wallet[] internal players;
 
     Wallet internal server = Wallet({ addr: vm.addr(12345), privateKey: 12345 });
@@ -44,6 +39,9 @@ contract TestBaseContract is Test {
     address internal memeTokenAddress;
     IERC20 internal memeToken;
 
+    // ------------------------------------------------------ //
+    // Other variables
+    // ------------------------------------------------------ //
     uint internal randomNonce;
 
     function setUp() public virtual {
@@ -70,6 +68,7 @@ contract TestBaseContract is Test {
 
         // set server address
         proxy.setAddress(LibConstants.SERVER_ADDRESS, server.addr);
+        vm.label(server.addr, "Server");
 
         // set ownership
         proxy.transferOwnership(account0);
@@ -77,6 +76,7 @@ contract TestBaseContract is Test {
         // setup players
         for (uint i = 0; i < 5; i++) {
             players.push(Wallet({ addr: vm.addr(1001 + i), privateKey: 1001 + i }));
+            vm.label(players[i].addr, string(abi.encodePacked("Player ", i)));
         }
     }
 

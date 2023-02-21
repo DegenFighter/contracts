@@ -23,12 +23,6 @@ contract ItemsTest is TestBaseContract {
         super.setUp();
 
         proxy.setAddress(LibConstants.TREASURY_ADDRESS, address(proxy));
-        writeTokenBalance(
-            address(this),
-            address(proxy),
-            LibConstants.WMATIC_POLYGON_ADDRESS,
-            10000e18
-        );
 
         proxy.buyMeme{ value: 300 ether }(MemeBuySizeDollars.Hundred);
     }
