@@ -65,55 +65,8 @@ contract MemeTest is TestBaseContract {
         assertEq(memeToken.balanceOf(user1), 1000 ether);
     }
 
-    function testPurchaseMemeRoutingEthToTreasury() public {
-        // deploy mock twap
-        MockTwap twap = new MockTwap();
-
-        twap.setSqrtPriceX96(1625 * 10 ** 18);
-        proxy.setPriceOracle(address(twap));
-
-        console2.log(address(this).balance);
-
-        // give more than 0.5 coin to server
-        vm.deal(server.addr, 1 ether);
-
-        uint256 startingUserBalance = address(user1).balance;
-        vm.prank(user1);
-        proxy.buyMeme{ value: 1 ether }(MemeBuySizeDollars.Five);
-
-        uint256 treasuryBalance = address(proxy).balance;
-
-        assertEq(
-            user1.balance + treasuryBalance,
-            startingUserBalance,
-            "treasury balance is not correct"
-        );
-    }
-
-    function testPurchaseMemeWithLiveTwap() public {
-        ChainDependent memory cd = returnChainDependentData();
-        proxy.setPriceOracle(cd.priceOracle);
-
-        uint256 user1_startingBalance = user1.balance;
-
-        vm.prank(user1);
-        proxy.buyMeme{ value: 10 ether }(MemeBuySizeDollars.Five);
-        uint256 user1_endingBalance = user1.balance;
-
-        uint256 receiverBalance = server.addr.balance;
-
-        console2.log("receiver balance", receiverBalance);
-        console2.log("user1 ending balance", user1_endingBalance);
-        assertEq(
-            user1_startingBalance,
-            user1_endingBalance + receiverBalance,
-            "user1 balance is not correct"
-        );
-
-        assertEq(memeToken.balanceOf(user1), 1000 ether);
-    }
-
-    function testFuzz_buyMemeWithMockTwap(uint256 amount) public {
+    /// @notice tests MEME balance
+    function testFuzz_buyMemeRoutingCoinToServerAndTreasury(uint256 amount) public {
         amount = bound(amount, 1 ether, 1000 ether);
 
         MockTwap twap = new MockTwap();
@@ -124,20 +77,17 @@ contract MemeTest is TestBaseContract {
         vm.deal(user1, 1e6 ether);
 
         uint256 user1_startingBalance;
-
         uint256 server_startingBalance;
         uint256 treasury_startingBalance;
 
         uint256 user1_endingBalance;
-
-        uint256 cost; // cost of meme in coin
-        uint256 buyAmount; // amount of MEME bought
         uint256 server_endingBalance;
         uint256 treasury_endingBalance;
 
+        uint256 cost; // cost of meme in coin
+
         MemeBuySizeDollars size;
 
-        uint256 user1_startingMemeBalance;
         for (uint256 i; i < 5; ++i) {
             if (i == 0) {
                 size = MemeBuySizeDollars.Five;
@@ -154,25 +104,6 @@ contract MemeTest is TestBaseContract {
 
             server_startingBalance = server.addr.balance;
             treasury_startingBalance = address(proxy).balance;
-
-            user1_startingMemeBalance = proxy.tokenBalanceOf(LibTokenIds.TOKEN_MEME, user1);
-            (cost, buyAmount) = proxy.getMemeCost(size);
-            if (cost <= amount) {
-                vm.prank(user1);
-                proxy.buyMeme{ value: amount }(size);
-                assertEq(
-                    proxy.tokenBalanceOf(LibTokenIds.TOKEN_MEME, user1),
-                    user1_startingMemeBalance + buyAmount,
-                    "user1 meme balance should INCREASE"
-                );
-                assertEq(
-                    memeToken.balanceOf(user1),
-                    user1_startingMemeBalance + buyAmount,
-                    "user1 meme balance should INCREASE"
-                );
-            } else {
-                delete cost;
-            }
 
             user1_endingBalance = user1.balance;
 
@@ -201,6 +132,80 @@ contract MemeTest is TestBaseContract {
                     server_startingBalance + cost,
                     "server balance should INCREASE by cost"
                 );
+            }
+        }
+    }
+
+    function testPurchaseMemeWithLiveTwap() public {
+        ChainDependent memory cd = returnChainDependentData();
+        proxy.setPriceOracle(cd.priceOracle);
+
+        uint256 user1_startingBalance = user1.balance;
+
+        vm.prank(user1);
+        proxy.buyMeme{ value: 10 ether }(MemeBuySizeDollars.Five);
+        uint256 user1_endingBalance = user1.balance;
+
+        uint256 receiverBalance = server.addr.balance;
+
+        console2.log("receiver balance", receiverBalance);
+        console2.log("user1 ending balance", user1_endingBalance);
+        assertEq(
+            user1_startingBalance,
+            user1_endingBalance + receiverBalance,
+            "user1 balance is not correct"
+        );
+
+        assertEq(memeToken.balanceOf(user1), 1000 ether);
+    }
+
+    /// @notice tests COIN balance
+    function testFuzz_buyMemeWithMockTwap(uint256 amount) public {
+        amount = bound(amount, 1 ether, 1000 ether);
+
+        MockTwap twap = new MockTwap();
+
+        twap.setSqrtPriceX96(1625 * 10 ** 18);
+        proxy.setPriceOracle(address(twap));
+
+        vm.deal(user1, 1e6 ether);
+
+        uint256 cost; // cost of meme in coin
+        uint256 buyAmount; // amount of MEME bought
+
+        MemeBuySizeDollars size;
+
+        uint256 user1_startingMemeBalance;
+        for (uint256 i; i < 5; ++i) {
+            if (i == 0) {
+                size = MemeBuySizeDollars.Five;
+            } else if (i == 1) {
+                size = MemeBuySizeDollars.Ten;
+            } else if (i == 2) {
+                size = MemeBuySizeDollars.Twenty;
+            } else if (i == 3) {
+                size = MemeBuySizeDollars.Fifty;
+            } else if (i == 4) {
+                size = MemeBuySizeDollars.Hundred;
+            }
+
+            user1_startingMemeBalance = proxy.tokenBalanceOf(LibTokenIds.TOKEN_MEME, user1);
+            (cost, buyAmount) = proxy.getMemeCost(size);
+            if (cost <= amount) {
+                vm.prank(user1);
+                proxy.buyMeme{ value: amount }(size);
+                assertEq(
+                    proxy.tokenBalanceOf(LibTokenIds.TOKEN_MEME, user1),
+                    user1_startingMemeBalance + buyAmount,
+                    "user1 meme balance should INCREASE"
+                );
+                assertEq(
+                    memeToken.balanceOf(user1),
+                    user1_startingMemeBalance + buyAmount,
+                    "user1 meme balance should INCREASE"
+                );
+            } else {
+                delete cost;
             }
         }
     }
