@@ -11,7 +11,8 @@ contract UpdateParams is Script, DeploymentHelpers {
     function setUp() public {}
 
     function run() public {
-        IProxy proxy = IProxy(getDiamondAddressFromFile());
+        (address diamondAddress, ) = getDiamondAddressesFromFile();
+        IProxy proxy = IProxy(diamondAddress);
 
         ChainDependent memory data = returnChainDependentData();
 

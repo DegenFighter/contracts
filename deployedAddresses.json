@@ -1,7 +1,10 @@
 {
   "5": {
     "Diamond": {
-      "address": "0x9bbc723dddaeca5a38c29e8b3ddab7258b8854f6"
+      "address": "0x51D484398cE6d72d5F744A4Cef0eC25f2606F3aE"
+    },
+    "Meme": {
+      "address": "0xC3Ad8Cd70bf3744D8011c7234eB48A09e66cB842"
     }
   },
   "280": "0x14fed9c62c58d8cf3e2a8e9bd3ea9ce8252c19f3"
