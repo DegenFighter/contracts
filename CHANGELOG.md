@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [3.1.0](https://github.com/DegenFighter/contracts/compare/v3.0.1...v3.1.0) (2023-02-22)
+
+
+### Features
+
+* add meme token address to deployed json ([b5e9097](https://github.com/DegenFighter/contracts/commit/b5e9097c6220f2da32f0bbe546121da3dd458ddc))
+
 ### [3.0.1](https://github.com/DegenFighter/contracts/compare/v3.0.0...v3.0.1) (2023-02-21)
 
 
