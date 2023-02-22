@@ -124,11 +124,7 @@ contract DeploymentHelpers is Test {
                 "./deployedAddresses.json",
                 keyForDiamondAddress
             );
-            vm.writeJson(
-                vm.toString(diamondAddress),
-                "./deployedAddresses.json",
-                keyForMemeAddress
-            );
+            vm.writeJson(vm.toString(memeAddress), "./deployedAddresses.json", keyForMemeAddress);
         } else {
             // Read in current diamond address
             (diamondAddress, memeAddress) = getDiamondAddressesFromFile();
