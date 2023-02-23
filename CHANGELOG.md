@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [3.2.0](https://github.com/DegenFighter/contracts/compare/v3.1.0...v3.2.0) (2023-02-23)
+
+
+### Features
+
+* claim free meme when betting, new 'available meme' gettor ([908e19f](https://github.com/DegenFighter/contracts/commit/908e19fb28a69fa9b846ecec24820fff7d614a86))
+
+
+### Bug Fixes
+
+* writing meme address to deployedAddresses.json ([1b042fd](https://github.com/DegenFighter/contracts/commit/1b042fdaf4816c4b5808f0d6f50e6652f14fab95))
+
 ## [3.1.0](https://github.com/DegenFighter/contracts/compare/v3.0.1...v3.1.0) (2023-02-22)
 
 
