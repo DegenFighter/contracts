@@ -13,23 +13,50 @@ import "../Errors.sol";
 library LibBetting {
     using SafeMath for uint;
 
-    function getBoutOrCreate(uint boutId) internal returns (Bout storage bout) {
+    struct CreateBoutParams {
+        // whether to set expiry time - if we're finalizing a bout without betting, we don't want to set the expiry time
+        bool setExpiryTime;
+        // to decrease gas cost of endBout() calls we can pre-set the variables that would be set in that function
+        bool setDefaultValuesToSaveEndBoutGas;
+    }
+
+    function getBoutOrCreate(
+        uint boutId,
+        CreateBoutParams memory params
+    ) internal returns (Bout storage bout) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         bout = s.bouts[boutId];
 
         if (uint(bout.state) == uint(BoutState.Uninitialized)) {
             s.totalBouts++;
             s.boutIdByIndex[s.totalBouts] = boutId;
+
             bout.state = BoutState.Created;
-            bout.createTime = block.timestamp;
-            bout.expiryTime = block.timestamp + LibConstants.DEFAULT_BOUT_EXPIRATION_TIME;
+
+            if (params.setExpiryTime) {
+                bout.expiryTime = block.timestamp + LibConstants.DEFAULT_BOUT_EXPIRATION_TIME;
+            }
+
+            if (params.setDefaultValuesToSaveEndBoutGas) {
+                bout.revealValues = [0];
+                bout.fighterIds[BoutFighter.FighterA] = 1;
+                bout.fighterIds[BoutFighter.FighterB] = 1;
+                bout.fighterPotBalances[BoutFighter.FighterA] = 1;
+                bout.fighterPotBalances[BoutFighter.FighterB] = 1;
+                bout.endTime = 1;
+                bout.winningsRatio = 1;
+                bout.winner = BoutFighter.FighterA;
+            }
         }
     }
 
     function bet(uint boutId, address wallet, uint8 br, uint amount) internal {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
-        Bout storage bout = getBoutOrCreate(boutId);
+        Bout storage bout = getBoutOrCreate(
+            boutId,
+            CreateBoutParams({ setExpiryTime: true, setDefaultValuesToSaveEndBoutGas: true })
+        );
 
         if (bout.state != BoutState.Created) {
             revert BoutInWrongStateError(boutId, bout.state);
@@ -102,7 +129,10 @@ library LibBetting {
     ) internal {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
-        Bout storage bout = getBoutOrCreate(boutId);
+        Bout storage bout = getBoutOrCreate(
+            boutId,
+            CreateBoutParams({ setExpiryTime: false, setDefaultValuesToSaveEndBoutGas: false })
+        );
 
         if (bout.state != BoutState.Created) {
             revert BoutInWrongStateError(boutId, bout.state);
@@ -120,7 +150,7 @@ library LibBetting {
             revert PotMismatchError(boutId, fighterAPot, fighterBPot, bout.totalPot);
         }
 
-        if (block.timestamp >= bout.expiryTime) {
+        if (bout.expiryTime > 0 && block.timestamp >= bout.expiryTime) {
             revert BoutExpiredError(boutId, bout.expiryTime);
         }
 
@@ -129,19 +159,20 @@ library LibBetting {
         bout.revealValues = revealValues;
 
         bout.fighterIds[BoutFighter.FighterA] = fighterAId;
-        bout.fighterPots[BoutFighter.FighterA] = fighterAPot;
-        bout.fighterPotBalances[BoutFighter.FighterA] = fighterAPot;
-
         bout.fighterIds[BoutFighter.FighterB] = fighterBId;
-        bout.fighterPots[BoutFighter.FighterB] = fighterBPot;
+
+        bout.fighterPotBalances[BoutFighter.FighterA] = fighterAPot;
         bout.fighterPotBalances[BoutFighter.FighterB] = fighterBPot;
 
+        // calculate winnings ratio
+        BoutFighter loser = _getLoser(winner);
+        bout.winningsRatio = (bout.fighterPotBalances[winner] > 0)
+            ? ((bout.fighterPotBalances[loser] * 1000 ether) / bout.fighterPotBalances[winner])
+            : 0;
+
         bout.winner = winner;
-        bout.loser = (winner == BoutFighter.FighterA ? BoutFighter.FighterB : BoutFighter.FighterA);
 
         bout.endTime = block.timestamp;
-
-        s.endedBouts++;
     }
 
     /*
@@ -189,7 +220,8 @@ library LibBetting {
                         selfBetAmount
                     );
                     // remove won amount from loser pot
-                    bout.fighterPotBalances[bout.loser] = bout.fighterPotBalances[bout.loser].sub(
+                    BoutFighter loser = _getLoser(bout.winner);
+                    bout.fighterPotBalances[loser] = bout.fighterPotBalances[loser].sub(
                         loserPotAmountToClaim
                     );
                 }
@@ -252,8 +284,7 @@ library LibBetting {
         // bet on winner?
         if (bet == bout.winner) {
             // how much of losing pot do we get?
-            uint ratio = (selfBetAmount * 1000 ether) / bout.fighterPots[bout.winner];
-            loserPotAmountToClaim = (ratio * bout.fighterPots[bout.loser]) / 1000 ether;
+            loserPotAmountToClaim = (selfBetAmount * bout.winningsRatio) / 1000 ether;
             // total winnings
             totalToClaim = selfBetAmount + loserPotAmountToClaim;
             // return
@@ -329,5 +360,9 @@ library LibBetting {
         Bout storage bout
     ) internal view returns (bool) {
         return bout.state == BoutState.Expired || block.timestamp >= bout.expiryTime;
+    }
+
+    function _getLoser(BoutFighter winner) internal view returns (BoutFighter) {
+        return winner == BoutFighter.FighterA ? BoutFighter.FighterB : BoutFighter.FighterA;
     }
 }

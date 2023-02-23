@@ -17,11 +17,6 @@ contract InfoFacet is FacetBase, IInfoFacet {
         return s.boutIdByIndex[boutIndex];
     }
 
-    function getEndedBouts() external view returns (uint) {
-        AppStorage storage s = LibAppStorage.diamondStorage();
-        return s.endedBouts;
-    }
-
     function getUserBoutsWinningsClaimed(address wallet) external view returns (uint) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         return s.userTotalBoutsBetOn[wallet] - s.userBoutsWinningsToClaimList[wallet].len;
@@ -44,12 +39,10 @@ contract InfoFacet is FacetBase, IInfoFacet {
             BoutNonMappingInfo({
                 numBettors: bout.numBettors,
                 totalPot: bout.totalPot,
-                createTime: bout.createTime,
                 expiryTime: bout.expiryTime,
                 endTime: bout.endTime,
                 state: bout.state,
                 winner: bout.winner,
-                loser: bout.loser,
                 revealValues: bout.revealValues
             });
     }
@@ -88,12 +81,6 @@ contract InfoFacet is FacetBase, IInfoFacet {
         AppStorage storage s = LibAppStorage.diamondStorage();
         Bout storage bout = s.bouts[boutId];
         return bout.fighterIds[p];
-    }
-
-    function getBoutFighterPot(uint boutId, BoutFighter p) external view returns (uint) {
-        AppStorage storage s = LibAppStorage.diamondStorage();
-        Bout storage bout = s.bouts[boutId];
-        return bout.fighterPots[p];
     }
 
     function getBoutFighterPotBalance(uint boutId, BoutFighter p) external view returns (uint) {

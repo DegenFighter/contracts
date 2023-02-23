@@ -8,8 +8,6 @@ interface IInfoFacet {
 
     function getBoutIdByIndex(uint boutIndex) external view returns (uint);
 
-    function getEndedBouts() external view returns (uint);
-
     function getUserBoutsWinningsClaimed(address wallet) external view returns (uint);
 
     function getUserBoutsBetOn(address wallet) external view returns (uint);
@@ -29,8 +27,6 @@ interface IInfoFacet {
     function getBoutWinningsClaimed(uint boutId, address bettor) external view returns (bool);
 
     function getBoutFighterId(uint boutId, BoutFighter p) external view returns (uint);
-
-    function getBoutFighterPot(uint boutId, BoutFighter p) external view returns (uint);
 
     function getBoutFighterPotBalance(uint boutId, BoutFighter p) external view returns (uint);
 }

@@ -25,20 +25,18 @@ enum MemeBuySizeDollars {
 struct Bout {
     uint numBettors;
     uint totalPot;
-    uint createTime;
     uint endTime;
     uint expiryTime;
     BoutState state;
     BoutFighter winner;
-    BoutFighter loser;
     uint8[] revealValues; // the 'r' values packed into 2 bits each
+    uint winningsRatio;
     mapping(uint => address) bettors;
     mapping(address => uint) bettorIndexes;
     mapping(address => uint8) hiddenBets;
     mapping(address => uint) betAmounts;
     mapping(address => bool) winningsClaimed;
     mapping(BoutFighter => uint) fighterIds;
-    mapping(BoutFighter => uint) fighterPots;
     mapping(BoutFighter => uint) fighterPotBalances;
 }
 
@@ -50,12 +48,10 @@ struct Bout {
 struct BoutNonMappingInfo {
     uint numBettors;
     uint totalPot;
-    uint createTime;
     uint expiryTime;
     uint endTime;
     BoutState state;
     BoutFighter winner;
-    BoutFighter loser;
     uint8[] revealValues; // the 'r' values packed into 2 bits each
 }
 
@@ -122,8 +118,6 @@ struct AppStorage {
 
     // no. of bouts created
     uint totalBouts;
-    // no. of bouts finished
-    uint endedBouts;
     // bout id => bout details
     mapping(uint => Bout) bouts;
     // bout index => bout id
