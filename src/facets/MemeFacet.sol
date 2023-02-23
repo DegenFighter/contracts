@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.17 <0.9;
 
+import { SafeMath } from "lib/openzeppelin-contracts/contracts/utils/math/SafeMath.sol";
+
 import { FacetBase } from "../FacetBase.sol";
 import { NotAllowedError } from "../Errors.sol";
 import { AppStorage, LibAppStorage, MemeBuySizeDollars } from "../Objects.sol";
@@ -10,28 +12,28 @@ import { LibConstants } from "../libs/LibConstants.sol";
 import { LibToken, LibTokenIds } from "../libs/LibToken.sol";
 import { ReentrancyGuard } from "../shared/ReentrancyGuard.sol";
 import { LibComptroller } from "../libs/LibComptroller.sol";
-import { LibMemeMarket } from "../libs/LibMemeMarket.sol";
+import { LibMeme } from "../libs/LibMeme.sol";
+import { LibBetting } from "../libs/LibBetting.sol";
 
 error InsufficientCoin(uint256 required, uint256 available);
 error FailedToReturnEthToUser(uint256 amount, uint256 gasLeft);
 
-contract MemeMarketFacet is FacetBase, ReentrancyGuard {
-    function claimFreeMeme() external {
+contract MemeFacet is FacetBase, ReentrancyGuard {
+    using SafeMath for uint;
+
+    function getAvailableMeme(address wallet) external view returns (uint256) {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
-        address wallet = _msgSender();
-
-        uint256 bal = s.tokenBalances[LibTokenIds.TOKEN_MEME][wallet];
-
-        if (bal < LibConstants.MIN_BET_AMOUNT) {
-            LibToken.mint(LibTokenIds.TOKEN_MEME, wallet, LibConstants.MIN_BET_AMOUNT - bal);
-        }
+        return
+            LibBetting.getClaimableWinnings(wallet).add(
+                s.tokenBalances[LibTokenIds.TOKEN_MEME][wallet]
+            );
     }
 
     function getMemeCost(
         MemeBuySizeDollars size
     ) external view returns (uint256 cost, uint256 buyAmount) {
-        (cost, buyAmount) = LibMemeMarket._getMemeCost(size);
+        (cost, buyAmount) = LibMeme.getMemeCost(size);
     }
 
     function buyMeme(
@@ -42,7 +44,7 @@ contract MemeMarketFacet is FacetBase, ReentrancyGuard {
         nonReentrant
         returns (uint160 sqrtPriceX96, uint256 priceX96, uint256 cost, uint256 buyAmount)
     {
-        (cost, buyAmount) = LibMemeMarket._getMemeCost(size);
+        (cost, buyAmount) = LibMeme.getMemeCost(size);
 
         if (msg.value < cost) {
             revert InsufficientCoin(cost, msg.value);
@@ -50,7 +52,7 @@ contract MemeMarketFacet is FacetBase, ReentrancyGuard {
 
         uint256 amountToSendBack = msg.value - cost;
 
-        LibComptroller._routeCoinPayment(cost);
+        LibComptroller.routeCoinPayment(cost);
 
         // return the extra eth
         (bool sent, ) = address(_msgSender()).call{ value: amountToSendBack }("");

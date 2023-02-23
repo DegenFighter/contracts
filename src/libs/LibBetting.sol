@@ -38,6 +38,7 @@ library LibBetting {
         if (amount < LibConstants.MIN_BET_AMOUNT) {
             revert MinimumBetAmountError(boutId, wallet, amount);
         }
+
         if (br < 1 || br > 3) {
             revert InvalidBetTargetError(boutId, wallet, br);
         }
@@ -77,6 +78,14 @@ library LibBetting {
         bout.totalPot = bout.totalPot.add(amount);
         bout.betAmounts[wallet] = amount;
         bout.hiddenBets[wallet] = br;
+
+        // if not enough MEME for minimum bet then min them some
+        if (amount == LibConstants.MIN_BET_AMOUNT) {
+            uint bal = LibToken.balanceOf(LibTokenIds.TOKEN_MEME, wallet);
+            if (bal < amount) {
+                LibToken.mint(LibTokenIds.TOKEN_MEME, wallet, LibConstants.MIN_BET_AMOUNT - bal);
+            }
+        }
 
         // transfer bet amount to contract
         LibToken.transfer(LibTokenIds.TOKEN_MEME, wallet, address(this), amount);

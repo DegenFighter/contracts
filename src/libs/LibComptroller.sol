@@ -7,7 +7,7 @@ import { LibConstants } from "../libs/LibConstants.sol";
 error FailedToSendEtherToServer(address to);
 
 library LibComptroller {
-    function _routeCoinPayment(uint256 amount) internal {
+    function routeCoinPayment(uint256 amount) internal {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
         address serverAddress = s.addresses[LibConstants.SERVER_ADDRESS];

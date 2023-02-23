@@ -234,39 +234,4 @@ contract MemeTest is TestBaseContract {
             }
         }
     }
-
-    // ------------------------------------------------------ //
-    //
-    // Claim MEME
-    //
-    // ------------------------------------------------------ //
-
-    function testClaimMemeGivesUptoMinBetAmount() public {
-        assertEq(memeToken.balanceOf(players[0].addr), 0);
-
-        vm.prank(players[0].addr);
-        proxy.claimFreeMeme();
-
-        assertEq(memeToken.balanceOf(players[0].addr), LibConstants.MIN_BET_AMOUNT);
-
-        uint amt = LibConstants.MIN_BET_AMOUNT / 3;
-        proxy._testMintMeme(players[1].addr, amt);
-        assertEq(memeToken.balanceOf(players[1].addr), amt);
-
-        vm.prank(players[1].addr);
-        proxy.claimFreeMeme();
-
-        assertEq(memeToken.balanceOf(players[1].addr), LibConstants.MIN_BET_AMOUNT);
-    }
-
-    function testClaimMemeDoesNothingIfBalanceAlreadyEnough() public {
-        uint amt = LibConstants.MIN_BET_AMOUNT;
-        proxy._testMintMeme(players[0].addr, amt);
-        assertEq(memeToken.balanceOf(players[0].addr), amt);
-
-        vm.prank(players[0].addr);
-        proxy.claimFreeMeme();
-
-        assertEq(memeToken.balanceOf(players[0].addr), amt);
-    }
 }

@@ -3,8 +3,11 @@ pragma solidity >=0.8.17 <0.9;
 
 import { MemeBuySizeDollars } from "../Objects.sol";
 
-interface IMemeMarketFacet {
-    function claimFreeMeme() external;
+interface IMemeFacet {
+    /**
+     * @dev Returns the MEME balance of the wallet + unclaimed winnings.
+     */
+    function getAvailableMeme(address wallet) external view returns (uint256);
 
     function getMemeCost(
         MemeBuySizeDollars size

@@ -3,11 +3,12 @@ pragma solidity >=0.8.17 <0.9;
 
 import { AppStorage, LibAppStorage, MemeBuySizeDollars } from "../Objects.sol";
 import { LibToken, LibTokenIds } from "../libs/LibToken.sol";
+import { LibConstants } from "../libs/LibConstants.sol";
 import { LibUniswapV3Twap } from "../libs/LibUniswapV3Twap.sol";
 import { FixedPoint96 } from "lib/v3-core-08/contracts/libraries/FixedPoint96.sol";
 
-library LibMemeMarket {
-    function _getMemeCost(
+library LibMeme {
+    function getMemeCost(
         MemeBuySizeDollars size
     ) internal view returns (uint256 cost, uint256 buyAmount) {
         AppStorage storage s = LibAppStorage.diamondStorage();

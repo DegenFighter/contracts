@@ -10,6 +10,16 @@ library LibToken {
 
     event Transfer(address indexed from, address indexed to, uint256 value);
 
+    function totalSupply(uint tokenId) internal view returns (uint) {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        return s.tokenSupply[tokenId];
+    }
+
+    function balanceOf(uint tokenId, address wallet) internal view returns (uint) {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        return s.tokenBalances[tokenId][wallet];
+    }
+
     function transfer(uint tokenId, address from, address to, uint amount) internal {
         AppStorage storage s = LibAppStorage.diamondStorage();
 

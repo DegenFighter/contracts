@@ -132,6 +132,33 @@ contract BettingTest is TestBaseContract {
     function testBetWithInsufficentTokens() public {
         uint boutId = 100;
 
+        uint amount = LibConstants.MIN_BET_AMOUNT + 1;
+
+        // do signature
+        bytes32 digest = proxy.calculateBetSignature(
+            server.addr,
+            account0,
+            boutId,
+            1,
+            amount,
+            block.timestamp + 1000
+        );
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(server.privateKey, digest);
+
+        uint256 userBalance = proxy.tokenBalanceOf(LibTokenIds.TOKEN_MEME, address(this));
+
+        vm.expectRevert(
+            abi.encodeWithSelector(TokenBalanceInsufficient.selector, userBalance, amount)
+        );
+        proxy.bet(boutId, 1, amount, block.timestamp + 1000, v, r, s);
+    }
+
+    function testBetMinimumAmountWithInsufficentTokensGetsFreeMint() public {
+        uint boutId = 100;
+
+        proxy._testMintMeme(account0, 1);
+        assertEq(proxy.tokenBalanceOf(LibTokenIds.TOKEN_MEME, account0), 1);
+
         // do signature
         bytes32 digest = proxy.calculateBetSignature(
             server.addr,
@@ -143,16 +170,12 @@ contract BettingTest is TestBaseContract {
         );
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(server.privateKey, digest);
 
-        uint256 userBalance = proxy.tokenBalanceOf(LibTokenIds.TOKEN_MEME, address(this));
-
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                TokenBalanceInsufficient.selector,
-                userBalance,
-                LibConstants.MIN_BET_AMOUNT
-            )
-        );
         proxy.bet(boutId, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, v, r, s);
+
+        // check values
+        assertEq(proxy.tokenBalanceOf(LibTokenIds.TOKEN_MEME, account0), 0);
+        BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(boutId);
+        assertEq(bout.totalPot, LibConstants.MIN_BET_AMOUNT, "total pot");
     }
 
     function testBetSingle() public returns (uint boutId) {
@@ -920,6 +943,31 @@ contract BettingTest is TestBaseContract {
             uint winnings = proxy.getClaimableWinnings(player.addr);
 
             assertEq(winnings, scen.expectedWinnings[i], "winnings");
+        }
+    }
+
+    // ------------------------------------------------------ //
+    //
+    //  Claimable winnings get included in "available" MEME
+    //
+    // ------------------------------------------------------ //
+
+    function testGetClaimableWinningsIncludedInAvailableMeme() public {
+        uint boutId = testEndBout();
+
+        BettingScenario memory scen = _getScenario_Default();
+
+        // check claimable winnings
+        for (uint i = 0; i < scen.players.length; i++) {
+            Wallet memory player = scen.players[i];
+
+            proxy._testMintMeme(player.addr, 1000 + i);
+
+            uint winnings = proxy.getClaimableWinnings(player.addr);
+
+            uint availMeme = proxy.getAvailableMeme(player.addr);
+
+            assertEq(availMeme, winnings + 1000 + i, "winnings");
         }
     }
 
