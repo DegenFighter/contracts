@@ -1,5 +1,6 @@
 import "@matterlabs/hardhat-zksync-deploy";
 import "@matterlabs/hardhat-zksync-solc";
+import "@matterlabs/hardhat-zksync-verify";
 import "hardhat-gas-reporter";
 import "@nomicfoundation/hardhat-foundry";
 import "hardhat-diamond-abi";
@@ -33,7 +34,7 @@ module.exports = {
     compilerSource: "binary",
     settings: {},
   },
-  defaultNetwork: "zkTestnet",
+  defaultNetwork: "zkSyncTestnet",
   networks: {
     hardhat: {
       accounts: {
@@ -56,6 +57,8 @@ module.exports = {
       url: `https://zksync2-testnet.zksync.dev`, // URL of the zkSync network RPC
       ethNetwork: process.env.ALCHEMY_ETH_GOERLI_RPC_URL,
       zksync: true,
+      verifyURL:
+        "https://zksync2-testnet-explorer.zksync.dev/contract_verification",
     },
   },
   gasReporter: {

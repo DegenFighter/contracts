@@ -163,3 +163,6 @@ build-zksync: ## build zksync contracts
 
 deploy-zksync: ## deploy zksync contracts to zksync testnet with sender 0x90C36636E885BEE8096E4d12a7372866ab782091
 	yarn hardhat deploy-zksync --script deploy.ts
+	
+verify-hardhat: ## verify contracts (including on zksync explorer)
+	yarn hardhat verify 
