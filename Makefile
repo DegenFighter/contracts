@@ -166,3 +166,30 @@ deploy-zksync: ## deploy zksync contracts to zksync testnet with sender 0x90C366
 	
 verify-hardhat: ## verify contracts (including on zksync explorer)
 	yarn hardhat verify 
+
+deploy-arbitrum-goerli-sim: ## simulate deploy contracts to arbitrum goerli testnet with sender 0x90C36636E885BEE8096E4d12a7372866ab782091
+	forge script SmartDeploy \
+	-s "smartDeploy(bool, bool, uint8, string[] memory)" ${newDiamond} ${initNewDiamond} ${facetAction} ${facetsToCutIn} \
+	-f ${ALCHEMY_ARBITRUM_GOERLI_RPC_URL} \
+	--chain-id 421613 \
+	--etherscan-api-key ${ETHERSCAN_API_KEY} \
+	--sender ${senderAddress} \
+	--mnemonic-paths ./mnemonic.txt \
+	--mnemonic-indexes 0 \
+	-vvvv \
+	--ffi
+
+
+deploy-arbitrum-goerli: ## deploy contracts to arbitrum goerli testnet with sender 0x90C36636E885BEE8096E4d12a7372866ab782091
+	forge script SmartDeploy \
+	-s "smartDeploy(bool, bool, uint8, string[] memory)" ${newDiamond} ${initNewDiamond} ${facetAction} ${facetsToCutIn} \
+	-f ${ALCHEMY_ARBITRUM_GOERLI_RPC_URL} \
+	--chain-id 421613 \
+	--etherscan-api-key ${ETHERSCAN_API_KEY} \
+	--sender ${senderAddress} \
+	--mnemonic-paths ./mnemonic.txt \
+	--mnemonic-indexes 0 \
+	-vvvv \
+	--ffi \
+	--broadcast \
+	--verify --delay 30 --retries 10

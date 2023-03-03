@@ -56,6 +56,12 @@ The contact addresses will be output as follows:
 make deploy-goerli newDiamond=true initNewDiamond=true facetAction=0
 ```
 
+#### To Arbitrum Goerli Testnet
+
+```zsh
+make deploy-arbitrum-goerli newDiamond=true initNewDiamond=true facetAction=0
+```
+
 #### To zkSync era testnet
 
 First, compile contracts with zksolc

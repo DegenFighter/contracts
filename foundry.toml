@@ -16,4 +16,6 @@ mainnet = "${ALCHEMY_ETH_MAINNET_RPC_URL}"
 goerli = "${ALCHEMY_ETH_GOERLI_RPC_URL}"
 anvil = "${LOCAL_RPC_URL}"
 polygon = "${ALCHEMY_POLYGON_RPC_URL}"
+arbitrum = "${ALCHEMY_ARBITRUM_RPC_URL}"
+arbitrum-goerli = "${ALCHEMY_ARBITRUM_GOERLI_RPC_URL}"
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
