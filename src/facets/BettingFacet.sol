@@ -30,7 +30,14 @@ contract BettingFacet is FacetBase, IBettingFacet {
 
         // recover signer
         address server = s.addresses[LibConstants.SERVER_ADDRESS];
-        bytes32 digest = calculateBetSignature(server, bettor, boutId, br, amount, deadline);
+        bytes32 digest = LibBetting.calculateBetSignature(
+            server,
+            bettor,
+            boutId,
+            br,
+            amount,
+            deadline
+        );
         address signer = LibEip712.recover(digest, sigV, sigR, sigS);
 
         // check signature
@@ -92,7 +99,7 @@ contract BettingFacet is FacetBase, IBettingFacet {
         uint8 br,
         uint256 amount,
         uint256 deadline
-    ) public returns (bytes32) {
+    ) external returns (bytes32) {
         return LibBetting.calculateBetSignature(server, bettor, boutId, br, amount, deadline);
     }
 }
