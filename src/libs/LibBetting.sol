@@ -106,7 +106,7 @@ library LibBetting {
         bout.betAmounts[wallet] = amount;
         bout.hiddenBets[wallet] = br;
 
-        // if not enough MEME for minimum bet then min them some
+        // if not enough MEME for minimum bet then mint them some
         if (amount == LibConstants.MIN_BET_AMOUNT) {
             uint bal = LibToken.balanceOf(LibTokenIds.TOKEN_MEME, wallet);
             if (bal < amount) {
