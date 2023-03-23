@@ -1,6 +1,6 @@
 {
   "name": "@degenfighter/contracts",
-  "version": "3.2.1",
+  "version": "3.2.2",
   "description": "Contracts for DegenFighter",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
