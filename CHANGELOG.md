@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.2.4](https://github.com/DegenFighter/contracts/compare/v3.2.3...v3.2.4) (2023-03-28)
+
+
+### Bug Fixes
+
+* interface had not been updated ([28f6a78](https://github.com/DegenFighter/contracts/commit/28f6a7800de83217aa0790c52448356c4a1d26d6))
+
 ### [3.2.3](https://github.com/DegenFighter/contracts/compare/v3.2.2...v3.2.3) (2023-03-28)
 
 
