@@ -99,7 +99,7 @@ contract BettingFacet is FacetBase, IBettingFacet {
         uint8 br,
         uint256 amount,
         uint256 deadline
-    ) external returns (bytes32) {
+    ) external view returns (bytes32) {
         return LibBetting.calculateBetSignature(server, bettor, boutId, br, amount, deadline);
     }
 }

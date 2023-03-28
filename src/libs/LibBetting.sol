@@ -331,7 +331,7 @@ library LibBetting {
         uint8 br,
         uint amount,
         uint deadline
-    ) internal returns (bytes32) {
+    ) internal view returns (bytes32) {
         return
             LibEip712.hashTypedDataV4(
                 keccak256(
