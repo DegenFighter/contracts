@@ -43,5 +43,5 @@ interface IBettingFacet {
         uint8 br,
         uint amount,
         uint deadline
-    ) external returns (bytes32);
+    ) external view returns (bytes32);
 }
