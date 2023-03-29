@@ -324,7 +324,7 @@ library LibBetting {
         bet = BoutFighter(rawBet + 1);
     }
 
-    function calculateBetSignature(
+    function calculateBetSignatureDigest(
         address server,
         address wallet,
         uint boutId,
@@ -332,22 +332,7 @@ library LibBetting {
         uint amount,
         uint deadline
     ) internal view returns (bytes32) {
-        return
-            LibEip712.hashTypedDataV4(
-                keccak256(
-                    abi.encode(
-                        keccak256(
-                            "calculateBetSignature(address,address,uint256,uint8,uint256,uint256)"
-                        ),
-                        server,
-                        wallet,
-                        boutId,
-                        br,
-                        amount,
-                        deadline
-                    )
-                )
-            );
+        return keccak256(abi.encode(server, wallet, boutId, br, amount, deadline));
     }
 
     function calculateNumRevealValues(uint numBettors) internal pure returns (uint) {

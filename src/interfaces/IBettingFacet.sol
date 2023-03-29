@@ -36,7 +36,7 @@ interface IBettingFacet {
 
     function claimWinnings(address wallet, uint maxBoutsToClaim) external;
 
-    function calculateBetSignature(
+    function calculateBetSignatureDigest(
         address server,
         address bettor,
         uint boutId,

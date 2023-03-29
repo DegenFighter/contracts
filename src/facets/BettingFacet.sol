@@ -30,7 +30,7 @@ contract BettingFacet is FacetBase, IBettingFacet {
 
         // recover signer
         address server = s.addresses[LibConstants.SERVER_ADDRESS];
-        bytes32 digest = LibBetting.calculateBetSignature(
+        bytes32 digest = LibBetting.calculateBetSignatureDigest(
             server,
             bettor,
             boutId,
@@ -92,7 +92,7 @@ contract BettingFacet is FacetBase, IBettingFacet {
         LibBetting.claimWinnings(wallet, maxBoutsToClaim);
     }
 
-    function calculateBetSignature(
+    function calculateBetSignatureDigest(
         address server,
         address bettor,
         uint256 boutId,
@@ -100,6 +100,6 @@ contract BettingFacet is FacetBase, IBettingFacet {
         uint256 amount,
         uint256 deadline
     ) external view returns (bytes32) {
-        return LibBetting.calculateBetSignature(server, bettor, boutId, br, amount, deadline);
+        return LibBetting.calculateBetSignatureDigest(server, bettor, boutId, br, amount, deadline);
     }
 }

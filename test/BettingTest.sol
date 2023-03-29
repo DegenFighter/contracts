@@ -20,7 +20,7 @@ contract BettingTest is TestBaseContract {
         uint boutId = 100;
 
         // do signature
-        bytes32 digest = proxy.calculateBetSignature(
+        bytes32 digest = proxy.calculateBetSignatureDigest(
             server.addr,
             account0,
             boutId,
@@ -50,7 +50,7 @@ contract BettingTest is TestBaseContract {
 
         // do signature
         address signer = vm.addr(123);
-        bytes32 digest = proxy.calculateBetSignature(
+        bytes32 digest = proxy.calculateBetSignatureDigest(
             signer,
             account0,
             boutId,
@@ -68,7 +68,7 @@ contract BettingTest is TestBaseContract {
         uint boutId = 100;
 
         // do signature
-        bytes32 digest = proxy.calculateBetSignature(
+        bytes32 digest = proxy.calculateBetSignatureDigest(
             server.addr,
             account0,
             boutId,
@@ -86,7 +86,7 @@ contract BettingTest is TestBaseContract {
         uint boutId = 100;
 
         // do signature
-        bytes32 digest = proxy.calculateBetSignature(
+        bytes32 digest = proxy.calculateBetSignatureDigest(
             server.addr,
             account0,
             boutId,
@@ -113,7 +113,7 @@ contract BettingTest is TestBaseContract {
         uint boutId = 100;
 
         // do signature
-        bytes32 digest = proxy.calculateBetSignature(
+        bytes32 digest = proxy.calculateBetSignatureDigest(
             server.addr,
             account0,
             boutId,
@@ -135,7 +135,7 @@ contract BettingTest is TestBaseContract {
         uint amount = LibConstants.MIN_BET_AMOUNT + 1;
 
         // do signature
-        bytes32 digest = proxy.calculateBetSignature(
+        bytes32 digest = proxy.calculateBetSignatureDigest(
             server.addr,
             account0,
             boutId,
@@ -160,7 +160,7 @@ contract BettingTest is TestBaseContract {
         assertEq(proxy.tokenBalanceOf(LibTokenIds.TOKEN_MEME, account0), 1);
 
         // do signature
-        bytes32 digest = proxy.calculateBetSignature(
+        bytes32 digest = proxy.calculateBetSignatureDigest(
             server.addr,
             account0,
             boutId,
@@ -1314,7 +1314,7 @@ contract BettingTest is TestBaseContract {
         proxy._testMintMeme(bettor, amount);
 
         // do signature
-        bytes32 digest = proxy.calculateBetSignature(
+        bytes32 digest = proxy.calculateBetSignatureDigest(
             server.addr,
             bettor,
             boutId,
