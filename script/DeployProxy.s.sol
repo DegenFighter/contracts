@@ -32,12 +32,13 @@ contract DeployProxy is Script {
         console.log("Address[memeToken]: ", memeTokenAddress);
         proxy.setAddress(LibConstants.MEME_TOKEN_ADDRESS, memeTokenAddress);
 
-        // set server address
-        proxy.setAddress(LibConstants.SERVER_ADDRESS, msg.sender);
-
         // deploy multicall
         address multicallAddress = deployBytecode(MULTICALL);
         console.log("Address[multicall]: ", multicallAddress);
+
+        // set server address
+        console.log("Address[server]: ", msg.sender);
+        proxy.setAddress(LibConstants.SERVER_ADDRESS, msg.sender);
 
         vm.stopBroadcast();
     }

@@ -24,7 +24,7 @@ Install:
 Run in a new terminal:
 
 ```zsh
-anvil
+anvil --chain-id 1337
 ```
 
 Then run in a separate terminal:
