@@ -38,7 +38,12 @@ contract BettingFacet is FacetBase, IBettingFacet {
             amount,
             deadline
         );
-        address signer = LibEip712.recover(digest, sigV, sigR, sigS);
+        address signer = LibEip712.recover(
+            LibEip712.toEthSignedMessageHash(digest),
+            sigV,
+            sigR,
+            sigS
+        );
 
         // check signature
         if (signer != server) {

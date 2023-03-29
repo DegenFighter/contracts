@@ -10,11 +10,17 @@ library LibEip712 {
         AppStorage storage s = LibAppStorage.diamondStorage();
         bytes32 hashedName = keccak256(bytes(name));
         bytes32 hashedVersion = keccak256(bytes(version));
-        bytes32 typeHash = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
+        bytes32 typeHash = keccak256(
+            "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+        );
         s.eip712.HASHED_NAME = hashedName;
         s.eip712.HASHED_VERSION = hashedVersion;
         s.eip712.CACHED_CHAIN_ID = block.chainid;
-        s.eip712.CACHED_DOMAIN_SEPARATOR = _buildDomainSeparator(typeHash, hashedName, hashedVersion);
+        s.eip712.CACHED_DOMAIN_SEPARATOR = _buildDomainSeparator(
+            typeHash,
+            hashedName,
+            hashedVersion
+        );
         s.eip712.CACHED_THIS = address(this);
         s.eip712.TYPE_HASH = typeHash;
     }
@@ -24,7 +30,12 @@ library LibEip712 {
         if (address(this) == s.eip712.CACHED_THIS && block.chainid == s.eip712.CACHED_CHAIN_ID) {
             return s.eip712.CACHED_DOMAIN_SEPARATOR;
         } else {
-            return _buildDomainSeparator(s.eip712.TYPE_HASH, s.eip712.HASHED_NAME, s.eip712.HASHED_VERSION);
+            return
+                _buildDomainSeparator(
+                    s.eip712.TYPE_HASH,
+                    s.eip712.HASHED_NAME,
+                    s.eip712.HASHED_VERSION
+                );
         }
     }
 
@@ -32,11 +43,19 @@ library LibEip712 {
         return ECDSA.toTypedDataHash(domainSeparatorV4(), structHash);
     }
 
+    function toEthSignedMessageHash(bytes32 hash) internal pure returns (bytes32) {
+        return ECDSA.toEthSignedMessageHash(hash);
+    }
+
     function recover(bytes32 hash, uint8 v, bytes32 r, bytes32 s) internal pure returns (address) {
         return ECDSA.recover(hash, v, r, s);
     }
 
-    function _buildDomainSeparator(bytes32 typeHash, bytes32 nameHash, bytes32 versionHash) private view returns (bytes32) {
+    function _buildDomainSeparator(
+        bytes32 typeHash,
+        bytes32 nameHash,
+        bytes32 versionHash
+    ) private view returns (bytes32) {
         return keccak256(abi.encode(typeHash, nameHash, versionHash, block.chainid, address(this)));
     }
 }

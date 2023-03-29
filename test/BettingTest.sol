@@ -28,7 +28,7 @@ contract BettingTest is TestBaseContract {
             LibConstants.MIN_BET_AMOUNT,
             block.timestamp + 1000
         );
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(server.privateKey, digest);
+        (uint8 v, bytes32 r, bytes32 s) = sign(server.privateKey, digest);
 
         // state: Ended - should fail
         proxy._testSetBoutState(boutId, BoutState.Ended);
@@ -58,7 +58,7 @@ contract BettingTest is TestBaseContract {
             LibConstants.MIN_BET_AMOUNT,
             block.timestamp + 1000
         );
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(123, digest);
+        (uint8 v, bytes32 r, bytes32 s) = sign(123, digest);
 
         vm.expectRevert(SignerMustBeServerError.selector);
         proxy.bet(boutId, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, v, r, s);
@@ -76,7 +76,7 @@ contract BettingTest is TestBaseContract {
             LibConstants.MIN_BET_AMOUNT,
             block.timestamp - 1
         );
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(server.privateKey, digest);
+        (uint8 v, bytes32 r, bytes32 s) = sign(server.privateKey, digest);
 
         vm.expectRevert(SignatureExpiredError.selector);
         proxy.bet(boutId, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp - 1, v, r, s);
@@ -94,7 +94,7 @@ contract BettingTest is TestBaseContract {
             LibConstants.MIN_BET_AMOUNT - 1,
             block.timestamp + 1000
         );
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(server.privateKey, digest);
+        (uint8 v, bytes32 r, bytes32 s) = sign(server.privateKey, digest);
 
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -121,7 +121,7 @@ contract BettingTest is TestBaseContract {
             LibConstants.MIN_BET_AMOUNT,
             block.timestamp + 1000
         );
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(server.privateKey, digest);
+        (uint8 v, bytes32 r, bytes32 s) = sign(server.privateKey, digest);
 
         vm.expectRevert(
             abi.encodeWithSelector(InvalidBetTargetError.selector, boutId, address(this), br)
@@ -143,7 +143,7 @@ contract BettingTest is TestBaseContract {
             amount,
             block.timestamp + 1000
         );
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(server.privateKey, digest);
+        (uint8 v, bytes32 r, bytes32 s) = sign(server.privateKey, digest);
 
         uint256 userBalance = proxy.tokenBalanceOf(LibTokenIds.TOKEN_MEME, address(this));
 
@@ -168,7 +168,7 @@ contract BettingTest is TestBaseContract {
             LibConstants.MIN_BET_AMOUNT,
             block.timestamp + 1000
         );
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(server.privateKey, digest);
+        (uint8 v, bytes32 r, bytes32 s) = sign(server.privateKey, digest);
 
         proxy.bet(boutId, 1, LibConstants.MIN_BET_AMOUNT, block.timestamp + 1000, v, r, s);
 
@@ -1322,7 +1322,7 @@ contract BettingTest is TestBaseContract {
             amount,
             block.timestamp + 1000
         );
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(server.privateKey, digest);
+        (uint8 v, bytes32 r, bytes32 s) = sign(server.privateKey, digest);
 
         vm.prank(bettor);
         proxy.bet(boutId, br, amount, block.timestamp + 1000, v, r, s);

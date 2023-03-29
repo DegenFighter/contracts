@@ -2,6 +2,7 @@
 pragma solidity >=0.8.17 <0.9;
 
 import "forge-std/Test.sol";
+import { ECDSA } from "lib/openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
 import { IERC20 } from "lib/openzeppelin-contracts/contracts/interfaces/IERC20.sol";
 import { IProxy } from "../../src/interfaces/IProxy.sol";
 import { Proxy } from "../../src/Proxy.sol";
@@ -99,6 +100,13 @@ contract TestBaseContract is Test {
 
     function assertEq(BoutFighter a, BoutFighter b, string memory err) internal {
         assertEq(uint(a), uint(b), err);
+    }
+
+    function sign(
+        uint256 privateKey,
+        bytes32 digest
+    ) internal returns (uint8 v, bytes32 r, bytes32 s) {
+        return vm.sign(privateKey, ECDSA.toEthSignedMessageHash(digest));
     }
 
     function randUint() internal returns (uint256) {
