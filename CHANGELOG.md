@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.2.6](https://github.com/DegenFighter/contracts/compare/v3.2.5...v3.2.6) (2023-03-29)
+
+
+### Bug Fixes
+
+* use proper eip 191 standard for signing ([4fd05c2](https://github.com/DegenFighter/contracts/commit/4fd05c2f9a9ddbeffd79b185e048f1ecdf3ae989))
+
 ### [3.2.5](https://github.com/DegenFighter/contracts/compare/v3.2.4...v3.2.5) (2023-03-29)
 
 ### [3.2.4](https://github.com/DegenFighter/contracts/compare/v3.2.3...v3.2.4) (2023-03-28)
