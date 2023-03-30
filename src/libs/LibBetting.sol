@@ -305,7 +305,7 @@ library LibBetting {
         }
 
         uint index = bout.bettorIndexes[wallet] - 1;
-        uint rPackedIndex = index >> 2; // 4 bets per reveal value
+        uint rPackedIndex = index >> 2; // 2 bits per bet => 4 bets per 8-bit reveal value
 
         // if index is invalid then no bet exists
         if (rPackedIndex >= bout.revealValues.length) {
@@ -316,9 +316,9 @@ library LibBetting {
         uint8 rawBet;
         if (bout.hiddenBets[wallet] >= r) {
             rawBet = bout.hiddenBets[wallet] - r;
-            // default to 0 if invalid
+            // ensure it's valid
             if (rawBet != 0 && rawBet != 1) {
-                rawBet = 0;
+                return BoutFighter.Invalid;
             }
         }
         bet = BoutFighter(rawBet + 1);

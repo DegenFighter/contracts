@@ -216,13 +216,10 @@ contract BettingTest is TestBaseContract {
         assertEq(proxy.getBoutFighterPotBalance(boutId, BoutFighter.FighterB), 1, "fighter B pot");
 
         // check player data
-        assertEq(proxy.getBoutSupporter(boutId, 1), player.addr, "bettor address");
-        assertEq(proxy.getBoutHiddenBet(boutId, player.addr), 1, "bettor hidden bet");
-        assertEq(
-            proxy.getBoutBetAmount(boutId, player.addr),
-            scen.betAmounts[0],
-            "bettor bet amount"
-        );
+        (address sup, uint ba, uint8 hb, ) = proxy.getBetByIndex(boutId, 1);
+        assertEq(sup, player.addr, "bettor address");
+        assertEq(hb, 1, "bettor hidden bet");
+        assertEq(ba, scen.betAmounts[0], "bettor bet amount");
         assertEq(proxy.getUserBoutsBetOn(player.addr), 1, "user supported bouts");
 
         // check MEME balances
@@ -258,13 +255,10 @@ contract BettingTest is TestBaseContract {
         for (uint i = 0; i < scen.players.length; i += 1) {
             Wallet memory player = scen.players[i];
 
-            assertEq(proxy.getBoutSupporter(boutId, i + 1), player.addr, "bettor address");
-            assertEq(proxy.getBoutHiddenBet(boutId, player.addr), 1, "bettor hidden bet");
-            assertEq(
-                proxy.getBoutBetAmount(boutId, player.addr),
-                scen.betAmounts[i],
-                "bettor bet amount"
-            );
+            (address sup, uint ba, uint8 hb, ) = proxy.getBetByIndex(boutId, i + 1);
+            assertEq(sup, player.addr, "bettor address");
+            assertEq(hb, 1, "bettor hidden bet");
+            assertEq(ba, scen.betAmounts[i], "bettor bet amount");
             assertEq(proxy.getUserBoutsBetOn(player.addr), 1, "user supported bouts");
         }
 
@@ -290,13 +284,10 @@ contract BettingTest is TestBaseContract {
         assertEq(bout.totalPot, LibConstants.MIN_BET_AMOUNT * 5, "total pot");
 
         // check bettor data
-        assertEq(proxy.getBoutSupporter(boutId, 1), players[0].addr, "bettor address");
-        assertEq(proxy.getBoutHiddenBet(boutId, players[0].addr), 1, "bettor hidden bet");
-        assertEq(
-            proxy.getBoutBetAmount(boutId, players[0].addr),
-            bout.totalPot,
-            "bettor bet amount"
-        );
+        (address sup, uint ba, uint8 hb, ) = proxy.getBetByIndex(boutId, 1);
+        assertEq(sup, players[0].addr, "bettor address");
+        assertEq(hb, 1, "bettor hidden bet");
+        assertEq(ba, bout.totalPot, "bettor bet amount");
         assertEq(proxy.getUserBoutsBetOn(players[0].addr), 1, "user supported bouts");
 
         // check MEME balances
@@ -329,6 +320,55 @@ contract BettingTest is TestBaseContract {
         (uint eBoutId, address bettor) = abi.decode(entries[2].data, (uint256, address));
         assertEq(eBoutId, boutId, "boutId incorrect");
         assertEq(bettor, players[0].addr, "bettor incorrect");
+    }
+
+    // ------------------------------------------------------ //
+    //
+    // Bettor list
+    //
+    // ------------------------------------------------------ //
+
+    function testBettorListBadBounds() public {
+        uint boutId = testBetMultiple();
+
+        BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(boutId);
+
+        proxy.getBoutBettors(boutId, 1, 1);
+        proxy.getBoutBettors(boutId, bout.numBettors, bout.numBettors);
+        proxy.getBoutBettors(boutId, 1, bout.numBettors);
+
+        vm.expectRevert(OutOfBoundsError.selector);
+        proxy.getBoutBettors(boutId, 0, 1);
+
+        vm.expectRevert(OutOfBoundsError.selector);
+        proxy.getBoutBettors(boutId, 0, 0);
+
+        vm.expectRevert(OutOfBoundsError.selector);
+        proxy.getBoutBettors(boutId, 2, 1);
+
+        vm.expectRevert(OutOfBoundsError.selector);
+        proxy.getBoutBettors(boutId, 1, bout.numBettors + 1);
+
+        vm.expectRevert(OutOfBoundsError.selector);
+        proxy.getBoutBettors(boutId, bout.numBettors + 1, bout.numBettors + 1);
+    }
+
+    function testBettorListAllBettors() public {
+        uint boutId = testBetMultiple();
+
+        BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(boutId);
+
+        address[] memory bettors = proxy.getBoutBettors(boutId, 1, bout.numBettors);
+
+        BettingScenario memory scen = _getScenario_Default();
+
+        assertEq(bettors.length, scen.players.length, "no. of bettors");
+
+        // place bets
+        for (uint i = 0; i < scen.players.length; i += 1) {
+            Wallet memory player = scen.players[i];
+            assertEq(bettors[i], player.addr, "bettor address");
+        }
     }
 
     // ------------------------------------------------------ //
@@ -595,7 +635,7 @@ contract BettingTest is TestBaseContract {
         for (uint i = 0; i < scen.players.length; i++) {
             Wallet memory player = scen.players[i];
 
-            BoutFighter revealedBet = proxy.getBoutRevealedBet(boutId, player.addr);
+            (, , , BoutFighter revealedBet) = proxy.getBetByBettor(boutId, player.addr);
 
             assertEq(revealedBet, scen.betTargets[i], "revealed target");
         }
@@ -617,7 +657,7 @@ contract BettingTest is TestBaseContract {
             scen.revealValues
         );
 
-        BoutFighter revealedBet = proxy.getBoutRevealedBet(boutId, vm.addr(666));
+        (, , , BoutFighter revealedBet) = proxy.getBetByBettor(boutId, vm.addr(666));
         assertEq(revealedBet, BoutFighter.Invalid, "no target");
     }
 

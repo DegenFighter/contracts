@@ -16,13 +16,21 @@ interface IInfoFacet {
 
     function getBoutNonMappingInfo(uint boutId) external view returns (BoutNonMappingInfo memory);
 
-    function getBoutSupporter(uint boutId, uint bettorNum) external view returns (address);
+    function getBoutBettors(
+        uint boutId,
+        uint startIndex,
+        uint endIndex
+    ) external view returns (address[] memory);
 
-    function getBoutHiddenBet(uint boutId, address bettor) external view returns (uint8);
+    function getBetByIndex(
+        uint boutId,
+        uint bettorNum
+    ) external view returns (address, uint, uint8, BoutFighter);
 
-    function getBoutRevealedBet(uint boutId, address bettor) external view returns (BoutFighter);
-
-    function getBoutBetAmount(uint boutId, address bettor) external view returns (uint);
+    function getBetByBettor(
+        uint boutId,
+        address bettor
+    ) external view returns (uint, uint, uint8, BoutFighter);
 
     function getBoutWinningsClaimed(uint boutId, address bettor) external view returns (bool);
 

@@ -18,4 +18,6 @@ error MinimumBetAmountError(uint boutId, address bettor, uint amount);
 error InvalidBetTargetError(uint boutId, address bettor, uint8 br);
 error InvalidWinnerError(uint boutId, BoutFighter winner);
 
+error OutOfBoundsError();
+
 error TokenBalanceInsufficient(uint256 userBalance, uint256 amount);
