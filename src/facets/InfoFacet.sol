@@ -2,7 +2,7 @@
 pragma solidity >=0.8.17 <0.9;
 
 import { FacetBase } from "../FacetBase.sol";
-import { AppStorage, LibAppStorage, Bout, BoutFighter, BoutNonMappingInfo } from "../Objects.sol";
+import { AppStorage, LibAppStorage, Bout, BoutFighter, BoutNonMappingInfo, BetInfo } from "../Objects.sol";
 import { IInfoFacet } from "../interfaces/IInfoFacet.sol";
 import { LibBetting } from "../libs/LibBetting.sol";
 import "../Errors.sol";
@@ -75,39 +75,31 @@ contract InfoFacet is FacetBase, IInfoFacet {
         return bettors;
     }
 
-    function getBetByIndex(
-        uint boutId,
-        uint bettorNum
-    ) external view returns (address, uint, uint8, BoutFighter) {
+    function getBetByIndex(uint boutId, uint bettorNum) external view returns (BetInfo memory) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         Bout storage bout = s.bouts[boutId];
         address bettor = bout.bettors[bettorNum];
-        return (
-            bettor,
-            bout.betAmounts[bettor],
-            bout.hiddenBets[bettor],
-            LibBetting.getRevealedBet(bout, bettor)
-        );
+        BetInfo storage betInfo = bout.bets[bettor];
+        return
+            BetInfo({
+                amount: betInfo.amount,
+                hidden: betInfo.hidden,
+                winningsClaimed: betInfo.winningsClaimed,
+                revealed: LibBetting.getRevealedBet(bout, bettor)
+            });
     }
 
-    function getBetByBettor(
-        uint boutId,
-        address bettor
-    ) external view returns (uint, uint, uint8, BoutFighter) {
+    function getBetByBettor(uint boutId, address bettor) external view returns (BetInfo memory) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         Bout storage bout = s.bouts[boutId];
-        return (
-            bout.bettorIndexes[bettor],
-            bout.betAmounts[bettor],
-            bout.hiddenBets[bettor],
-            LibBetting.getRevealedBet(bout, bettor)
-        );
-    }
-
-    function getBoutWinningsClaimed(uint boutId, address bettor) external view returns (bool) {
-        AppStorage storage s = LibAppStorage.diamondStorage();
-        Bout storage bout = s.bouts[boutId];
-        return bout.winningsClaimed[bettor];
+        BetInfo storage betInfo = bout.bets[bettor];
+        return
+            BetInfo({
+                amount: betInfo.amount,
+                hidden: betInfo.hidden,
+                winningsClaimed: betInfo.winningsClaimed,
+                revealed: LibBetting.getRevealedBet(bout, bettor)
+            });
     }
 
     function getBoutFighterId(uint boutId, BoutFighter p) external view returns (uint) {

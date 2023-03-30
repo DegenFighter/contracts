@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.17 <0.9;
 
-import { BoutNonMappingInfo, BoutFighter } from "../Objects.sol";
+import { BoutNonMappingInfo, BoutFighter, BetInfo } from "../Objects.sol";
 
 interface IInfoFacet {
     function getTotalBouts() external view returns (uint);
@@ -22,17 +22,9 @@ interface IInfoFacet {
         uint endIndex
     ) external view returns (address[] memory);
 
-    function getBetByIndex(
-        uint boutId,
-        uint bettorNum
-    ) external view returns (address, uint, uint8, BoutFighter);
+    function getBetByIndex(uint boutId, uint bettorNum) external view returns (BetInfo memory);
 
-    function getBetByBettor(
-        uint boutId,
-        address bettor
-    ) external view returns (uint, uint, uint8, BoutFighter);
-
-    function getBoutWinningsClaimed(uint boutId, address bettor) external view returns (bool);
+    function getBetByBettor(uint boutId, address bettor) external view returns (BetInfo memory);
 
     function getBoutFighterId(uint boutId, BoutFighter p) external view returns (uint);
 

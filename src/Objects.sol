@@ -22,6 +22,19 @@ enum MemeBuySizeDollars {
     Hundred
 }
 
+/**
+ * @dev A bet.
+ */
+struct BetInfo {
+    uint8 hidden;
+    BoutFighter revealed; // we will never actually use this storage slot, but when returning in an external call this will be set
+    uint amount;
+    bool winningsClaimed;
+}
+
+/**
+ * @dev A bout.
+ */
 struct Bout {
     uint numBettors;
     uint totalPot;
@@ -33,9 +46,7 @@ struct Bout {
     uint winningsRatio;
     mapping(uint => address) bettors;
     mapping(address => uint) bettorIndexes;
-    mapping(address => uint8) hiddenBets;
-    mapping(address => uint) betAmounts;
-    mapping(address => bool) winningsClaimed;
+    mapping(address => BetInfo) bets;
     mapping(BoutFighter => uint) fighterIds;
     mapping(BoutFighter => uint) fighterPotBalances;
 }

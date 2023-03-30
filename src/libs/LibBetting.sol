@@ -3,7 +3,7 @@ pragma solidity >=0.8.17 <0.9;
 
 import { SafeMath } from "lib/openzeppelin-contracts/contracts/utils/math/SafeMath.sol";
 
-import { AppStorage, LibAppStorage, Bout, BoutState, BoutFighter, BoutList, BoutListNode } from "../Objects.sol";
+import { AppStorage, LibAppStorage, Bout, BoutState, BoutFighter, BoutList, BoutListNode, BetInfo } from "../Objects.sol";
 import { LibToken, LibTokenIds } from "./LibToken.sol";
 import { LibConstants } from "./LibConstants.sol";
 import { LibEip712 } from "./LibEip712.sol";
@@ -79,14 +79,14 @@ library LibBetting {
         claimWinnings(wallet, 1);
 
         // replace old bet?
-        if (bout.hiddenBets[wallet] != 0) {
+        if (bout.bets[wallet].amount > 0) {
             // refund old bet
-            bout.totalPot = bout.totalPot.sub(bout.betAmounts[wallet]);
+            bout.totalPot = bout.totalPot.sub(bout.bets[wallet].amount);
             LibToken.transfer(
                 LibTokenIds.TOKEN_MEME,
                 address(this),
                 wallet,
-                bout.betAmounts[wallet]
+                bout.bets[wallet].amount
             );
         }
         // new bet?
@@ -103,8 +103,9 @@ library LibBetting {
 
         // add to pot
         bout.totalPot = bout.totalPot.add(amount);
-        bout.betAmounts[wallet] = amount;
-        bout.hiddenBets[wallet] = br;
+        // update bet data
+        bout.bets[wallet].hidden = br;
+        bout.bets[wallet].amount = amount;
 
         // if not enough MEME for minimum bet then mint them some
         if (amount == LibConstants.MIN_BET_AMOUNT) {
@@ -230,7 +231,7 @@ library LibBetting {
             }
 
             // remove this and move to next item
-            bout.winningsClaimed[wallet] = true;
+            bout.bets[wallet].winningsClaimed = true;
             LibLinkedList.removeFromBoutList(s.userBoutsWinningsToClaimList[wallet], node);
             node = c.nodes[node.next];
 
@@ -264,7 +265,7 @@ library LibBetting {
 
         Bout storage bout = s.bouts[boutId];
 
-        selfBetAmount = bout.betAmounts[wallet];
+        selfBetAmount = bout.bets[wallet].amount;
 
         // if bout not yet ended
         if (bout.state != BoutState.Ended) {
@@ -314,8 +315,8 @@ library LibBetting {
 
         uint8 r = (bout.revealValues[rPackedIndex] >> ((3 - (index % 4)) * 2)) & 3;
         uint8 rawBet;
-        if (bout.hiddenBets[wallet] >= r) {
-            rawBet = bout.hiddenBets[wallet] - r;
+        if (bout.bets[wallet].hidden >= r) {
+            rawBet = bout.bets[wallet].hidden - r;
             // ensure it's valid
             if (rawBet != 0 && rawBet != 1) {
                 return BoutFighter.Invalid;

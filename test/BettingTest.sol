@@ -3,7 +3,7 @@ pragma solidity >=0.8.17 <0.9;
 
 import "forge-std/Test.sol";
 import "../src/Errors.sol";
-import { BoutNonMappingInfo, BoutFighter, BoutState } from "../src/Objects.sol";
+import { BoutNonMappingInfo, BoutFighter, BoutState, BetInfo } from "../src/Objects.sol";
 import { Wallet, TestBaseContract } from "./utils/TestBaseContract.sol";
 import { LibConstants } from "../src/libs/LibConstants.sol";
 import { LibTokenIds } from "../src/libs/LibToken.sol";
@@ -216,10 +216,11 @@ contract BettingTest is TestBaseContract {
         assertEq(proxy.getBoutFighterPotBalance(boutId, BoutFighter.FighterB), 1, "fighter B pot");
 
         // check player data
-        (address sup, uint ba, uint8 hb, ) = proxy.getBetByIndex(boutId, 1);
-        assertEq(sup, player.addr, "bettor address");
-        assertEq(hb, 1, "bettor hidden bet");
-        assertEq(ba, scen.betAmounts[0], "bettor bet amount");
+        address[] memory sup = proxy.getBoutBettors(boutId, 1, 1);
+        assertEq(sup[0], player.addr, "bettor address");
+        BetInfo memory info = proxy.getBetByIndex(boutId, 1);
+        assertEq(info.hidden, 1, "bettor hidden bet");
+        assertEq(info.amount, scen.betAmounts[0], "bettor bet amount");
         assertEq(proxy.getUserBoutsBetOn(player.addr), 1, "user supported bouts");
 
         // check MEME balances
@@ -255,10 +256,12 @@ contract BettingTest is TestBaseContract {
         for (uint i = 0; i < scen.players.length; i += 1) {
             Wallet memory player = scen.players[i];
 
-            (address sup, uint ba, uint8 hb, ) = proxy.getBetByIndex(boutId, i + 1);
-            assertEq(sup, player.addr, "bettor address");
-            assertEq(hb, 1, "bettor hidden bet");
-            assertEq(ba, scen.betAmounts[i], "bettor bet amount");
+            address[] memory sup = proxy.getBoutBettors(boutId, i + 1, i + 1);
+            assertEq(sup[0], player.addr, "bettor address");
+            BetInfo memory info = proxy.getBetByIndex(boutId, 1);
+            assertEq(info.hidden, 1, "bettor hidden bet");
+            assertEq(info.amount, scen.betAmounts[0], "bettor bet amount");
+
             assertEq(proxy.getUserBoutsBetOn(player.addr), 1, "user supported bouts");
         }
 
@@ -284,10 +287,11 @@ contract BettingTest is TestBaseContract {
         assertEq(bout.totalPot, LibConstants.MIN_BET_AMOUNT * 5, "total pot");
 
         // check bettor data
-        (address sup, uint ba, uint8 hb, ) = proxy.getBetByIndex(boutId, 1);
-        assertEq(sup, players[0].addr, "bettor address");
-        assertEq(hb, 1, "bettor hidden bet");
-        assertEq(ba, bout.totalPot, "bettor bet amount");
+        address[] memory sup = proxy.getBoutBettors(boutId, 1, 1);
+        assertEq(sup[0], players[0].addr, "bettor address");
+        BetInfo memory info = proxy.getBetByIndex(boutId, 1);
+        assertEq(info.hidden, 1, "bettor hidden bet");
+        assertEq(info.amount, bout.totalPot, "bettor bet amount");
         assertEq(proxy.getUserBoutsBetOn(players[0].addr), 1, "user supported bouts");
 
         // check MEME balances
@@ -635,9 +639,9 @@ contract BettingTest is TestBaseContract {
         for (uint i = 0; i < scen.players.length; i++) {
             Wallet memory player = scen.players[i];
 
-            (, , , BoutFighter revealedBet) = proxy.getBetByBettor(boutId, player.addr);
+            BetInfo memory info = proxy.getBetByBettor(boutId, player.addr);
 
-            assertEq(revealedBet, scen.betTargets[i], "revealed target");
+            assertEq(info.revealed, scen.betTargets[i], "revealed target");
         }
     }
 
@@ -657,8 +661,8 @@ contract BettingTest is TestBaseContract {
             scen.revealValues
         );
 
-        (, , , BoutFighter revealedBet) = proxy.getBetByBettor(boutId, vm.addr(666));
-        assertEq(revealedBet, BoutFighter.Invalid, "no target");
+        BetInfo memory info = proxy.getBetByBettor(boutId, vm.addr(666));
+        assertEq(info.revealed, BoutFighter.Invalid, "no target");
     }
 
     // ------------------------------------------------------ //
@@ -1006,7 +1010,7 @@ contract BettingTest is TestBaseContract {
 
             // check bout winnings claimed status
             assertEq(
-                proxy.getBoutWinningsClaimed(boutId, player.addr),
+                proxy.getBetByBettor(boutId, player.addr).winningsClaimed,
                 true,
                 "bout winnings claimed"
             );
@@ -1073,7 +1077,7 @@ contract BettingTest is TestBaseContract {
 
             // check bout winnings claimed status
             assertEq(
-                proxy.getBoutWinningsClaimed(boutId, player.addr),
+                proxy.getBetByBettor(boutId, player.addr).winningsClaimed,
                 true,
                 "bout winnings claimed"
             );
@@ -1141,7 +1145,7 @@ contract BettingTest is TestBaseContract {
 
             // check bout winnings claimed status
             assertEq(
-                proxy.getBoutWinningsClaimed(boutId, player.addr),
+                proxy.getBetByBettor(boutId, player.addr).winningsClaimed,
                 true,
                 "bout winnings claimed"
             );
@@ -1244,7 +1248,11 @@ contract BettingTest is TestBaseContract {
         proxy.claimWinnings(player.addr, 1);
 
         // check bout winnings claimed status
-        assertEq(proxy.getBoutWinningsClaimed(boutId, player.addr), true, "bout winnings claimed");
+        assertEq(
+            proxy.getBetByBettor(boutId, player.addr).winningsClaimed,
+            true,
+            "bout winnings claimed"
+        );
 
         // check that tokens were transferred
         assertEq(memeToken.balanceOf(player.addr), v.total, "total winnings");
@@ -1306,20 +1314,28 @@ contract BettingTest is TestBaseContract {
         proxy.claimWinnings(player.addr, 10);
 
         // check bout winnings claimed status
-        assertEq(proxy.getBoutWinningsClaimed(boutIds[0], player.addr), true, "bout 1 claimed");
         assertEq(
-            proxy.getBoutWinningsClaimed(boutIds[1], player.addr),
+            proxy.getBetByBettor(boutIds[0], player.addr).winningsClaimed,
+            true,
+            "bout 1 claimed"
+        );
+        assertEq(
+            proxy.getBetByBettor(boutIds[1], player.addr).winningsClaimed,
             false,
             "bout 2 not claimed"
         );
-        assertEq(proxy.getBoutWinningsClaimed(boutIds[2], player.addr), true, "bout 3 claimed");
         assertEq(
-            proxy.getBoutWinningsClaimed(boutIds[3], player.addr),
+            proxy.getBetByBettor(boutIds[2], player.addr).winningsClaimed,
+            true,
+            "bout 3 claimed"
+        );
+        assertEq(
+            proxy.getBetByBettor(boutIds[3], player.addr).winningsClaimed,
             false,
             "bout 4 not claimed"
         );
         assertEq(
-            proxy.getBoutWinningsClaimed(boutIds[4], player.addr),
+            proxy.getBetByBettor(boutIds[4], player.addr).winningsClaimed,
             false,
             "bout 5 not claimed"
         );
