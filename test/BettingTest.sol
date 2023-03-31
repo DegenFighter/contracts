@@ -710,16 +710,33 @@ contract BettingTest is TestBaseContract {
             assertEq(bout.winner, scen.winner, "winner");
             assertEq(proxy.getBoutFighterId(boutId, BoutFighter.FighterA), 21, "fighter A id");
             assertEq(proxy.getBoutFighterId(boutId, BoutFighter.FighterB), 22, "fighter B id");
-            assertEq(
-                proxy.getBoutFighterPotBalance(boutId, BoutFighter.FighterA),
-                scen.fighterAPot,
-                "fighter A pot balance"
-            );
-            assertEq(
-                proxy.getBoutFighterPotBalance(boutId, BoutFighter.FighterB),
-                scen.fighterBPot,
-                "fighter B pot balance"
-            );
+            /*
+                For all bouts except the last one, the fighter pot balance should be 0 or close to 0
+                since we claim winnings when placing bets
+            */
+            if (i < numBouts - 1) {
+                assertLt(
+                    proxy.getBoutFighterPotBalance(boutId, BoutFighter.FighterA),
+                    1000,
+                    "fighter A pot balance"
+                );
+                assertLt(
+                    proxy.getBoutFighterPotBalance(boutId, BoutFighter.FighterB),
+                    1000,
+                    "fighter B pot balance"
+                );
+            } else {
+                assertEq(
+                    proxy.getBoutFighterPotBalance(boutId, BoutFighter.FighterA),
+                    scen.fighterAPot,
+                    "fighter A pot balance"
+                );
+                assertEq(
+                    proxy.getBoutFighterPotBalance(boutId, BoutFighter.FighterB),
+                    scen.fighterBPot,
+                    "fighter B pot balance"
+                );
+            }
         }
     }
 

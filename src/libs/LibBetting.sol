@@ -70,6 +70,14 @@ library LibBetting {
             revert InvalidBetTargetError(boutId, wallet, br);
         }
 
+        /*
+        Resolve any unclaimed MEME.
+
+        We do this before incrementing userTotalBoutsBetOn and userBoutsBetOnByIndex below, otherwise the 
+        claimWinnings function will not work correctly. 
+        */
+        claimWinnings(wallet, 1);
+
         // replace old bet?
         if (bout.bets[wallet].amount > 0) {
             // refund old bet
