@@ -89,8 +89,11 @@ contract BettingFacet is FacetBase, IBettingFacet {
         return LibBetting.getBoutClaimableAmounts(boutId, wallet);
     }
 
-    function getClaimableWinnings(address wallet) external view returns (uint) {
-        return LibBetting.getClaimableWinnings(wallet);
+    function getClaimableWinnings(
+        address wallet,
+        uint maxUnclaimedBouts
+    ) external view returns (uint) {
+        return LibBetting.getClaimableWinnings(wallet, maxUnclaimedBouts);
     }
 
     function claimWinnings(address wallet, uint maxBoutsToClaim) external {

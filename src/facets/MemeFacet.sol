@@ -21,11 +21,14 @@ error FailedToReturnEthToUser(uint256 amount, uint256 gasLeft);
 contract MemeFacet is FacetBase, ReentrancyGuard {
     using SafeMath for uint;
 
-    function getAvailableMeme(address wallet) external view returns (uint256) {
+    function getAvailableMeme(
+        address wallet,
+        uint maxUnclaimedBouts
+    ) external view returns (uint256) {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
         return
-            LibBetting.getClaimableWinnings(wallet).add(
+            LibBetting.getClaimableWinnings(wallet, maxUnclaimedBouts).add(
                 s.tokenBalances[LibTokenIds.TOKEN_MEME][wallet]
             );
     }

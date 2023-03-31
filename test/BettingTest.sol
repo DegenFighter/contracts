@@ -710,33 +710,16 @@ contract BettingTest is TestBaseContract {
             assertEq(bout.winner, scen.winner, "winner");
             assertEq(proxy.getBoutFighterId(boutId, BoutFighter.FighterA), 21, "fighter A id");
             assertEq(proxy.getBoutFighterId(boutId, BoutFighter.FighterB), 22, "fighter B id");
-            /*
-                For all bouts except the last one, the fighter pot balance should be 0 or close to 0
-                since we claim winnings when placing bets
-            */
-            if (i < numBouts - 1) {
-                assertLt(
-                    proxy.getBoutFighterPotBalance(boutId, BoutFighter.FighterA),
-                    1000,
-                    "fighter A pot balance"
-                );
-                assertLt(
-                    proxy.getBoutFighterPotBalance(boutId, BoutFighter.FighterB),
-                    1000,
-                    "fighter B pot balance"
-                );
-            } else {
-                assertEq(
-                    proxy.getBoutFighterPotBalance(boutId, BoutFighter.FighterA),
-                    scen.fighterAPot,
-                    "fighter A pot balance"
-                );
-                assertEq(
-                    proxy.getBoutFighterPotBalance(boutId, BoutFighter.FighterB),
-                    scen.fighterBPot,
-                    "fighter B pot balance"
-                );
-            }
+            assertEq(
+                proxy.getBoutFighterPotBalance(boutId, BoutFighter.FighterA),
+                scen.fighterAPot,
+                "fighter A pot balance"
+            );
+            assertEq(
+                proxy.getBoutFighterPotBalance(boutId, BoutFighter.FighterB),
+                scen.fighterBPot,
+                "fighter B pot balance"
+            );
         }
     }
 
@@ -811,7 +794,7 @@ contract BettingTest is TestBaseContract {
         for (uint i = 0; i < scen.players.length; i++) {
             Wallet memory player = scen.players[i];
 
-            uint winnings = proxy.getClaimableWinnings(player.addr);
+            uint winnings = proxy.getClaimableWinnings(player.addr, 1);
             assertEq(winnings, 0, "no winnings claimable yet");
 
             (uint total, uint selfAmount, uint won) = proxy.getBoutClaimableAmounts(
@@ -831,7 +814,7 @@ contract BettingTest is TestBaseContract {
 
         address playerAddr = vm.addr(666);
 
-        assertEq(proxy.getClaimableWinnings(playerAddr), 0, "no winnings claimable");
+        assertEq(proxy.getClaimableWinnings(playerAddr, 1), 0, "no winnings claimable");
 
         (uint total, uint selfAmount, uint won) = proxy.getBoutClaimableAmounts(boutId, playerAddr);
         assertEq(total, 0, "no total winnings");
@@ -848,7 +831,7 @@ contract BettingTest is TestBaseContract {
         for (uint i = 0; i < scen.players.length; i++) {
             Wallet memory player = scen.players[i];
 
-            uint winnings = proxy.getClaimableWinnings(player.addr);
+            uint winnings = proxy.getClaimableWinnings(player.addr, 1);
 
             assertEq(winnings, scen.expectedWinnings[i], "winnings");
         }
@@ -863,9 +846,24 @@ contract BettingTest is TestBaseContract {
         for (uint i = 1; i < 2; i++) {
             Wallet memory player = scen.players[i];
 
-            uint winnings = proxy.getClaimableWinnings(player.addr);
+            uint winnings = proxy.getClaimableWinnings(player.addr, 10);
 
             assertEq(winnings, scen.expectedWinnings[i] * boutIds.length, "winnings");
+        }
+    }
+
+    function testGetClaimableWinningsForMultipleBoutsButLimitLoop() public {
+        uint[] memory boutIds = testProcessMultipleBoutsInParallel();
+
+        BettingScenario memory scen = _getScenario_Default();
+
+        // check claimable winnings
+        for (uint i = 1; i < 2; i++) {
+            Wallet memory player = scen.players[i];
+
+            uint winnings = proxy.getClaimableWinnings(player.addr, 2);
+
+            assertEq(winnings, scen.expectedWinnings[i] * 2, "winnings");
         }
     }
 
@@ -893,7 +891,7 @@ contract BettingTest is TestBaseContract {
         for (uint i = 0; i < scen.players.length; i++) {
             Wallet memory player = scen.players[i];
 
-            uint winnings = proxy.getClaimableWinnings(player.addr);
+            uint winnings = proxy.getClaimableWinnings(player.addr, 10);
 
             assertEq(winnings, scen.expectedWinnings[i], "winnings");
         }
@@ -923,7 +921,7 @@ contract BettingTest is TestBaseContract {
         for (uint i = 0; i < scen.players.length; i++) {
             Wallet memory player = scen.players[i];
 
-            uint winnings = proxy.getClaimableWinnings(player.addr);
+            uint winnings = proxy.getClaimableWinnings(player.addr, 10);
 
             assertEq(winnings, scen.expectedWinnings[i], "winnings");
         }
@@ -946,9 +944,9 @@ contract BettingTest is TestBaseContract {
 
             proxy._testMintMeme(player.addr, 1000 + i);
 
-            uint winnings = proxy.getClaimableWinnings(player.addr);
+            uint winnings = proxy.getClaimableWinnings(player.addr, 10);
 
-            uint availMeme = proxy.getAvailableMeme(player.addr);
+            uint availMeme = proxy.getAvailableMeme(player.addr, 10);
 
             assertEq(availMeme, winnings + 1000 + i, "winnings");
         }
@@ -1024,7 +1022,7 @@ contract BettingTest is TestBaseContract {
             );
 
             // check that there no more winnings to claim for this player
-            assertEq(proxy.getClaimableWinnings(player.addr), 0, "all winnings claimed");
+            assertEq(proxy.getClaimableWinnings(player.addr, 10), 0, "all winnings claimed");
         }
     }
 
@@ -1038,7 +1036,7 @@ contract BettingTest is TestBaseContract {
         assertEq(scen.betTargets[2], scen.winner, "chosen winner");
 
         uint winningsClaimed = 0;
-        uint totalWinnings = proxy.getClaimableWinnings(player.addr);
+        uint totalWinnings = proxy.getClaimableWinnings(player.addr, 10);
         uint proxyMemeTokenBalance = memeToken.balanceOf(proxyAddress);
 
         // get pre-values
@@ -1092,7 +1090,7 @@ contract BettingTest is TestBaseContract {
         );
 
         // check that there no more winnings to claim for this player
-        assertEq(proxy.getClaimableWinnings(player.addr), 0, "all winnings claimed");
+        assertEq(proxy.getClaimableWinnings(player.addr, 10), 0, "all winnings claimed");
     }
 
     function testClaimWinningsForMultipleBoutsSubset() public {
@@ -1105,7 +1103,7 @@ contract BettingTest is TestBaseContract {
         assertEq(scen.betTargets[2], scen.winner, "chosen winner");
 
         uint winningsClaimed = 0;
-        uint totalWinnings = proxy.getClaimableWinnings(player.addr);
+        uint totalWinnings = proxy.getClaimableWinnings(player.addr, 10);
         uint proxyMemeTokenBalance = memeToken.balanceOf(proxyAddress);
 
         uint MAX_BOUTS = 2;
@@ -1163,7 +1161,7 @@ contract BettingTest is TestBaseContract {
 
         // check that there are still winnings to claim for this player
         assertEq(
-            proxy.getClaimableWinnings(player.addr),
+            proxy.getClaimableWinnings(player.addr, 10),
             totalWinnings - winningsClaimed,
             "some winnings claimed"
         );
@@ -1212,7 +1210,7 @@ contract BettingTest is TestBaseContract {
         for (uint i = 0; i < scen.players.length; i++) {
             Wallet memory player = scen.players[i];
 
-            uint winnings = proxy.getClaimableWinnings(player.addr);
+            uint winnings = proxy.getClaimableWinnings(player.addr, 10);
             assertEq(winnings, scen.betAmounts[i], "bet refunded");
 
             (uint total, uint selfAmount, uint won) = proxy.getBoutClaimableAmounts(
@@ -1237,7 +1235,7 @@ contract BettingTest is TestBaseContract {
         Wallet memory player = scen.players[2];
         assertEq(scen.betTargets[2], scen.winner, "bet target");
 
-        uint totalWinnings = proxy.getClaimableWinnings(player.addr);
+        uint totalWinnings = proxy.getClaimableWinnings(player.addr, 10);
         uint proxyMemeTokenBalance = memeToken.balanceOf(proxyAddress);
         ClaimWinningsLoopValues memory v;
 
@@ -1263,7 +1261,7 @@ contract BettingTest is TestBaseContract {
         );
 
         // check that there no more winnings to claim for this player
-        assertEq(proxy.getClaimableWinnings(player.addr), 0, "all winnings claimed");
+        assertEq(proxy.getClaimableWinnings(player.addr, 10), 0, "all winnings claimed");
 
         BoutNonMappingInfo memory bout = proxy.getBoutNonMappingInfo(boutId);
         assertEq(bout.state, BoutState.Expired, "bout state");
@@ -1306,7 +1304,7 @@ contract BettingTest is TestBaseContract {
         Wallet memory player = scen.players[2];
         assertEq(scen.betTargets[2], scen.winner, "bet target");
 
-        uint totalWinnings = proxy.getClaimableWinnings(player.addr);
+        uint totalWinnings = proxy.getClaimableWinnings(player.addr, 10);
         uint proxyMemeTokenBalance = memeToken.balanceOf(proxyAddress);
         ClaimWinningsLoopValues memory v;
 
@@ -1349,7 +1347,7 @@ contract BettingTest is TestBaseContract {
         );
 
         // check that there no more winnings to claim for this player
-        assertEq(proxy.getClaimableWinnings(player.addr), 0, "all winnings claimed");
+        assertEq(proxy.getClaimableWinnings(player.addr, 10), 0, "all winnings claimed");
 
         // check that user bout winningsToClaim list is now of length 3
         assertEq(

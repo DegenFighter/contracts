@@ -32,7 +32,10 @@ interface IBettingFacet {
         address wallet
     ) external view returns (uint totalToClaim, uint selfBetAmount, uint loserPotAmountToClaim);
 
-    function getClaimableWinnings(address wallet) external view returns (uint);
+    function getClaimableWinnings(
+        address wallet,
+        uint maxUnclaimedBouts
+    ) external view returns (uint);
 
     function claimWinnings(address wallet, uint maxBoutsToClaim) external;
 

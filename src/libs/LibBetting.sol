@@ -70,14 +70,6 @@ library LibBetting {
             revert InvalidBetTargetError(boutId, wallet, br);
         }
 
-        /*
-        Resolve any unclaimed MEME.
-
-        We do this before incrementing userTotalBoutsBetOn and userBoutsBetOnByIndex below, otherwise the 
-        claimWinnings function will not work correctly. 
-        */
-        claimWinnings(wallet, 1);
-
         // replace old bet?
         if (bout.bets[wallet].amount > 0) {
             // refund old bet
@@ -244,16 +236,22 @@ library LibBetting {
         }
     }
 
-    function getClaimableWinnings(address wallet) internal view returns (uint winnings) {
+    function getClaimableWinnings(
+        address wallet,
+        uint maxUnclaimedBouts
+    ) internal view returns (uint winnings) {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
         BoutList storage c = s.userBoutsWinningsToClaimList[wallet];
         BoutListNode storage node = c.nodes[c.head];
 
-        while (node.boutId != 0) {
+        uint count = 0;
+
+        while (node.boutId != 0 && count < maxUnclaimedBouts) {
             (uint totalToClaim, , ) = getBoutClaimableAmounts(node.boutId, wallet);
             winnings = winnings.add(totalToClaim);
             node = c.nodes[node.next];
+            count++;
         }
     }
 
