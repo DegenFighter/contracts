@@ -70,6 +70,10 @@ library LibBetting {
             revert InvalidBetTargetError(boutId, wallet, br);
         }
 
+        // we might need to mint free MEME below, let's first check if user already has enough
+        // (this also ensures userBoutsWinningsToClaimList is up to date)
+        LibBetting.claimLatestWinnings(wallet);
+
         // replace old bet?
         if (bout.bets[wallet].amount > 0) {
             // refund old bet
@@ -99,10 +103,11 @@ library LibBetting {
         bout.bets[wallet].hidden = br;
         bout.bets[wallet].amount = amount;
 
-        // if not enough MEME for minimum bet then mint them some
+        // mint free MEME if needed
         if (amount == LibConstants.MIN_BET_AMOUNT) {
             uint bal = LibToken.balanceOf(LibTokenIds.TOKEN_MEME, wallet);
-            if (bal < amount) {
+
+            if (bal < LibConstants.MIN_BET_AMOUNT) {
                 LibToken.mint(LibTokenIds.TOKEN_MEME, wallet, LibConstants.MIN_BET_AMOUNT - bal);
             }
         }
@@ -168,13 +173,10 @@ library LibBetting {
         bout.endTime = block.timestamp;
     }
 
-    /*
-    We usually pass maxBoutsToClaim = 1 because under normal circumstances, the user will only have one
-    unclaimed bout winnings to claim. If the user places bets on lots of bouts before the 
-    server suddenl goes down for a while then they'll have lots of unclaimed winnings and/or 
-    bets that need to be refunded. In this case, the user may need to call this directly 
-    multiple times to get through the backlog. We will enable this in the UI.
-    */
+    function claimLatestWinnings(address wallet) internal {
+        LibBetting.claimWinnings(wallet, LibConstants.NUM_LATEST_BOUTS_TO_CLAIM);
+    }
+
     function claimWinnings(address wallet, uint maxBoutsToClaim) internal {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
@@ -234,6 +236,10 @@ library LibBetting {
         if (totalWinnings > 0) {
             LibToken.transfer(LibTokenIds.TOKEN_MEME, address(this), wallet, totalWinnings);
         }
+    }
+
+    function getLatestClaimableWinnings(address wallet) internal view returns (uint winnings) {
+        winnings = LibBetting.getClaimableWinnings(wallet, LibConstants.NUM_LATEST_BOUTS_TO_CLAIM);
     }
 
     function getClaimableWinnings(

@@ -10,6 +10,8 @@ library LibConstants {
     bytes32 internal constant SERVER_ADDRESS = keccak256("SERVER_ADDRESS");
     // wallet address of the treasury
     bytes32 internal constant TREASURY_ADDRESS = keccak256("TREASURY_ADDRESS");
+    // the minimum no. of bouts to claim winnings from when claiming winnings or calculating claims
+    uint internal constant NUM_LATEST_BOUTS_TO_CLAIM = 10;
     // the minimum amount of tokens that can be bet on a bout
     uint internal constant MIN_BET_AMOUNT = 10 ether;
     // time before a bout expires unless it is finalized
